@@ -27,3 +27,20 @@ public.jobs (
   constraint jobs_externalId_key unique ("externalId"),
   constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
 ) tablespace pg_default;
+
+-- row level security
+create policy "enable all for users based on user_id" 
+on public.links 
+as permissive 
+for all 
+to authenticated 
+using (auth.uid() = user_id) 
+with check (auth.uid() = user_id);
+
+create policy "enable all for users based on user_id" 
+on public.jobs 
+as permissive 
+for all 
+to authenticated 
+using (auth.uid() = user_id) 
+with check (auth.uid() = user_id);
