@@ -1,4 +1,4 @@
-import { Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 /**
  * Login with email and password.
@@ -18,6 +18,15 @@ export async function loginWithEmail({
 
   // @ts-ignore
   return session;
+}
+
+/**
+ * Get user from the current session.
+ */
+export async function getUser(): Promise<User | null> {
+  // @ts-ignore
+  const { user } = await window.electron.invoke("get-user", {});
+  return user;
 }
 
 /**

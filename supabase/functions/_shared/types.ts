@@ -34,6 +34,8 @@ type LinkRow = Link & {
 type JobRow = Job & {
   id: string;
   user_id: string;
+  visible: boolean;
+  archived: boolean;
   created_at: Date;
   updated_at: Date;
 };
