@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     console.log(`found ${jobs.length} jobs: ${JSON.stringify(jobs[0])}`);
     const { error: insertError } = await supabaseClient
       .from("jobs")
-      .insert(jobs);
+      .upsert(jobs, { onConflict: "externalId" });
     if (insertError) throw insertError;
 
     const [link] = createdLinks ?? [];

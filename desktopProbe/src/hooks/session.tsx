@@ -1,3 +1,5 @@
+import { getUser } from "@/lib/electronMainSdk";
+import { getExceptionMessage } from "@/lib/error";
 import { User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -29,13 +31,23 @@ export const useSession = () => {
 
 // Create a provider for the session
 export const SessionProvider = ({ children }: React.PropsWithChildren) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
+  // Load the user on mount
   useEffect(() => {
-    // todo-2: implement the session manager
-    setIsLoading(false);
-  }, [user]);
+    const asyncLoad = async () => {
+      try {
+        const currentUser = await getUser();
+        setUser(currentUser);
+        setIsLoading(false);
+      } catch (error) {
+        console.error(getExceptionMessage(error));
+      }
+    };
+
+    asyncLoad();
+  }, []);
 
   return (
     <SessionContext.Provider
