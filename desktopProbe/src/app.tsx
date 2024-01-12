@@ -10,10 +10,12 @@ import { AuthPage } from "./pages/auth";
 import { SupabaseProvider } from "./hooks/supabase";
 import { SessionProvider } from "./hooks/session";
 import { withAuthGuard } from "./components/authGuard";
+import { Home } from "./pages/home";
 
 const AuthGuardedMainWindow = withAuthGuard(() => {
   return (
     <div>
+      <Home />
       <Link to="/main_window/about">About</Link>
       <Link to="/main_window">MainWindow</Link>
     </div>
