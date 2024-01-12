@@ -11,16 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 
-export function SignupCard() {
+export function LoginCard() {
   return (
-    <Card>
+    <Card className="min-w-80">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Sign up</CardTitle>
+        <CardTitle className="text-2xl text-center">Login</CardTitle>
         <CardDescription className="text-center">
-          select your preferred method to get started
+          Don't have an account?{" "}
+          <a href="" className="text-green-700 hover:underline">
+            Sign up
+          </a>
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4 pb-6">
+      <CardContent className="grid gap-4 pb-2">
         <Button variant="outline">
           <Icons.google className="mr-2 h-4 w-4" />
           Google
@@ -39,19 +42,23 @@ export function SignupCard() {
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" placeholder="name@example.com" />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
+        <div className="grid">
+          <Label htmlFor="password" className="mb-2">
+            Password
+          </Label>
           <Input id="password" type="password" />
+          <div className="justify-self-end">
+            <a
+              href=""
+              className="text-xs underline w-fit text-muted-foreground"
+            >
+              Forgot passoword?
+            </a>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-3">
+      <CardFooter className="flex flex-col">
         <Button className="w-full">Create account</Button>
-        <p className="text-xs">
-          Already have an account?{" "}
-          <a href="" className="text-green-700 hover:underline">
-            Log in
-          </a>
-        </p>
       </CardFooter>
     </Card>
   );
