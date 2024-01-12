@@ -139,6 +139,49 @@ ${
 /**
  * IPC handlers used to communicate with the renderer process.
  */
+ipcMain.handle("signup-with-email", async (event, { email, password }) => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+
+    return { user: data.user };
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+    throw error;
+  }
+});
+
+ipcMain.handle("login-with-email", async (event, { email, password }) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+
+    return { user: data.user };
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+    throw error;
+  }
+});
+
+// handler used to fetch the user from the current supabase session
+ipcMain.handle("get-user", async (event) => {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+
+    return { user: data.user ?? null };
+  } catch (error) {
+    // console.error(getExceptionMessage(error));
+    return { user: null };
+  }
+});
+
 ipcMain.handle("create-link", async (event, { url }) => {
   try {
     const html = await downloadUrl(url);
@@ -160,35 +203,6 @@ ipcMain.handle("create-link", async (event, { url }) => {
   } catch (error) {
     console.error(getExceptionMessage(error));
     throw error;
-  }
-});
-
-ipcMain.handle("login-with-email", async (event, { email, password }) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-
-    return { session: data.session };
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
-
-// handler used to fetch the user from the current supabase session
-ipcMain.handle("get-user", async (event) => {
-  try {
-    console.log(`getting user from get-user`);
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw error;
-
-    return { user: data.user ?? null };
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    return { user: null };
   }
 });
 
@@ -240,7 +254,7 @@ app.on("ready", async () => {
           console.log(`saving session to disk`);
           fs.writeFileSync(sessionPath, JSON.stringify(session));
         }
-        if (session) await scanLinks(supabase);
+        // if (session) await scanLinks(supabase);
       } catch (error) {
         console.error(getExceptionMessage(error));
       }
