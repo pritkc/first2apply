@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -48,9 +49,9 @@ export function SignupCard() {
         <Button className="w-full">Create account</Button>
         <p className="text-xs">
           Already have an account?{" "}
-          <a href="" className="text-green-700 hover:underline">
+          <Link to="/login" className="text-green-700 hover:underline">
             Log in
-          </a>
+          </Link>
         </p>
       </CardFooter>
     </Card>

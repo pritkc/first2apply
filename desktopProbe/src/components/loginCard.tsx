@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -18,9 +19,9 @@ export function LoginCard() {
         <CardTitle className="text-2xl text-center">Login</CardTitle>
         <CardDescription className="text-center">
           Don't have an account?{" "}
-          <a href="" className="text-green-700 hover:underline">
+          <Link to="/signup" className="text-green-700 hover:underline">
             Sign up
-          </a>
+          </Link>
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 pb-2">
