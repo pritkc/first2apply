@@ -11,8 +11,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { signupWithEmail } from "@/lib/electronMainSdk";
+import { useState } from "react";
+import { useSession } from "@/hooks/session";
+import { useNavigate } from "react-router-dom";
 
 export function SignupCard() {
+  const { login } = useSession();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const onSignup = async () => {
+    try {
+      const user = await signupWithEmail({ email, password });
+      login(user);
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="space-y-1">
@@ -38,15 +58,28 @@ export function SignupCard() {
         </div>
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="name@example.com" />
+          <Input
+            id="email"
+            type="email"
+            placeholder="m@example.com"
+            value={email}
+            onChange={(evt) => setEmail(evt.target.value)}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(evt) => setPassword(evt.target.value)}
+          />
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3">
-        <Button className="w-full">Create account</Button>
+        <Button className="w-full" onClick={onSignup}>
+          Create account
+        </Button>
         <p className="text-xs">
           Already have an account?{" "}
           <Link to="/login" className="text-green-700 hover:underline">

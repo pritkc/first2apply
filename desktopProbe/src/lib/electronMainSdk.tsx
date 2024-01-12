@@ -1,6 +1,25 @@
 import { Session, User } from "@supabase/supabase-js";
 
 /**
+ * Create a new account with email and password.
+ */
+export async function signupWithEmail({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<User> {
+  // @ts-ignore
+  const { user } = await window.electron.invoke("signup-with-email", {
+    email,
+    password,
+  });
+
+  return user;
+}
+
+/**
  * Login with email and password.
  */
 export async function loginWithEmail({
@@ -9,15 +28,14 @@ export async function loginWithEmail({
 }: {
   email: string;
   password: string;
-}): Promise<Session> {
+}): Promise<User> {
   // @ts-ignore
-  const { session } = await window.electron.invoke("login-with-email", {
+  const { user } = await window.electron.invoke("login-with-email", {
     email,
     password,
   });
 
-  // @ts-ignore
-  return session;
+  return user;
 }
 
 /**
