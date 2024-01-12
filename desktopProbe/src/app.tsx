@@ -6,7 +6,8 @@ import {
   Link,
   createRoutesFromElements,
 } from "react-router-dom";
-import { AuthPage } from "./pages/auth";
+import { LoginPage } from "./pages/login";
+import { SignupPage } from "./pages/signup";
 import { SupabaseProvider } from "./hooks/supabase";
 import { SessionProvider } from "./hooks/session";
 import { withAuthGuard } from "./components/authGuard";
@@ -24,7 +25,8 @@ const router = createMemoryRouter(
   createRoutesFromElements(
     <>
       <Route path="/" element={<AuthGuardedMainWindow />}></Route>
-      <Route path="/login" element={<AuthPage></AuthPage>} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/about" element={<div>About</div>} />
     </>
   ),
