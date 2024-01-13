@@ -3,7 +3,7 @@ import { SignupCard } from "@/components/signupCard";
 
 export function SignupPage() {
   return (
-    <DefaultLayout className="flex justify-center items-center">
+    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
       <SignupCard />
     </DefaultLayout>
   );

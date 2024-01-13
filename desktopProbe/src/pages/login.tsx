@@ -30,7 +30,7 @@ export function LoginPage() {
   };
 
   return (
-    <DefaultLayout className="flex justify-center items-center">
+    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
       <LoginCard onLoginWithEmail={onLoginWithEmail} />
     </DefaultLayout>
   );
