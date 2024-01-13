@@ -12,6 +12,8 @@ import { SupabaseProvider } from "./hooks/supabase";
 import { SessionProvider } from "./hooks/session";
 import { withAuthGuard } from "./components/authGuard";
 import { Home } from "./pages/home";
+import { Toaster } from "./components/ui/toaster";
+import { ThemeProvider } from "./components/themeProvider";
 
 const AuthGuardedMainWindow = withAuthGuard(() => {
   return (
@@ -39,12 +41,25 @@ const router = createMemoryRouter(
  * Main app component.
  */
 function App() {
+  // @ts-ignore
+  console.log(window.electron?.theme);
+
   return (
-    <SupabaseProvider>
-      <SessionProvider>
-        <RouterProvider router={router}></RouterProvider>
-      </SessionProvider>
-    </SupabaseProvider>
+    <>
+      <SupabaseProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            // @ts-ignore
+            defaultTheme={window.electron?.theme || "light"}
+            disableTransitionOnChange
+          >
+            <RouterProvider router={router}></RouterProvider>
+          </ThemeProvider>
+        </SessionProvider>
+      </SupabaseProvider>
+      <Toaster />
+    </>
   );
 }
 
