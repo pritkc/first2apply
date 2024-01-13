@@ -50,12 +50,12 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.listJobs())
   );
 
-  ipcMain.handle("update-probe-cron-schedule", async (event, { cronRule }) =>
-    _apiCall(async () => jobScanner.updateSearchFrequency({ cronRule }))
+  ipcMain.handle("update-job-scanner-settings", async (event, { settings }) =>
+    _apiCall(async () => jobScanner.updateSettings(settings))
   );
 
   // handler used to fetch the cron schedule
-  ipcMain.handle("get-probe-cron-rule", async (event) =>
-    _apiCall(async () => jobScanner.getCronRule())
+  ipcMain.handle("get-job-scanner-settings", async (event) =>
+    _apiCall(async () => jobScanner.getSettings())
   );
 }

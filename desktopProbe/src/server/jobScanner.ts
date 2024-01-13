@@ -2,32 +2,43 @@ import path from "path";
 import fs from "fs";
 import { Notification, app } from "electron";
 import { ScheduledTask, schedule } from "node-cron";
-import { AVAILABLE_CRON_RULES, CronRule } from "../lib/types";
+import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { downloadUrl } from "./jobHelpers";
 import { getExceptionMessage } from "../lib/error";
 import { Job } from "../../../supabase/functions/_shared/types";
 
 const userDataPath = app.getPath("userData");
-const cronRulePath = path.join(userDataPath, "cronRule.json");
+const settingsPath = path.join(userDataPath, "settings.json");
 
 /**
  * Class used to manage a cron job that periodically scans links.
  */
 export class JobScanner {
-  private _cronRule: CronRule | undefined = AVAILABLE_CRON_RULES[0];
+  private _settings: JobScannerSettings = {
+    cronRule: AVAILABLE_CRON_RULES[0].value,
+    preventSleep: true,
+    useSound: true,
+  };
   private _cronJob: ScheduledTask | undefined;
 
   constructor(private _supabaseApi: F2aSupabaseApi) {
-    // load the cron rule from disk and start the cron job
-    if (fs.existsSync(cronRulePath)) {
-      console.log(`loading cron rule from disk`);
-      this._cronRule = JSON.parse(fs.readFileSync(cronRulePath, "utf-8"));
+    // load the setings from disk
+    if (fs.existsSync(settingsPath)) {
+      console.log(`loading settings from disk`);
+      this._settings = {
+        ...this._settings,
+        ...JSON.parse(fs.readFileSync(settingsPath, "utf-8")),
+      };
     } else {
-      console.log(`no cron rule found on disk, using default`);
+      console.log(`no settings found on disk, using defaults`);
+      this._saveSettings();
     }
-    this._cronJob = schedule(this._cronRule.value, () => this.scanLinks());
-    console.log(`cron job started successfully`);
+
+    if (this._settings.cronRule) {
+      this._cronJob = schedule(this._settings.cronRule, () => this.scanLinks());
+      console.log(`cron job started successfully`);
+    }
   }
 
   /**
@@ -87,10 +98,10 @@ export class JobScanner {
   }
 
   /**
-   * Update the cron rule.
+   * Update settings.
    */
-  updateSearchFrequency({ cronRule }: { cronRule?: CronRule }) {
-    console.log(`setting cron schedule: ${cronRule?.name ?? "Never"}`);
+  updateSettings(settings: JobScannerSettings) {
+    console.log(`updating settings: ${JSON.stringify(settings)}`);
 
     // stop old cron job
     if (this._cronJob) {
@@ -99,20 +110,27 @@ export class JobScanner {
     }
 
     // start new cron job if needed
-    if (cronRule) {
-      fs.writeFileSync(cronRulePath, JSON.stringify(cronRule));
-
-      this._cronJob = schedule(cronRule.value, () => this.scanLinks());
+    if (settings.cronRule) {
+      this._cronJob = schedule(settings.cronRule, () => this.scanLinks());
       console.log(`cron job started successfully`);
-    } else {
-      fs.unlinkSync(cronRulePath);
     }
+
+    // update settings
+    this._settings = settings;
+    this._saveSettings();
   }
 
   /**
-   * Get the current cron rule.
+   * Get the current settings.
    */
-  getCronRule() {
-    return { ...this._cronRule };
+  getSettings() {
+    return { ...this._settings };
+  }
+
+  /**
+   * Persist settings to disk.
+   */
+  private _saveSettings() {
+    fs.writeFileSync(settingsPath, JSON.stringify(this._settings));
   }
 }
