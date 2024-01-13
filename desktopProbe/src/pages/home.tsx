@@ -1,7 +1,8 @@
-import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/hooks/supabase";
 import { getExceptionMessage } from "@/lib/error";
 import { createLink } from "@/lib/electronMainSdk";
+import { DefaultLayout } from "./defaultLayout";
+import { Dashboard } from "@/components/dashboard";
 
 /**
  * Component that renders the home page.
@@ -24,8 +25,8 @@ export function Home() {
   };
 
   return (
-    <div>
-      <Button onClick={onCreateLink}>Click me</Button>
-    </div>
+    <DefaultLayout className="px-6 md:px-10 xl:px-0">
+      <Dashboard />
+    </DefaultLayout>
   );
 }
