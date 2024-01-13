@@ -1,11 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  nativeTheme,
-  Notification,
-} from "electron";
-import * as cron from "node-cron";
+import { app, BrowserWindow, nativeTheme } from "electron";
 import path from "path";
 import { ENV } from "./env";
 
@@ -67,205 +60,36 @@ app.on("activate", () => {
 // code. You can also put them in separate files and import them here.
 import fs from "fs";
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { DbSchema } from "../../supabase/functions/_shared/types";
 import { getExceptionMessage } from "./lib/error";
-import { AVAILABLE_CRON_RULES, CronRule } from "./lib/types";
+import { F2aSupabaseApi } from "./server/supabaseApi";
+import { JobScanner } from "./server/jobScanner";
+import { initRendererIpcApi } from "./server/rendererIpcApi";
 
 // globals
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
-let cronRule: CronRule | undefined = AVAILABLE_CRON_RULES[0];
-let cronJob: cron.ScheduledTask | undefined;
-
-/**
- * Function used to download the HTML of a given URL.
- */
-async function downloadUrl(url: string) {
-  console.log(`downloading url: ${url} ...`);
-  const response = await fetch(url);
-  const html = await response.text();
-  console.log(`finished downloading url: ${url}`);
-
-  return html;
-}
-
-/**
- * Method used to scan all links in the database.
- */
-async function scanLinks(supabase: SupabaseClient) {
-  try {
-    console.log("scanning links...");
-
-    // fetch all links from the database
-    const { data: links, error } = await supabase.from("links").select("*");
-    if (error) throw error;
-    console.log(`found ${links?.length} links`);
-
-    // fetch the html for each link
-    for (const link of links ?? []) {
-      const html = await downloadUrl(link.url);
-
-      // invoke the scan-url function
-      const { data, error: scanError } = await supabase.functions.invoke(
-        "scan-url",
-        {
-          body: {
-            linkId: link.id,
-            html,
-          },
-        }
-      );
-      if (scanError) throw scanError;
-
-      const newJobs = data?.newJobs ?? [];
-      console.log(`found ${newJobs.length} new jobs`);
-
-      // Create a new notification
-      const maxDisplayedJobs = 3;
-      const displatedJobs = newJobs.slice(0, maxDisplayedJobs);
-      const otherJobsCount = newJobs.length - maxDisplayedJobs;
-
-      const firstJobsLabel = displatedJobs
-        .map((job: any) => `${job.title} at ${job.companyName}`)
-        .join(", ");
-      const plural = otherJobsCount > 1 ? "s" : "";
-      const otherJobsLabel =
-        otherJobsCount > 0 ? ` and ${otherJobsCount} other${plural}` : "";
-      const notification = new Notification({
-        title: "Job Search Update",
-        body: `${firstJobsLabel}${otherJobsLabel} are now available!`,
-        sound: "Submarine",
-        silent: false,
-      });
-
-      // Show the notification
-      notification.show();
-    }
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-  }
-}
-
-/**
- * IPC handlers used to communicate with the renderer process.
- */
-ipcMain.handle("signup-with-email", async (event, { email, password }) => {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) throw error;
-
-    return { user: data.user };
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
-
-ipcMain.handle("login-with-email", async (event, { email, password }) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-
-    return { user: data.user };
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
-
-// handler used to fetch the user from the current supabase session
-ipcMain.handle("get-user", async (event) => {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw error;
-
-    return { user: data.user ?? null };
-  } catch (error) {
-    // console.error(getExceptionMessage(error));
-    return { user: null };
-  }
-});
-
-ipcMain.handle("create-link", async (event, { url }) => {
-  try {
-    const html = await downloadUrl(url);
-
-    const { data: createdLink, error } = await supabase.functions.invoke(
-      "create-link",
-      {
-        body: {
-          url,
-          html,
-        },
-      }
-    );
-    if (error) throw error;
-
-    console.log(`created link: ${JSON.stringify(createdLink)}`);
-
-    return createdLink;
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
-
-// handler used to set the cron schedule
-ipcMain.handle("update-probe-cron-schedule", async (event, { cronRule }) => {
-  try {
-    console.log(`setting cron schedule: ${cronRule?.name}`);
-
-    if (cronJob) {
-      console.log(`stopping old cron schedule`);
-      cronJob.stop();
-    }
-
-    // save rule to disk
-    const userDataPath = app.getPath("userData");
-    const cronRulePath = path.join(userDataPath, "cronRule.json");
-    if (cronRule) {
-      fs.writeFileSync(cronRulePath, JSON.stringify(cronRule));
-    } else {
-      fs.unlinkSync(cronRulePath);
-    }
-
-    // create a new cron job
-    cronJob = cron.schedule(cronRule.value, () => scanLinks(supabase));
-    console.log(`cron job started successfully`);
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
-
-// handler used to fetch the cron schedule
-ipcMain.handle("get-probe-cron-rule", async (event) => {
-  try {
-    console.log(`fetching cron schedule`);
-    return { cronRule };
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-    throw error;
-  }
-});
+const supabaseApi = new F2aSupabaseApi(supabase);
+let jobScanner: JobScanner | undefined;
 
 /**
  * Bootstrap probe service.
  */
 async function bootstrap() {
   try {
+    // init the job scanner
+    jobScanner = new JobScanner(supabaseApi);
+
+    // init the renderer IPC API
+    initRendererIpcApi({ supabaseApi, jobScanner });
+
     const userDataPath = app.getPath("userData");
     const sessionPath = path.join(userDataPath, "session.json");
 
     // manual logout for testing
     // fs.unlinkSync(sessionPath);
 
+    // load the session from disk if it exists
     if (fs.existsSync(sessionPath)) {
       const session = JSON.parse(fs.readFileSync(sessionPath, "utf-8"));
       console.log(`loading session from disk`);
@@ -287,25 +111,13 @@ async function bootstrap() {
           console.log(`saving session to disk`);
           fs.writeFileSync(sessionPath, JSON.stringify(session));
         }
-        // if (session) await scanLinks(supabase);
       } catch (error) {
         console.error(getExceptionMessage(error));
       }
     });
 
-    // load the cron rule from disk and start the cron job
-    const cronRulePath = path.join(userDataPath, "cronRule.json");
-    if (fs.existsSync(cronRulePath)) {
-      console.log(`loading cron rule from disk`);
-      cronRule = JSON.parse(fs.readFileSync(cronRulePath, "utf-8"));
-    } else {
-      console.log(`no cron rule found on disk, using default`);
-    }
-    cronJob = cron.schedule(cronRule.value, () => scanLinks(supabase));
-    console.log(`cron job started successfully`);
-
-    // used for testing
-    scanLinks(supabase);
+    // perform an initial scan
+    await jobScanner.scanLinks();
   } catch (error) {
     console.error(getExceptionMessage(error));
   }
