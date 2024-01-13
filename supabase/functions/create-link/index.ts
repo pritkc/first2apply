@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { url, html } = await req.json();
+    const { title, url, html } = await req.json();
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
       .from("links")
       .insert({
         url,
+        title,
       })
       .select("id");
     if (error) throw error;

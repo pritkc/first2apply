@@ -13,15 +13,26 @@ import { Toaster } from "./components/ui/toaster";
 import { ThemeProvider } from "./components/themeProvider";
 import { LoginPage } from "./pages/login";
 import { SignupPage } from "./pages/signup";
+import { SettingsPage } from "./pages/settings";
+import { ComponentType } from "react";
 
-const AuthGuardedMainWindow = withAuthGuard(() => {
-  return <Home />;
-});
+// auth guarded component wrapper
+function AuthGuardedComponent({ component }: { component: ComponentType }) {
+  const Component = withAuthGuard(component);
+  return <Component />;
+}
 
 const router = createMemoryRouter(
   createRoutesFromElements(
     <>
-      <Route path="/" element={<AuthGuardedMainWindow />}></Route>
+      <Route
+        path="/"
+        element={<AuthGuardedComponent component={Home} />}
+      ></Route>
+      <Route
+        path="/settings"
+        element={<AuthGuardedComponent component={SettingsPage} />}
+      ></Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/about" element={<div>About</div>} />

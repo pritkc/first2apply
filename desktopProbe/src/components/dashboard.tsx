@@ -21,6 +21,8 @@ import {
 } from "./ui/select";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
+import { createLink } from "@/lib/electronMainSdk";
+import { getExceptionMessage } from "@/lib/error";
 
 const schema = z.object({
   name: z.string().min(1, { message: "This field cannot be blank" }).max(80),
@@ -32,6 +34,20 @@ export function Dashboard() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+
+  const onCreateLink = async () => {
+    try {
+      console.log("App mounted");
+
+      const url =
+        "https://www.linkedin.com/jobs/search?keywords=Node.js&location=Zurich%2C+Switzerland&geoId=102436504&trk=public_jobs_jobs-search-bar_search-submit";
+
+      const createdLink = await createLink({ title: "New", url });
+      console.log(JSON.stringify(createdLink, null, 2));
+    } catch (error) {
+      console.error(getExceptionMessage(error));
+    }
+  };
 
   return (
     <div>

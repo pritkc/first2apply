@@ -42,6 +42,14 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.createLink({ title, url }))
   );
 
+  ipcMain.handle("list-links", async (event, { title, url }) =>
+    _apiCall(() => supabaseApi.listLinks())
+  );
+
+  ipcMain.handle("list-jobs", async (event, {}) =>
+    _apiCall(() => supabaseApi.listJobs())
+  );
+
   ipcMain.handle("update-probe-cron-schedule", async (event, { cronRule }) =>
     _apiCall(async () => jobScanner.updateSearchFrequency({ cronRule }))
   );

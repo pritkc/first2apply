@@ -1,32 +1,29 @@
-import { useSupabase } from "@/hooks/supabase";
-import { getExceptionMessage } from "@/lib/error";
-import { createLink } from "@/lib/electronMainSdk";
 import { DefaultLayout } from "./defaultLayout";
 import { Dashboard } from "@/components/dashboard";
+import { SettingsPage } from "./settings";
+import { useEffect, useState } from "react";
+import { listJobs } from "@/lib/electronMainSdk";
+import { JobsList } from "@/components/jobsList";
 
 /**
  * Component that renders the home page.
  */
 export function Home() {
-  const supabase = useSupabase();
+  const [jobs, setJobs] = useState([]);
 
-  const onCreateLink = async () => {
-    try {
-      console.log("App mounted");
-
-      const url =
-        "https://www.linkedin.com/jobs/search?keywords=Node.js&location=Zurich%2C+Switzerland&geoId=102436504&trk=public_jobs_jobs-search-bar_search-submit";
-
-      const createdLink = await createLink(url);
-      console.log(JSON.stringify(createdLink, null, 2));
-    } catch (error) {
-      console.error(getExceptionMessage(error));
-    }
-  };
+  // load all jobs when the component mounts
+  useEffect(() => {
+    const asyncLoad = async () => {
+      const jobs = await listJobs();
+      setJobs(jobs);
+    };
+    asyncLoad();
+  }, []);
 
   return (
     <DefaultLayout className="px-6 md:px-10 xl:px-0">
-      <Dashboard />
+      {/* <Dashboard /> */}
+      <JobsList jobs={jobs} />
     </DefaultLayout>
   );
 }

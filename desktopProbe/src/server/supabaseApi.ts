@@ -58,9 +58,10 @@ export class F2aSupabaseApi {
    * Get all registered links for the current user.
    */
   listLinks() {
-    return this._supabaseApiCall(
-      async () => await this._supabase.from("links").select("*")
-    );
+    return this._supabaseApiCall(async () => {
+      const res = await this._supabase.from("links").select("*");
+      return res;
+    });
   }
 
   /**
@@ -73,6 +74,15 @@ export class F2aSupabaseApi {
           htmls,
         },
       })
+    );
+  }
+
+  /**
+   * List all jobs for the current user.
+   */
+  listJobs() {
+    return this._supabaseApiCall(
+      async () => await this._supabase.from("jobs").select("*")
     );
   }
 
