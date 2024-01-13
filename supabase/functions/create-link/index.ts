@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { DbSchema } from "../_shared/types.ts";
 import { parseJobPage } from "../_shared/jobParser.ts";
+import { getExceptionMessage } from "../_shared/errorUtils.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,11 +45,13 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {
-    console.error(error);
-
-    return new Response(JSON.stringify({ error_message: error.message }), {
-      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      status: 500,
-    });
+    console.error(getExceptionMessage(error));
+    return new Response(
+      JSON.stringify({ errorMessage: getExceptionMessage(error, true) }),
+      {
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        status: 500,
+      }
+    );
   }
 });
