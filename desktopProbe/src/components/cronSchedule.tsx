@@ -18,33 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-
-const AVAILABLE_CRON_RULES = [
-  {
-    name: "Every 30 minutes",
-    value: "*/30 * * * *",
-  },
-  {
-    name: "Every hour",
-    value: "0 * * * *",
-  },
-  {
-    name: "Every 4 hours",
-    value: "0 */4 * * *",
-  },
-  {
-    name: "Every day",
-    value: "0 0 * * *",
-  },
-  {
-    name: "Every 3 days",
-    value: "0 0 */3 * *",
-  },
-  {
-    name: "Every week",
-    value: "0 0 * * 0",
-  },
-];
+import { AVAILABLE_CRON_RULES } from "@/lib/types";
+import { useEffect } from "react";
+import {
+  getProbeCronSchedule,
+  updateProbeCronSchedule,
+} from "@/lib/electronMainSdk";
+import { getExceptionMessage } from "@/lib/error";
 
 const schema = z.object({
   cronRule: z.string().default(""),
@@ -57,7 +37,33 @@ export function CronSchedule() {
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: schema.parse({}),
+    mode: "onChange",
   });
+
+  // load cron rule when component is mounted
+  useEffect(() => {
+    const loadCronRule = async () => {
+      try {
+        const cronRule = await getProbeCronSchedule();
+        form.setValue("cronRule", cronRule.value);
+      } catch (error) {
+        console.error(getExceptionMessage(error));
+      }
+    };
+    loadCronRule();
+  }, []);
+
+  // update cron rule when form is updated
+  const saveCronRule = async (data: z.infer<typeof schema>) => {
+    try {
+      const cronRule = AVAILABLE_CRON_RULES.find(
+        (cr) => cr.value === data.cronRule
+      );
+      await updateProbeCronSchedule({ cronRule });
+    } catch (error) {
+      console.error(getExceptionMessage(error));
+    }
+  };
 
   return (
     <Form {...form}>
@@ -73,7 +79,13 @@ export function CronSchedule() {
               </FormDescription>
             </div>
             <FormControl>
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(evt) => {
+                  field.onChange(evt);
+                  saveCronRule(form.getValues());
+                }}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Never" />
                 </SelectTrigger>

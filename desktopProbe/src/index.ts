@@ -34,7 +34,9 @@ const createWindow = (): void => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  bootstrap();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -60,9 +62,11 @@ import fs from "fs";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { DbSchema } from "../../supabase/functions/_shared/types";
 import { getExceptionMessage } from "./lib/error";
+import { AVAILABLE_CRON_RULES, CronRule } from "./lib/types";
 
 // globals
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
+let cronRule: CronRule | undefined = AVAILABLE_CRON_RULES[0];
 let cronJob: cron.ScheduledTask | undefined;
 
 /**
@@ -85,11 +89,8 @@ async function scanLinks(supabase: SupabaseClient) {
     console.log("scanning links...");
 
     // fetch all links from the database
-    const { data: user } = await supabase.auth.getUser();
-    console.log(`found user: ${JSON.stringify(user)}`);
     const { data: links, error } = await supabase.from("links").select("*");
     if (error) throw error;
-
     console.log(`found ${links?.length} links`);
 
     // fetch the html for each link
@@ -112,20 +113,21 @@ async function scanLinks(supabase: SupabaseClient) {
       console.log(`found ${newJobs.length} new jobs`);
 
       // Create a new notification
-      const maxDisplayedJobs = 2;
+      const maxDisplayedJobs = 3;
+      const displatedJobs = newJobs.slice(0, maxDisplayedJobs);
+      const otherJobsCount = newJobs.length - maxDisplayedJobs;
+
+      const firstJobsLabel = displatedJobs
+        .map((job: any) => `${job.title} at ${job.companyName}`)
+        .join(", ");
+      const plural = otherJobsCount > 1 ? "s" : "";
+      const otherJobsLabel =
+        otherJobsCount > 0 ? ` and ${otherJobsCount} other${plural}` : "";
       const notification = new Notification({
         title: "Job Search Update",
-        body: `Found ${newJobs.length} new jobs:
-${newJobs
-  .slice(maxDisplayedJobs)
-  .map((job: any) => `- ${job.title}`)
-  .join("\n")}
-${
-  newJobs.length > maxDisplayedJobs
-    ? `and ${newJobs.slice(3).length} others`
-    : ""
-}}`,
+        body: `${firstJobsLabel}${otherJobsLabel} are now available!`,
         sound: "Submarine",
+        silent: false,
       });
 
       // Show the notification
@@ -207,25 +209,48 @@ ipcMain.handle("create-link", async (event, { url }) => {
 });
 
 // handler used to set the cron schedule
-ipcMain.handle("set-cron-schedule", async (event, { cronSchedule }) => {
+ipcMain.handle("update-probe-cron-schedule", async (event, { cronRule }) => {
   try {
-    console.log(`setting cron schedule: ${cronSchedule}`);
+    console.log(`setting cron schedule: ${cronRule?.name}`);
 
     if (cronJob) {
       console.log(`stopping old cron schedule`);
       cronJob.stop();
     }
 
+    // save rule to disk
+    const userDataPath = app.getPath("userData");
+    const cronRulePath = path.join(userDataPath, "cronRule.json");
+    if (cronRule) {
+      fs.writeFileSync(cronRulePath, JSON.stringify(cronRule));
+    } else {
+      fs.unlinkSync(cronRulePath);
+    }
+
     // create a new cron job
-    // cronJob = cron.schedule(cronSchedule, scanLinks);
+    cronJob = cron.schedule(cronRule.value, () => scanLinks(supabase));
+    console.log(`cron job started successfully`);
   } catch (error) {
     console.error(getExceptionMessage(error));
     throw error;
   }
 });
 
-// listener used to load the session from disk
-app.on("ready", async () => {
+// handler used to fetch the cron schedule
+ipcMain.handle("get-probe-cron-rule", async (event) => {
+  try {
+    console.log(`fetching cron schedule`);
+    return { cronRule };
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+    throw error;
+  }
+});
+
+/**
+ * Bootstrap probe service.
+ */
+async function bootstrap() {
   try {
     const userDataPath = app.getPath("userData");
     const sessionPath = path.join(userDataPath, "session.json");
@@ -259,7 +284,24 @@ app.on("ready", async () => {
         console.error(getExceptionMessage(error));
       }
     });
+
+    // load the cron rule from disk and start the cron job
+    const cronRulePath = path.join(userDataPath, "cronRule.json");
+    if (fs.existsSync(cronRulePath)) {
+      console.log(`loading cron rule from disk`);
+      cronRule = JSON.parse(fs.readFileSync(cronRulePath, "utf-8"));
+    } else {
+      console.log(`no cron rule found on disk, using default`);
+    }
+    cronJob = cron.schedule(cronRule.value, () => scanLinks(supabase));
+    console.log(`cron job started successfully`);
+
+    // used for testing
+    scanLinks(supabase);
   } catch (error) {
     console.error(getExceptionMessage(error));
   }
-});
+
+  // create the main window after everything is setup
+  createWindow();
+}
