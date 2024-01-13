@@ -29,3 +29,9 @@ export const AVAILABLE_CRON_RULES = [
   },
 ];
 export type CronRule = (typeof AVAILABLE_CRON_RULES)[number];
+
+export type JobScannerSettings = {
+  cronRule?: string;
+  preventSleep: boolean;
+  useSound: boolean;
+};

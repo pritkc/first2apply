@@ -1,16 +1,15 @@
 import { DefaultLayout } from "./defaultLayout";
-import { Dashboard } from "@/components/dashboard";
-import { SettingsPage } from "./settings";
 import { useEffect, useState } from "react";
 import {
-  getProbeCronSchedule,
+  getProbeSettings,
   listJobs,
-  updateProbeCronSchedule,
+  updateProbeSettings,
 } from "@/lib/electronMainSdk";
 import { JobsList } from "@/components/jobsList";
-import { AVAILABLE_CRON_RULES, CronRule } from "@/lib/types";
+import { JobScannerSettings } from "@/lib/types";
 import { useError } from "@/hooks/error";
 import { CronSchedule } from "@/components/cronSchedule";
+import { set } from "react-hook-form";
 
 /**
  * Component that renders the home page.
@@ -19,18 +18,20 @@ export function Home() {
   const { handleError } = useError();
 
   const [jobs, setJobs] = useState([]);
-  const [cronRule, setCronRule] = useState<CronRule | undefined>();
+  const [settings, setSettings] = useState<JobScannerSettings>({
+    cronRule: undefined,
+    useSound: false,
+    preventSleep: false,
+  });
 
   useEffect(() => {
     const asyncLoad = async () => {
       try {
         // load all jobs when the component mounts
-        const jobs = await listJobs();
-        setJobs(jobs);
+        setJobs(await listJobs());
 
-        // load cron rule when component is mounted
-        const cronRule = await getProbeCronSchedule();
-        setCronRule(cronRule);
+        // load settings when component is mounted
+        setSettings(await getProbeSettings());
       } catch (error) {
         handleError(error);
       }
@@ -39,10 +40,11 @@ export function Home() {
   }, []);
 
   // update cron rule when form is updated
-  const onCronRuleChange = async (cron: string | undefined) => {
+  const onCronRuleChange = async (cronRule: string | undefined) => {
     try {
-      const cronRule = AVAILABLE_CRON_RULES.find((cr) => cr.value === cron);
-      await updateProbeCronSchedule({ cronRule });
+      const newSettings = { ...settings, cronRule };
+      await updateProbeSettings(newSettings);
+      setSettings(newSettings);
     } catch (error) {
       handleError(error);
     }
@@ -50,7 +52,10 @@ export function Home() {
 
   return (
     <DefaultLayout className="px-6 md:px-10 xl:px-0">
-      <CronSchedule cronRule={cronRule} onCronRuleChange={onCronRuleChange} />
+      <CronSchedule
+        cronRule={settings.cronRule}
+        onCronRuleChange={onCronRuleChange}
+      />
       <JobsList jobs={jobs} />
     </DefaultLayout>
   );

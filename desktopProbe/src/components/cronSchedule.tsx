@@ -1,42 +1,11 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "./ui/form";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { AVAILABLE_CRON_RULES, CronRule } from "@/lib/types";
-import { useEffect, useState } from "react";
-import {
-  getProbeCronSchedule,
-  updateProbeCronSchedule,
-} from "@/lib/electronMainSdk";
-import { getExceptionMessage } from "@/lib/error";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import { Switch } from "./ui/switch";
-
-const schema = z.object({
-  cronRule: z.string().default(""),
-});
+import { AVAILABLE_CRON_RULES } from "@/lib/types";
 
 /**
  * Component used to set the cron schedule of the probe.
@@ -45,7 +14,7 @@ export function CronSchedule({
   cronRule,
   onCronRuleChange,
 }: {
-  cronRule?: CronRule;
+  cronRule?: string;
   onCronRuleChange: (cron: string | undefined) => void;
 }) {
   return (
@@ -58,7 +27,7 @@ export function CronSchedule({
             How often do you want to receive job notifications?
           </span>
         </div>
-        <Select value={cronRule?.value} onValueChange={onCronRuleChange}>
+        <Select value={cronRule} onValueChange={onCronRuleChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Never" />
           </SelectTrigger>

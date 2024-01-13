@@ -1,5 +1,5 @@
-import { Session, User } from "@supabase/supabase-js";
-import { CronRule } from "./types";
+import { User } from "@supabase/supabase-js";
+import { JobScannerSettings } from "./types";
 import { Job, Link } from "../../../supabase/functions/_shared/types";
 
 /**
@@ -86,24 +86,22 @@ export async function listJobs(): Promise<Job[]> {
 }
 
 /**
- * Update the cron schedule of the probe.
+ * Update the settings of the probe.
  */
-export async function updateProbeCronSchedule({
-  cronRule,
-}: {
-  cronRule?: CronRule;
-}): Promise<void> {
+export async function updateProbeSettings(
+  settings: JobScannerSettings
+): Promise<void> {
   // @ts-ignore
-  await window.electron.invoke("update-probe-cron-schedule", {
-    cronRule,
+  await window.electron.invoke("update-job-scanner-settings", {
+    settings,
   });
 }
 
 /**
- * Get the current cron schedule of the probe.
+ * Get the current settings of the probe.
  */
-export async function getProbeCronSchedule(): Promise<CronRule | undefined> {
+export async function getProbeSettings(): Promise<JobScannerSettings> {
   // @ts-ignore
-  const { cronRule } = await window.electron.invoke("get-probe-cron-rule", {});
-  return cronRule;
+  const settings = await window.electron.invoke("get-job-scanner-settings", {});
+  return settings;
 }
