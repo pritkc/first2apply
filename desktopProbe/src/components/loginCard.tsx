@@ -11,26 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/hooks/session";
+
 import { useState } from "react";
-import { loginWithEmail } from "@/lib/electronMainSdk";
 
-export function LoginCard() {
-  const { login } = useSession();
-  const navigate = useNavigate();
-
+export function LoginCard({
+  onLoginWithEmail,
+}: {
+  onLoginWithEmail: (params: { email: string; password: string }) => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const onLogin = async () => {
-    try {
-      const user = await loginWithEmail({ email, password });
-      login(user);
-      navigate("/");
-    } catch (error) {
-      console.log(error);
-    }
-  };
   return (
     <Card className="min-w-80">
       <CardHeader className="space-y-1">
@@ -88,7 +79,10 @@ export function LoginCard() {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col">
-        <Button className="w-full" onClick={onLogin}>
+        <Button
+          className="w-full"
+          onClick={() => onLoginWithEmail({ email, password })}
+        >
           Log In
         </Button>
       </CardFooter>

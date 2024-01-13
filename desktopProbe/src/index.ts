@@ -1,4 +1,10 @@
-import { app, BrowserWindow, ipcMain, Notification } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeTheme,
+  Notification,
+} from "electron";
 import * as cron from "node-cron";
 import path from "path";
 import { ENV } from "./env";
@@ -16,11 +22,13 @@ if (require("electron-squirrel-startup")) {
 
 const createWindow = (): void => {
   // Create the browser window.
+  const theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
   const mainWindow = new BrowserWindow({
     height: 800,
     width: 1024,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      additionalArguments: [theme],
     },
   });
 
