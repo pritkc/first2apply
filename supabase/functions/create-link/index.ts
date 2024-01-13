@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
         url,
         title,
       })
-      .select("id");
+      .select("*");
     if (error) throw error;
 
     // parse the html and save found jobs in the db

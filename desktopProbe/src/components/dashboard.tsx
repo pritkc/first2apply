@@ -35,20 +35,6 @@ export function Dashboard() {
     mode: "onChange",
   });
 
-  const onCreateLink = async () => {
-    try {
-      console.log("App mounted");
-
-      const url =
-        "https://www.linkedin.com/jobs/search?keywords=Node.js&location=Zurich%2C+Switzerland&geoId=102436504&trk=public_jobs_jobs-search-bar_search-submit";
-
-      const createdLink = await createLink({ title: "New", url });
-      console.log(JSON.stringify(createdLink, null, 2));
-    } catch (error) {
-      console.error(getExceptionMessage(error));
-    }
-  };
-
   return (
     <div>
       <section className="max-w-[980px] px-6 md:px-10 lg:px-20 pt-32 pb-20 mx-auto flex flex-col items-center gap-10">
@@ -80,64 +66,6 @@ export function Dashboard() {
         <hr className="w-full text-muted-foreground" />
 
         {/* <CronSchedule /> */}
-
-        <section className="h-fit border border-muted-foreground/20 rounded-lg">
-          {/* <div className="h-full flex items-center justify-center">
-            <PlusCircledIcon className="text-muted-foreground/20 w-10 h-10" />
-          </div> */}
-
-          <div className="p-4">
-            <Form {...form}>
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Add new job search</FormLabel>
-                <FormDescription>
-                  Enter a descriptive name for your search
-                </FormDescription>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl className="flex gap-2">
-                        <>
-                          <Input
-                            id="name"
-                            type="name"
-                            placeholder="Enter a descriptive name (eg: java senior remote)
-                            "
-                            value={field.value}
-                          />
-                        </>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="link"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl className="flex gap-2">
-                        <>
-                          <Input
-                            id="link"
-                            type="link"
-                            placeholder="Paste the URL of your job search"
-                            value={field.value}
-                          />
-                        </>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Form>
-          </div>
-        </section>
       </div>
     </div>
   );

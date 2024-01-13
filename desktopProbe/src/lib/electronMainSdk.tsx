@@ -58,7 +58,7 @@ export async function createLink({
 }: {
   title: string;
   url: string;
-}): Promise<{ id: string }> {
+}): Promise<Link> {
   // @ts-ignore
   const { link } = await window.electron.invoke("create-link", {
     title,
@@ -102,7 +102,7 @@ export async function updateProbeCronSchedule({
 /**
  * Get the current cron schedule of the probe.
  */
-export async function getProbeCronSchedule(): Promise<CronRule> {
+export async function getProbeCronSchedule(): Promise<CronRule | undefined> {
   // @ts-ignore
   const { cronRule } = await window.electron.invoke("get-probe-cron-rule", {});
   return cronRule;

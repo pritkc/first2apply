@@ -15,6 +15,7 @@ import { LoginPage } from "./pages/login";
 import { SignupPage } from "./pages/signup";
 import { SettingsPage } from "./pages/settings";
 import { ComponentType } from "react";
+import { LinksPage } from "./pages/links";
 
 // auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
@@ -30,6 +31,10 @@ const router = createMemoryRouter(
         element={<AuthGuardedComponent component={Home} />}
       ></Route>
       <Route
+        path="/links"
+        element={<AuthGuardedComponent component={LinksPage} />}
+      ></Route>
+      <Route
         path="/settings"
         element={<AuthGuardedComponent component={SettingsPage} />}
       ></Route>
@@ -38,7 +43,7 @@ const router = createMemoryRouter(
       <Route path="/about" element={<div>About</div>} />
     </>
   ),
-  { initialEntries: ["/"] }
+  { initialEntries: ["/links"] }
 );
 
 /**
