@@ -1,5 +1,6 @@
 import { Session, User } from "@supabase/supabase-js";
 import { CronRule } from "./types";
+import { Job, Link } from "../../../supabase/functions/_shared/types";
 
 /**
  * Create a new account with email and password.
@@ -51,12 +52,37 @@ export async function getUser(): Promise<User | null> {
 /**
  * Function used to create a new link.
  */
-export async function createLink(url: string): Promise<{ id: string }> {
+export async function createLink({
+  title,
+  url,
+}: {
+  title: string;
+  url: string;
+}): Promise<{ id: string }> {
   // @ts-ignore
   const { link } = await window.electron.invoke("create-link", {
+    title,
     url,
   });
   return link;
+}
+
+/**
+ * List all links.
+ */
+export async function listLinks(): Promise<Link[]> {
+  // @ts-ignore
+  const links = await window.electron.invoke("list-links", {});
+  return links;
+}
+
+/**
+ * List all jobs.
+ */
+export async function listJobs(): Promise<Job[]> {
+  // @ts-ignore
+  const jobs = await window.electron.invoke("list-jobs", {});
+  return jobs;
 }
 
 /**
