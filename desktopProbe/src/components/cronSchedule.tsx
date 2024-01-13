@@ -18,13 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { AVAILABLE_CRON_RULES } from "@/lib/types";
-import { useEffect } from "react";
+import { AVAILABLE_CRON_RULES, CronRule } from "@/lib/types";
+import { useEffect, useState } from "react";
 import {
   getProbeCronSchedule,
   updateProbeCronSchedule,
 } from "@/lib/electronMainSdk";
 import { getExceptionMessage } from "@/lib/error";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Switch } from "./ui/switch";
 
 const schema = z.object({
   cronRule: z.string().default(""),
@@ -33,74 +41,36 @@ const schema = z.object({
 /**
  * Component used to set the cron schedule of the probe.
  */
-export function CronSchedule() {
-  const form = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: schema.parse({}),
-    mode: "onChange",
-  });
-
-  // load cron rule when component is mounted
-  useEffect(() => {
-    const loadCronRule = async () => {
-      try {
-        const cronRule = await getProbeCronSchedule();
-        form.setValue("cronRule", cronRule.value);
-      } catch (error) {
-        console.error(getExceptionMessage(error));
-      }
-    };
-    loadCronRule();
-  }, []);
-
-  // update cron rule when form is updated
-  const saveCronRule = async (data: z.infer<typeof schema>) => {
-    try {
-      const cronRule = AVAILABLE_CRON_RULES.find(
-        (cr) => cr.value === data.cronRule
-      );
-      await updateProbeCronSchedule({ cronRule });
-    } catch (error) {
-      console.error(getExceptionMessage(error));
-    }
-  };
-
+export function CronSchedule({
+  cronRule,
+  onCronRuleChange,
+}: {
+  cronRule?: CronRule;
+  onCronRuleChange: (cron: string | undefined) => void;
+}) {
   return (
-    <Form {...form}>
-      <FormField
-        control={form.control}
-        name="cronRule"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Search Frequency</FormLabel>
-              <FormDescription>
-                How often do you want to receive job notifications?
-              </FormDescription>
-            </div>
-            <FormControl>
-              <Select
-                value={field.value}
-                onValueChange={(evt) => {
-                  field.onChange(evt);
-                  saveCronRule(form.getValues());
-                }}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Never" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AVAILABLE_CRON_RULES.map((rule) => (
-                    <SelectItem key={rule.value} value={rule.value}>
-                      {rule.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
-          </FormItem>
-        )}
-      />
-    </Form>
+    <div className="space-y-4">
+      {/* cron rule */}
+      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+        <div className="space-y-0.5">
+          <p className="text-base">Search Frequency</p>
+          <span className="text-sm">
+            How often do you want to receive job notifications?
+          </span>
+        </div>
+        <Select value={cronRule?.value} onValueChange={onCronRuleChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Never" />
+          </SelectTrigger>
+          <SelectContent>
+            {AVAILABLE_CRON_RULES.map((rule) => (
+              <SelectItem key={rule.value} value={rule.value}>
+                {rule.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 }

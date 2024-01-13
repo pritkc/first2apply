@@ -1,6 +1,6 @@
 import { getExceptionMessage } from "../lib/error";
 import { SupabaseClient, User } from "@supabase/supabase-js";
-import { DbSchema } from "../../../supabase/functions/_shared/types";
+import { DbSchema, Link } from "../../../supabase/functions/_shared/types";
 import { downloadUrl } from "./jobHelpers";
 
 /**
@@ -41,7 +41,13 @@ export class F2aSupabaseApi {
   /**
    * Create a new link.
    */
-  async createLink({ title, url }: { title: string; url: string }) {
+  async createLink({
+    title,
+    url,
+  }: {
+    title: string;
+    url: string;
+  }): Promise<{ link: Link }> {
     const html = await downloadUrl(url);
     return this._supabaseApiCall(() =>
       this._supabase.functions.invoke("create-link", {
