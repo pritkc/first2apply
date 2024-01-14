@@ -28,7 +28,7 @@ export function LoginCard({
         <CardTitle className="text-2xl text-center">Login</CardTitle>
         <CardDescription className="text-center">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-green-700 hover:underline">
+          <Link to="/signup" className="text-primary hover:underline">
             Sign up
           </Link>
         </CardDescription>
