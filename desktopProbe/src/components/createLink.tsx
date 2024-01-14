@@ -1,5 +1,4 @@
 import { Button } from "./ui/button";
-import { PlusCircledIcon } from "@radix-ui/react-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -58,15 +57,13 @@ export function CreateLink({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Title</FormLabel>
-                    <FormControl className="flex gap-2">
-                      <>
-                        <Input
-                          id="title"
-                          type="title"
-                          placeholder="Enter a descriptive name (eg: java senior remote)"
-                          {...field}
-                        />
-                      </>
+                    <FormControl>
+                      <Input
+                        id="title"
+                        type="title"
+                        placeholder="Enter a descriptive name (eg: java senior remote)"
+                        {...field}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -78,15 +75,13 @@ export function CreateLink({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>URL</FormLabel>
-                    <FormControl className="flex gap-2">
-                      <>
-                        <Input
-                          id="url"
-                          type="url"
-                          placeholder="Paste the URL of your job search"
-                          {...field}
-                        />
-                      </>
+                    <FormControl>
+                      <Input
+                        id="url"
+                        type="url"
+                        placeholder="Paste the URL of your job search"
+                        {...field}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
