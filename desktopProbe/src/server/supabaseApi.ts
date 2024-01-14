@@ -88,7 +88,8 @@ export class F2aSupabaseApi {
    */
   listJobs() {
     return this._supabaseApiCall(
-      async () => await this._supabase.from("jobs").select("*")
+      async () =>
+        await this._supabase.from("jobs").select("*").eq("visible", true)
     );
   }
 

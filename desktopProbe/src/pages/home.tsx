@@ -9,7 +9,6 @@ import { JobsList } from "@/components/jobsList";
 import { JobScannerSettings } from "@/lib/types";
 import { useError } from "@/hooks/error";
 import { CronSchedule } from "@/components/cronSchedule";
-import { set } from "react-hook-form";
 
 /**
  * Component that renders the home page.
