@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { Notification, app } from "electron";
+import { Notification, app, powerSaveBlocker } from "electron";
 import { ScheduledTask, schedule } from "node-cron";
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
 import { F2aSupabaseApi } from "./supabaseApi";
@@ -11,34 +11,41 @@ import { Job } from "../../../supabase/functions/_shared/types";
 const userDataPath = app.getPath("userData");
 const settingsPath = path.join(userDataPath, "settings.json");
 
+const DEFAULT_SETTINGS: JobScannerSettings = {
+  cronRule: AVAILABLE_CRON_RULES[0].value,
+  preventSleep: true,
+  useSound: true,
+};
+
 /**
  * Class used to manage a cron job that periodically scans links.
  */
 export class JobScanner {
   private _settings: JobScannerSettings = {
-    cronRule: AVAILABLE_CRON_RULES[0].value,
-    preventSleep: true,
-    useSound: true,
+    preventSleep: false,
+    useSound: false,
   };
   private _cronJob: ScheduledTask | undefined;
+  private _prowerSaveBlockerId: number | undefined;
 
   constructor(private _supabaseApi: F2aSupabaseApi) {
+    // used for testing
+    // fs.unlinkSync(settingsPath);
+
     // load the setings from disk
+    let settingsToApply = this._settings;
     if (fs.existsSync(settingsPath)) {
       console.log(`loading settings from disk`);
       this._settings = {
-        ...this._settings,
+        ...settingsToApply,
         ...JSON.parse(fs.readFileSync(settingsPath, "utf-8")),
       };
     } else {
       console.log(`no settings found on disk, using defaults`);
-      this._saveSettings();
+      settingsToApply = DEFAULT_SETTINGS;
     }
 
-    if (this._settings.cronRule) {
-      this._cronJob = schedule(this._settings.cronRule, () => this.scanLinks());
-      console.log(`cron job started successfully`);
-    }
+    this._applySettings(settingsToApply);
   }
 
   /**
@@ -88,9 +95,11 @@ export class JobScanner {
       otherJobsCount > 0 ? ` and ${otherJobsCount} other${plural}` : "";
     const notification = new Notification({
       title: "Job Search Update",
-      body: `${firstJobsLabel}${otherJobsLabel} are now available!`,
+      body: `${firstJobsLabel}${otherJobsLabel} ${
+        displatedJobs.length > 1 ? "are" : "is"
+      } now available!`,
       // sound: "Submarine",
-      // silent: false,
+      silent: this._settings.useSound === false,
     });
 
     // Show the notification
@@ -101,22 +110,7 @@ export class JobScanner {
    * Update settings.
    */
   updateSettings(settings: JobScannerSettings) {
-    console.log(`updating settings: ${JSON.stringify(settings)}`);
-
-    // stop old cron job
-    if (this._cronJob) {
-      console.log(`stopping old cron schedule`);
-      this._cronJob.stop();
-    }
-
-    // start new cron job if needed
-    if (settings.cronRule) {
-      this._cronJob = schedule(settings.cronRule, () => this.scanLinks());
-      console.log(`cron job started successfully`);
-    }
-
-    // update settings
-    this._settings = settings;
+    this._applySettings(settings);
     this._saveSettings();
   }
 
@@ -132,5 +126,44 @@ export class JobScanner {
    */
   private _saveSettings() {
     fs.writeFileSync(settingsPath, JSON.stringify(this._settings));
+    console.log(`settings saved to disk`);
+  }
+
+  /**
+   * Apply a new set of settings into the runtime.
+   */
+  private _applySettings(settings: JobScannerSettings) {
+    if (settings.cronRule !== this._settings.cronRule) {
+      // stop old cron job
+      if (this._cronJob) {
+        console.log(`stopping old cron schedule`);
+        this._cronJob.stop();
+      }
+      // start new cron job if needed
+      if (settings.cronRule) {
+        this._cronJob = schedule(settings.cronRule, () => this.scanLinks());
+        console.log(`cron job started successfully`);
+      }
+    }
+
+    if (settings.preventSleep !== this._settings.preventSleep) {
+      // stop old power blocker
+      if (typeof this._prowerSaveBlockerId === "number") {
+        console.log(`stopping old prevent sleep`);
+        powerSaveBlocker.stop(this._prowerSaveBlockerId);
+      }
+      // start new power blocker if needed
+      if (settings.preventSleep) {
+        this._prowerSaveBlockerId = powerSaveBlocker.start(
+          "prevent-app-suspension"
+        );
+        console.log(
+          `prevent sleep started successfully: ${this._prowerSaveBlockerId}`
+        );
+      }
+    }
+
+    this._settings = settings;
+    console.log(`settings applied successfully`);
   }
 }
