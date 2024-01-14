@@ -107,8 +107,12 @@ async function bootstrap() {
           console.log(`removing session from disk`);
           fs.unlinkSync(sessionPath);
           return;
-        } else if (event === "SIGNED_IN") {
-          console.log(`saving session to disk`);
+        } else if (
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "PASSWORD_RECOVERY"
+        ) {
+          console.log(`saving new session to disk`);
           fs.writeFileSync(sessionPath, JSON.stringify(session));
         }
       } catch (error) {
