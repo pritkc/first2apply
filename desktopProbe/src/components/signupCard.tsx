@@ -82,7 +82,7 @@ export function SignupCard() {
         </Button>
         <p className="text-xs">
           Already have an account?{" "}
-          <Link to="/login" className="text-green-700 hover:underline">
+          <Link to="/login" className="text-primary hover:underline">
             Log in
           </Link>
         </p>
