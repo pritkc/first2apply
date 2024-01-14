@@ -1,4 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+import { useSession } from "@/hooks/session";
+import { signupWithEmail } from "@/lib/electronMainSdk";
 import {
   Card,
   CardContent,
@@ -8,24 +14,38 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Icons } from "@/components/icons";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { Button } from "@/components/ui/button";
-import { signupWithEmail } from "@/lib/electronMainSdk";
-import { useState } from "react";
-import { useSession } from "@/hooks/session";
-import { useNavigate } from "react-router-dom";
+
+// Schema definition for form validation using Zod
+const schema = z.object({
+  email: z.string().email({ message: "Invalid email format" }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
+});
+
+type SignupFormValues = z.infer<typeof schema>;
 
 export function SignupCard() {
   const { login } = useSession();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    mode: "onChange",
+  });
 
-  const onSignup = async () => {
+  const onSubmit = async (values: SignupFormValues) => {
     try {
-      const user = await signupWithEmail({ email, password });
+      // Since the form validates email and password, we can assert their presence
+      const user = await signupWithEmail(
+        values as { email: string; password: string }
+      );
       login(user);
       navigate("/");
     } catch (error) {
@@ -34,59 +54,58 @@ export function SignupCard() {
   };
 
   return (
-    <Card>
+    <Card className="min-w-80 space-y-2.5">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Sign up</CardTitle>
+        <CardTitle className="text-2xl text-center tracking-wide">
+          Sign up
+        </CardTitle>
         <CardDescription className="text-center">
-          select your preferred method to get started
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4 pb-6">
-        <Button variant="outline">
-          <Icons.google className="mr-2 h-4 w-4" />
-          Google
-        </Button>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-            value={email}
-            onChange={(evt) => setEmail(evt.target.value)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(evt) => setPassword(evt.target.value)}
-          />
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-3">
-        <Button className="w-full" onClick={onSignup}>
-          Create account
-        </Button>
-        <p className="text-xs">
           Already have an account?{" "}
           <Link to="/login" className="text-primary hover:underline">
             Log in
           </Link>
-        </p>
-      </CardFooter>
+        </CardDescription>
+      </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <CardContent className="space-y-2.5">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel>Password</FormLabel>
+                  <FormControl className="flex gap-2">
+                    <Input id="password" type="password" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter className="pb-[68px] pt-2">
+            <Button className="w-full" disabled={!form.formState.isValid}>
+              Sign up
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }
