@@ -35,11 +35,13 @@ export class JobScanner {
     // load the setings from disk
     let settingsToApply = this._settings;
     if (fs.existsSync(settingsPath)) {
-      console.log(`loading settings from disk`);
-      this._settings = {
-        ...settingsToApply,
+      settingsToApply = {
+        ...this._settings,
         ...JSON.parse(fs.readFileSync(settingsPath, "utf-8")),
       };
+      console.log(
+        `loadied settings from disk: ${JSON.stringify(settingsToApply)}`
+      );
     } else {
       console.log(`no settings found on disk, using defaults`);
       settingsToApply = DEFAULT_SETTINGS;
