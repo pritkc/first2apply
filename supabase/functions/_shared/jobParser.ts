@@ -2,7 +2,7 @@ import {
   DOMParser,
   Element,
 } from "https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts";
-import { Job, JOB_PROVIDERS, JobProviders } from "./types.ts";
+import { Job, JOB_PROVIDERS, JobProviders, JobType } from "./types.ts";
 
 /**
  * Helper used to parse a salary string.
@@ -62,6 +62,10 @@ export function parseJobPage({
   switch (provider) {
     case "linkedin":
       return parseLinkedInJobs(html);
+    case "glassdoor":
+      return parseGlassDoorJobs(html);
+    case "indeed":
+      return parseIndeedJobs(html);
     case "remoteok":
       return parseRemoteOkJobs(html);
     case "weworkremotely":
@@ -268,4 +272,122 @@ export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
   return uniqueJobsIds.map(
     (id) => validJobs.find((job) => job.externalId === id)!
   );
+}
+
+/**
+ * Method used to parse a glassdoor job page.
+ */
+export function parseGlassDoorJobs(html: string): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector(".JobsList_jobsList__Ey2Vo");
+  if (!jobsList) {
+    throw new Error("Could not find jobs list");
+  }
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(":scope > li")
+  ) as Element[];
+  console.log(`[gd] found ${jobElements.length} elements`);
+
+  const location = document
+    .querySelector("#searchBar-location")
+    ?.getAttribute("value")
+    ?.trim();
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalId = el.getAttribute("data-jobid")?.trim();
+    if (!externalId) return null;
+
+    const externalUrl = el
+      .querySelector(".JobCard_seoLink__WdqHZ")
+      ?.getAttribute("href")
+      ?.trim();
+    if (!externalUrl) return null;
+
+    const title =
+      el.querySelector(".JobCard_seoLink__WdqHZ")?.textContent?.trim() || "";
+    if (!title) return null;
+
+    const companyName =
+      el
+        .querySelector(".jobCard .EmployerProfile_employerName__Xemli")
+        ?.textContent?.trim() || "";
+
+    const companyLogo = el
+      .querySelector(".jobCard .EmployerLogo_logoContainer__Ye3F5 > img")
+      ?.getAttribute("src")
+      ?.trim();
+
+    return {
+      provider: "glassdoor",
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType: "remote",
+      location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a indeed job page.
+ */
+export function parseIndeedJobs(html: string): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#mosaic-jobResults ul");
+  if (!jobsList) {
+    throw new Error("Could not find jobs list");
+  }
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(":scope > li")
+  ) as Element[];
+  console.log(`[indeed] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobLinkEl = el.querySelector(".jobTitle > a");
+    const externalId = jobLinkEl?.getAttribute("id")?.trim();
+    if (!externalId) return null;
+
+    const externalHref = jobLinkEl?.getAttribute("href")?.trim();
+    if (!externalHref) return null;
+    const externalUrl = `https://www.indeed.com${externalHref}`;
+
+    const title = jobLinkEl?.querySelector("span")?.textContent?.trim() || "";
+    if (!title) return null;
+
+    const companyEl = el.querySelector(".company_location");
+    const companyName =
+      companyEl?.querySelector(":scope > div > span")?.textContent?.trim() ||
+      "";
+
+    const location = companyEl
+      ?.querySelector(":scope > div > div")
+      ?.textContent?.trim();
+
+    let jobType: JobType = "onsite";
+    if (location?.toLowerCase().includes("remote")) jobType = "remote";
+    if (location?.toLowerCase().includes("hybrid")) jobType = "hybrid";
+
+    return {
+      provider: "glassdoor",
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      jobType,
+      location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
 }
