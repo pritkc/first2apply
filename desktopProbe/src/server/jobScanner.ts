@@ -7,6 +7,7 @@ import { F2aSupabaseApi } from "./supabaseApi";
 import { downloadUrl } from "./jobHelpers";
 import { getExceptionMessage } from "../lib/error";
 import { Job } from "../../../supabase/functions/_shared/types";
+import { promiseAllSequence } from "./helpers";
 
 const userDataPath = app.getPath("userData");
 const settingsPath = path.join(userDataPath, "settings.json");
@@ -61,12 +62,10 @@ export class JobScanner {
       const links = (await this._supabaseApi.listLinks()) ?? [];
       console.log(`found ${links?.length} links`);
 
-      const htmls = await Promise.all(
-        links.map(async (link) => ({
-          linkId: link.id,
-          content: await downloadUrl(link.url),
-        }))
-      );
+      const htmls = await promiseAllSequence(links, async (link) => ({
+        linkId: link.id,
+        content: await downloadUrl(link.url),
+      }));
       console.log(`downloaded html for ${htmls.length} links`);
 
       const { newJobs } = await this._supabaseApi.scanHtmls(htmls);
