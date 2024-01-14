@@ -43,7 +43,7 @@ const router = createMemoryRouter(
       <Route path="/about" element={<div>About</div>} />
     </>
   ),
-  { initialEntries: ["/links"] }
+  { initialEntries: ["/"] }
 );
 
 /**
