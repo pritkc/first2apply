@@ -2,6 +2,12 @@ export const JOB_PROVIDERS = {
   linkedin: {
     url: "https://www.linkedin.com/",
   },
+  indeed: {
+    url: "https://www.indeed.com/",
+  },
+  glassdoor: {
+    url: "https://www.glassdoor.com/",
+  },
   remoteok: {
     url: "https://remoteok.com/",
   },
@@ -11,7 +17,6 @@ export const JOB_PROVIDERS = {
 };
 export type JobProviders = keyof typeof JOB_PROVIDERS;
 
-// indeed.com - protected against scraping using cloudflare :/
 // https://www.breakoutlist.com/
 // https://topstartups.io/#
 // https://www.nowhiteboard.org/?&page=4&languages=JavaScript&level=Senior

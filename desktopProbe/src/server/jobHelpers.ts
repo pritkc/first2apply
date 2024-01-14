@@ -1,21 +1,39 @@
+import { BrowserWindow } from "electron";
+
 /**
  * Function used to download the HTML of a given URL.
  */
 export async function downloadUrl(url: string) {
   console.log(`downloading url: ${url} ...`);
-  const response = await fetch(url, {
-    headers: {
-      // set the user agent to be the same as the browser
-      // this is needed to prevent some websites from blocking the request
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept: "*/*",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Cache-Control": "no-cache",
-    },
-  });
-  const html = await response.text();
+  const html = await downloadUrlInHiddenWindow(url);
   console.log(`finished downloading url: ${url}`);
+
+  return html;
+}
+
+/**
+ * Helper method used to create an electron hidden window, load a given url and get the HTML.
+ */
+let SCRAPER_WINDOW: BrowserWindow | undefined;
+export async function downloadUrlInHiddenWindow(url: string) {
+  if (!SCRAPER_WINDOW) {
+    SCRAPER_WINDOW = new BrowserWindow({
+      show: false,
+      // set the window size
+      width: 1600,
+      height: 1200,
+      webPreferences: {
+        // disable the same origin policy
+        webSecurity: false,
+      },
+    });
+  }
+  await SCRAPER_WINDOW.loadURL(url);
+
+  const html = await SCRAPER_WINDOW.webContents.executeJavaScript(
+    "document.documentElement.innerHTML"
+  );
+  await SCRAPER_WINDOW.webContents.session.clearStorageData();
 
   return html;
 }
