@@ -1,5 +1,6 @@
 import { Job } from "../../../supabase/functions/_shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
 export function JobsList({ jobs }: { jobs: Job[] }) {
@@ -14,14 +15,29 @@ export function JobsList({ jobs }: { jobs: Job[] }) {
             </Avatar>
 
             <div className="flex-1 overflow-ellipsis">
-              <p className="font-medium">{job.title}</p>
               <p className="text-xs text-muted-foreground">{job.companyName}</p>
+              <p className="font-medium">{job.title}</p>
+
+              <div className="flex items-center gap-2">
+                {job.location && <Badge>{job.location}</Badge>}
+                {job.salary && <Badge variant="secondary">{job.salary}</Badge>}
+              </div>
+            </div>
+
+            <div className="w-1/4">
+              {job.tags?.slice(0, 5).map((tag) => (
+                <Badge variant="outline" className="m-x-3 space-y-1">
+                  {tag}
+                </Badge>
+              ))}
             </div>
 
             {/* actions */}
-            <div className="flex items-center gap-2">
-              <Button size="sm">Apply</Button>
-              <Button variant="outline" size="sm">
+            <div className="flex flex-col items-center gap-1">
+              <Button size="sm" className="w-full">
+                Apply
+              </Button>
+              <Button variant="outline" size="sm" className="w-full">
                 Dismiss
               </Button>
             </div>

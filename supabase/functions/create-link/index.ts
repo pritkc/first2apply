@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     // parse the html and save found jobs in the db
     // need to save it to be able to diff the jobs list later
     const jobs = await parseJobPage({ url, html });
-    console.log(`found ${jobs.length} jobs: ${JSON.stringify(jobs[0])}`);
+    console.log(`found ${jobs.length} jobs`);
     const { error: insertError } = await supabaseClient.from("jobs").upsert(
       jobs.map((j) => ({ ...j, visible: false })),
       { onConflict: "externalId" }

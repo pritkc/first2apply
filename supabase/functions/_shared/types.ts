@@ -3,10 +3,17 @@ export const JOB_PROVIDERS = {
     url: "https://www.linkedin.com/",
   },
   remoteok: {
-    url: "https://remoteok.io/",
+    url: "https://remoteok.com/",
   },
 };
 export type JobProviders = keyof typeof JOB_PROVIDERS;
+
+// indeed.com
+// https://www.breakoutlist.com/
+// https://topstartups.io/#
+// https://www.nowhiteboard.org/?&page=4&languages=JavaScript&level=Senior
+// https://peoplefirstjobs.com/jobs/development
+// https://4dayweek.io/
 
 export type Link = {
   id: string;
@@ -16,18 +23,26 @@ export type Link = {
   created_at: Date;
 };
 
+export type JobType = "remote" | "hybrid" | "onsite";
 export type Job = {
   id: string;
   user_id: string;
   externalId: string;
   externalUrl: string;
   provider: JobProviders;
+
   title: string;
   companyName: string;
-  companyLogo: string;
-  location: string;
+  companyLogo?: string;
+
+  jobType?: JobType;
+  location?: string;
+  salary?: string;
+  tags?: string[];
+
   visible: boolean;
   archived: boolean;
+
   created_at: Date;
   updated_at: Date;
 };
