@@ -64,6 +64,8 @@ export function parseJobPage({
       return parseLinkedInJobs(html);
     case "remoteok":
       return parseRemoteOkJobs(html);
+    case "weworkremotely":
+      return parseWeWorkRemotelyJobs(html);
   }
 }
 
@@ -186,4 +188,84 @@ export function parseRemoteOkJobs(html: string): ParsedJob[] {
   });
 
   return jobs;
+}
+
+/**
+ * Method used to parse a weworkremotely job page.
+ */
+export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#job_list");
+  if (!jobsList) {
+    throw new Error("Could not find jobs list");
+  }
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll("ul > li")
+  ) as Element[];
+  console.log(`[wwr] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const linkToJob = el.querySelector(":scope > a");
+    if (!linkToJob) return null;
+
+    const externalId = linkToJob
+      .getAttribute("href")
+      ?.trim()
+      .split("/")
+      .filter(Boolean)
+      .pop();
+    if (!externalId) return null;
+
+    const externalUrl = `https://weworkremotely.com${linkToJob
+      .getAttribute("href")
+      ?.trim()}`.trim();
+
+    const title =
+      linkToJob.querySelector("span.title")?.textContent?.trim() || "";
+    if (!title) return null;
+
+    const companyName =
+      linkToJob.querySelector("span.company")?.textContent?.trim() || "";
+    // background-image:url(https://we-work-remotely.imgix.net/logos/0082/0572/logo.gif?ixlib=rails-4.0.0&w=50&h=50&dpr=2&fit=fill&auto=compress)
+    const companyLogo =
+      el
+        .querySelector("div.tooltip > a > div")
+        ?.getAttribute("style")
+        ?.replace(/background-image:url\(/i, "")
+        ?.replace(/\)/i, "")
+        .trim() || undefined;
+
+    const location = linkToJob
+      .querySelector("span.region")
+      ?.textContent?.trim()
+      .split("/")
+      .map((s) =>
+        s
+          .trim()
+          .replace(/only/i, "")
+          .replace(/anywhere in the world/i, "worldwide")
+          .trim()
+      )
+      .join("/");
+
+    return {
+      provider: "weworkremotely",
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType: "remote",
+      location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  const uniqueJobsIds = [...new Set(validJobs.map((job) => job.externalId))];
+  return uniqueJobsIds.map(
+    (id) => validJobs.find((job) => job.externalId === id)!
+  );
 }
