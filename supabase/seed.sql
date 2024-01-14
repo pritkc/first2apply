@@ -23,6 +23,9 @@ public.jobs (
   updated_at timestamp with time zone not null default now(),
   visible boolean not null default false,
   archived boolean not null default false,
+  salary text null,
+  tags text[] null,
+  "jobType" text null,
   constraint jobs_pkey primary key (id),
   constraint jobs_externalId_key unique ("externalId"),
   constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
