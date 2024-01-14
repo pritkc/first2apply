@@ -5,10 +5,13 @@ export const JOB_PROVIDERS = {
   remoteok: {
     url: "https://remoteok.com/",
   },
+  weworkremotely: {
+    url: "https://weworkremotely.com/",
+  },
 };
 export type JobProviders = keyof typeof JOB_PROVIDERS;
 
-// indeed.com
+// indeed.com - protected against scraping using cloudflare :/
 // https://www.breakoutlist.com/
 // https://topstartups.io/#
 // https://www.nowhiteboard.org/?&page=4&languages=JavaScript&level=Senior
