@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const jobs = await parseJobPage({ url, html });
     console.log(`found ${jobs.length} jobs`);
     const { error: insertError } = await supabaseClient.from("jobs").upsert(
-      jobs.map((j) => ({ ...j, visible: false })),
+      jobs.map((j) => ({ ...j, visible: true })),
       { onConflict: "externalId" }
     );
     if (insertError) throw insertError;

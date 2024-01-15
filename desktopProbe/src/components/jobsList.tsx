@@ -8,32 +8,32 @@ export function JobsList({ jobs }: { jobs: Job[] }) {
     <ul className="space-y-10">
       {jobs.map((job) => {
         return (
-          <li key={job.id} className="flex items-center gap-4">
-            <Avatar className="w-11 h-11">
+          <li key={job.id} className="flex items-center gap-6 lg:gap-10">
+            <Avatar className="w-16 h-16">
               <AvatarImage src={job.companyLogo} />
               <AvatarFallback>LI</AvatarFallback>
             </Avatar>
 
-            <div className="flex-1 overflow-ellipsis">
+            <div className="flex-1 overflow-ellipsis w-fit">
               <p className="text-xs text-muted-foreground">{job.companyName}</p>
               <p className="font-medium">{job.title}</p>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-0.5">
                 {job.location && <Badge>{job.location}</Badge>}
                 {job.salary && <Badge variant="secondary">{job.salary}</Badge>}
               </div>
             </div>
 
-            <div className="w-1/4">
-              {job.tags?.slice(0, 5).map((tag) => (
-                <Badge variant="outline" className="m-x-3 space-y-1">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+            {job.tags && (
+              <div className="w-1/6 sm:w-1/4 md:w-1/3 lg:w-2/5 flex flex-wrap gap-1 justify-end">
+                {job.tags?.slice(0, 5).map((tag) => (
+                  <Badge variant="outline">{tag}</Badge>
+                ))}
+              </div>
+            )}
 
             {/* actions */}
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-1 max-w-">
               <Button size="sm" className="w-full">
                 Apply
               </Button>
