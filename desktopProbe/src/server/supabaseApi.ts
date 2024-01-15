@@ -1,7 +1,6 @@
 import { getExceptionMessage } from "../lib/error";
 import { SupabaseClient, User } from "@supabase/supabase-js";
 import { DbSchema, Link } from "../../../supabase/functions/_shared/types";
-import { downloadUrl } from "./jobHelpers";
 
 /**
  * Class used to interact with our Supabase API.
@@ -44,11 +43,12 @@ export class F2aSupabaseApi {
   async createLink({
     title,
     url,
+    html,
   }: {
     title: string;
     url: string;
+    html: string;
   }): Promise<{ link: Link }> {
-    const html = await downloadUrl(url);
     return this._supabaseApiCall(() =>
       this._supabase.functions.invoke("create-link", {
         body: {
@@ -65,7 +65,10 @@ export class F2aSupabaseApi {
    */
   listLinks() {
     return this._supabaseApiCall(async () => {
-      const res = await this._supabase.from("links").select("*");
+      const res = await this._supabase
+        .from("links")
+        .select("*")
+        .order("id", { ascending: false });
       return res;
     });
   }
@@ -89,7 +92,11 @@ export class F2aSupabaseApi {
   listJobs() {
     return this._supabaseApiCall(
       async () =>
-        await this._supabase.from("jobs").select("*").eq("visible", true)
+        await this._supabase
+          .from("jobs")
+          .select("*")
+          // .eq("visible", true)
+          .order("created_at", { ascending: false })
     );
   }
 

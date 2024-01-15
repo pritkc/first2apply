@@ -4,10 +4,10 @@ import { Notification, app, powerSaveBlocker } from "electron";
 import { ScheduledTask, schedule } from "node-cron";
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
 import { F2aSupabaseApi } from "./supabaseApi";
-import { downloadUrl } from "./jobHelpers";
 import { getExceptionMessage } from "../lib/error";
 import { Job } from "../../../supabase/functions/_shared/types";
 import { promiseAllSequence } from "./helpers";
+import { HtmlDownloader } from "./htmlDownloader";
 
 const userDataPath = app.getPath("userData");
 const settingsPath = path.join(userDataPath, "settings.json");
@@ -29,7 +29,10 @@ export class JobScanner {
   private _cronJob: ScheduledTask | undefined;
   private _prowerSaveBlockerId: number | undefined;
 
-  constructor(private _supabaseApi: F2aSupabaseApi) {
+  constructor(
+    private _supabaseApi: F2aSupabaseApi,
+    private _htmlDownloader: HtmlDownloader
+  ) {
     // used for testing
     // fs.unlinkSync(settingsPath);
 
@@ -64,7 +67,7 @@ export class JobScanner {
 
       const htmls = await promiseAllSequence(links, async (link) => ({
         linkId: link.id,
-        content: await downloadUrl(link.url),
+        content: await this._htmlDownloader.loadUrl(link.url),
       }));
       console.log(`downloaded html for ${htmls.length} links`);
 

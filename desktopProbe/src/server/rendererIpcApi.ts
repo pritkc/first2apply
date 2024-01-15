@@ -2,6 +2,7 @@ import { ipcMain } from "electron";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
 import { JobScanner } from "./jobScanner";
+import { HtmlDownloader } from "./htmlDownloader";
 
 /**
  * Helper methods used to centralize error handling.
@@ -22,9 +23,11 @@ async function _apiCall<T>(method: () => Promise<T>) {
 export function initRendererIpcApi({
   supabaseApi,
   jobScanner,
+  htmlDownloader,
 }: {
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
+  htmlDownloader: HtmlDownloader;
 }) {
   ipcMain.handle("signup-with-email", async (event, { email, password }) =>
     _apiCall(() => supabaseApi.signupWithEmail({ email, password }))
@@ -39,7 +42,13 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle("create-link", async (event, { title, url }) =>
-    _apiCall(() => supabaseApi.createLink({ title, url }))
+    _apiCall(async () =>
+      supabaseApi.createLink({
+        title,
+        url,
+        html: await htmlDownloader.loadUrl(url),
+      })
+    )
   );
 
   ipcMain.handle("list-links", async (event, { title, url }) =>

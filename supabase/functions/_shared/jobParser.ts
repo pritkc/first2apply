@@ -378,7 +378,7 @@ export function parseIndeedJobs(html: string): ParsedJob[] {
     if (location?.toLowerCase().includes("hybrid")) jobType = "hybrid";
 
     return {
-      provider: "glassdoor",
+      provider: "indeed",
       externalId,
       externalUrl,
       title,

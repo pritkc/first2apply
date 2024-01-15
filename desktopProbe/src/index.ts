@@ -13,10 +13,12 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-const createWindow = (): void => {
+let mainWindow: BrowserWindow | null = null;
+const createMainWindow = (): void => {
   // Create the browser window.
+  if (mainWindow) return;
   const theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     height: 800,
     width: 1024,
     webPreferences: {
@@ -30,6 +32,13 @@ const createWindow = (): void => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  mainWindow.on("close", (event) => {
+    event.preventDefault();
+    mainWindow?.hide();
+    mainWindow?.setSkipTaskbar(true);
+    app.dock.hide();
+  });
 };
 
 // This method will be called when Electron has finished
@@ -43,17 +52,14 @@ app.on("ready", () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-  // if (process.platform !== 'darwin') {
   app.quit();
-  // }
 });
 
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+  app.dock.show();
+  mainWindow?.show();
 });
 
 // In this file you can include the rest of your app's specific main process
@@ -66,22 +72,32 @@ import { getExceptionMessage } from "./lib/error";
 import { F2aSupabaseApi } from "./server/supabaseApi";
 import { JobScanner } from "./server/jobScanner";
 import { initRendererIpcApi } from "./server/rendererIpcApi";
+import { TrayMenu } from "./server/trayMenu";
+import { HtmlDownloader } from "./server/htmlDownloader";
 
 // globals
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
 const supabaseApi = new F2aSupabaseApi(supabase);
+const htmlDownloader = new HtmlDownloader();
 let jobScanner: JobScanner | undefined;
+let trayMenu: TrayMenu | undefined;
 
 /**
  * Bootstrap probe service.
  */
 async function bootstrap() {
   try {
+    // init the HTML downloader
+    htmlDownloader.init();
+
     // init the job scanner
-    jobScanner = new JobScanner(supabaseApi);
+    jobScanner = new JobScanner(supabaseApi, htmlDownloader);
 
     // init the renderer IPC API
-    initRendererIpcApi({ supabaseApi, jobScanner });
+    initRendererIpcApi({ supabaseApi, jobScanner, htmlDownloader });
+
+    // init the tray menu
+    trayMenu = new TrayMenu({ onQuit: quit });
 
     const userDataPath = app.getPath("userData");
     const sessionPath = path.join(userDataPath, "session.json");
@@ -121,11 +137,28 @@ async function bootstrap() {
     });
 
     // perform an initial scan
-    await jobScanner.scanLinks();
+    // await jobScanner.scanLinks();
   } catch (error) {
     console.error(getExceptionMessage(error));
   }
 
   // create the main window after everything is setup
-  createWindow();
+  createMainWindow();
+}
+
+/**
+ * Method used to quit the app.
+ */
+async function quit() {
+  try {
+    htmlDownloader.close();
+    if (trayMenu) trayMenu.close();
+
+    if (mainWindow) {
+      mainWindow.removeAllListeners();
+      mainWindow.close();
+    }
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+  }
 }
