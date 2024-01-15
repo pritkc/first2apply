@@ -5,7 +5,13 @@ export class TrayMenu {
   private _tray: Tray;
   private _iconPath = "/images/tray_icon.png";
 
-  constructor({ onQuit }: { onQuit: () => void }) {
+  constructor({
+    onQuit,
+    onNavigate,
+  }: {
+    onQuit: () => void;
+    onNavigate: (_: { path: string }) => void;
+  }) {
     const iconPath = path.join(__dirname, this._iconPath);
     console.log(`Tray icon path: ${iconPath}`);
     const image = nativeImage.createFromPath(iconPath);
@@ -18,21 +24,21 @@ export class TrayMenu {
         label: "Jobs",
         type: "normal",
         click: () => {
-          /* Later this will open the Main Window */
+          onNavigate({ path: "/" });
         },
       },
       {
         label: "Sites",
         type: "normal",
         click: () => {
-          /* Later this will open the Main Window */
+          onNavigate({ path: "/links" });
         },
       },
       {
         label: "Settings",
         type: "normal",
         click: () => {
-          /* Later this will open the Main Window */
+          onNavigate({ path: "/settings" });
         },
       },
       { type: "separator" },
