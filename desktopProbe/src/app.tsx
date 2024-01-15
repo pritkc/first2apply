@@ -55,7 +55,7 @@ function App() {
   useEffect(() => {
     // @ts-ignore
     window.electron?.on("navigate", (_, { path }) => {
-      router.navigate(path);
+      router.navigate(`${path}?r=${Date.now()}`, {});
     });
   }, []);
 

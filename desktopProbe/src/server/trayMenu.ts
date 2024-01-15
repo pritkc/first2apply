@@ -1,4 +1,4 @@
-import { app, Tray, Menu, nativeImage } from "electron";
+import { Tray, Menu, nativeImage } from "electron";
 import path from "path";
 
 export class TrayMenu {
