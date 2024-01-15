@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
 import path from "path";
 import { ENV } from "./env";
 
@@ -55,11 +55,16 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
+function onActivate() {
+  if (!mainWindow?.isVisible()) {
+    app.dock.show();
+    mainWindow?.show();
+  }
+}
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  app.dock.show();
-  mainWindow?.show();
+  onActivate();
 });
 
 // In this file you can include the rest of your app's specific main process
@@ -82,6 +87,12 @@ const htmlDownloader = new HtmlDownloader();
 let jobScanner: JobScanner | undefined;
 let trayMenu: TrayMenu | undefined;
 
+function navigate({ path }: { path: string }) {
+  console.log(`sending nav event to ${path}`);
+  onActivate(); // make sure the window is visible
+  mainWindow?.webContents.send("navigate", { path });
+}
+
 /**
  * Bootstrap probe service.
  */
@@ -97,7 +108,7 @@ async function bootstrap() {
     initRendererIpcApi({ supabaseApi, jobScanner, htmlDownloader });
 
     // init the tray menu
-    trayMenu = new TrayMenu({ onQuit: quit });
+    trayMenu = new TrayMenu({ onQuit: quit, onNavigate: navigate });
 
     const userDataPath = app.getPath("userData");
     const sessionPath = path.join(userDataPath, "session.json");

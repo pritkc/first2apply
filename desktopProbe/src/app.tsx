@@ -5,6 +5,7 @@ import {
   Route,
   createRoutesFromElements,
 } from "react-router-dom";
+import { useEffect } from "react";
 import { SupabaseProvider } from "./hooks/supabase";
 import { SessionProvider } from "./hooks/session";
 import { withAuthGuard } from "./components/authGuard";
@@ -50,8 +51,13 @@ const router = createMemoryRouter(
  * Main app component.
  */
 function App() {
-  // @ts-ignore
-  console.log(window.electron?.theme);
+  // subscribe to navigation events
+  useEffect(() => {
+    // @ts-ignore
+    window.electron?.on("navigate", (_, { path }) => {
+      router.navigate(path);
+    });
+  }, []);
 
   return (
     <>
