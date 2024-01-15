@@ -15,8 +15,7 @@ export function LinksPage() {
     const asyncLoad = async () => {
       try {
         const links = await listLinks();
-        console.log(JSON.stringify(links, null, 2));
-        setLinks([...links, ...links, ...links, ...links]);
+        setLinks(links);
       } catch (error) {
         handleError(error);
       }
