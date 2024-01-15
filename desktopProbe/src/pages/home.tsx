@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { JobScannerSettings } from "@/lib/types";
 import { useError } from "@/hooks/error";
+import { useLocation } from "react-router-dom";
 import {
   getProbeSettings,
   listJobs,
@@ -18,6 +19,7 @@ import { Link } from "react-router-dom";
  */
 export function Home() {
   const { handleError } = useError();
+  const { search } = useLocation();
 
   const [jobs, setJobs] = useState([]);
   const [settings, setSettings] = useState<JobScannerSettings>({
@@ -29,9 +31,6 @@ export function Home() {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        // load all jobs when the component mounts
-        setJobs(await listJobs());
-
         // load settings when component is mounted
         setSettings(await getProbeSettings());
       } catch (error) {
@@ -40,6 +39,19 @@ export function Home() {
     };
     asyncLoad();
   }, []);
+
+  // update jobs when search changes
+  useEffect(() => {
+    const asyncLoad = async () => {
+      try {
+        console.log("search changed");
+        setJobs(await listJobs());
+      } catch (error) {
+        handleError(error);
+      }
+    };
+    asyncLoad();
+  }, [search]);
 
   // update cron rule when form is updated
   const onCronRuleChange = async (cronRule: string | undefined) => {

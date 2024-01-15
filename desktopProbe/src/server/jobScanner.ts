@@ -31,7 +31,8 @@ export class JobScanner {
 
   constructor(
     private _supabaseApi: F2aSupabaseApi,
-    private _htmlDownloader: HtmlDownloader
+    private _htmlDownloader: HtmlDownloader,
+    private _onNavigate: (_: { path: string }) => void
   ) {
     // used for testing
     // fs.unlinkSync(settingsPath);
@@ -108,6 +109,9 @@ export class JobScanner {
 
     // Show the notification
     notification.show();
+    notification.on("click", () => {
+      this._onNavigate({ path: "/" });
+    });
   }
 
   /**

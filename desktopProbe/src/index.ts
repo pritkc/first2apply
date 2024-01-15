@@ -60,6 +60,7 @@ function onActivate() {
     app.dock.show();
     mainWindow?.show();
   }
+  mainWindow.focus();
 }
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
@@ -89,8 +90,8 @@ let trayMenu: TrayMenu | undefined;
 
 function navigate({ path }: { path: string }) {
   console.log(`sending nav event to ${path}`);
-  onActivate(); // make sure the window is visible
   mainWindow?.webContents.send("navigate", { path });
+  onActivate(); // make sure the window is visible
 }
 
 /**
@@ -102,7 +103,7 @@ async function bootstrap() {
     htmlDownloader.init();
 
     // init the job scanner
-    jobScanner = new JobScanner(supabaseApi, htmlDownloader);
+    jobScanner = new JobScanner(supabaseApi, htmlDownloader, navigate);
 
     // init the renderer IPC API
     initRendererIpcApi({ supabaseApi, jobScanner, htmlDownloader });

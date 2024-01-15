@@ -18,6 +18,7 @@ export class HtmlDownloader {
       webPreferences: {
         // disable the same origin policy
         webSecurity: false,
+        partition: "persist:scraper",
       },
     });
   }
