@@ -35,7 +35,7 @@ export function LinksPage() {
   };
 
   return (
-    <DefaultLayout>
+    <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
       <CreateLink onCreateLink={onCreateLink}></CreateLink>
       <LinksList links={links}></LinksList>
     </DefaultLayout>

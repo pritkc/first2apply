@@ -39,65 +39,70 @@ export function CreateLink({
   };
 
   return (
-    <section className="h-fit border border-muted-foreground/20 rounded-lg">
-      <div className="p-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Add new job search</FormLabel>
-              <FormDescription>
-                Enter a descriptive name for your search
-              </FormDescription>
-            </div>
+    <section>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+          <div>
+            <FormLabel className="text-2xl font-medium tracking-wide">
+              Add new job search
+            </FormLabel>
+            <FormDescription className="text-sm">
+              Name your filtered job searches and provide their website. The more
+              specific your filters, the better we can tailor job alerts for
+              you. Add as many varied searches as you like to maximize your
+              opportunities to be first in line.
+            </FormDescription>
+          </div>
 
-            <div className="flex flex-col gap-1">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="title"
-                        type="title"
-                        placeholder="Enter a descriptive name (eg: java senior remote)"
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+          <hr className="w-full text-muted-foreground" />
 
-              <FormField
-                control={form.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="url"
-                        type="url"
-                        placeholder="Paste the URL of your job search"
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="flex flex-col w-full gap-2">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="title"
+                      type="title"
+                      placeholder="Enter a descriptive name (eg: java senior remote)"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-            <Button
-              type="submit"
-              className="mt-4"
-              disabled={!form.formState.isValid}
-            >
-              Save
-            </Button>
-          </form>
-        </Form>
-      </div>
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="url"
+                      type="url"
+                      placeholder="Paste the URL of your job search"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="mt-4"
+            disabled={!form.formState.isValid}
+          >
+            Save
+          </Button>
+        </form>
+      </Form>
     </section>
   );
 }
