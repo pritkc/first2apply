@@ -2,7 +2,8 @@ import {
   DOMParser,
   Element,
 } from "https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts";
-import { Job, JOB_PROVIDERS, JobProviders, JobType } from "./types.ts";
+import { Job, JobType } from "./types.ts";
+import { JobSite } from "./types.ts";
 
 /**
  * Helper used to parse a salary string.
@@ -36,55 +37,61 @@ type ParsedJob = Omit<
 >;
 
 /**
- * Get the provider for a given url.
+ * Get the site for a given url.
  */
-export function getJobProvider(url: string): JobProviders | undefined {
-  for (const [provider, { url: providerUrl }] of Object.entries(
-    JOB_PROVIDERS
-  )) {
-    if (url.startsWith(providerUrl)) return provider as JobProviders;
-  }
+export function getJobSite({
+  allJobSites,
+  url,
+}: {
+  allJobSites: JobSite[];
+  url: string;
+}): JobSite | undefined {
+  const site = allJobSites.find((site) => {
+    return site.urls.some((siteUrl) => url.startsWith(siteUrl));
+  });
+  return site;
 }
 
 /**
- * Clean a job url, might have to remove some query params for some providers.
+ * Clean a job url, might have to remove some query params for some sites.
  */
-export function cleanJobUrl(url: string): string {
-  const provider = getJobProvider(url);
-  if (!provider) return url;
-
-  switch (provider) {
-    case "linkedin": {
-      // remove the 'currentJobId' query param
-      const parsedUrl = new URL(url);
-      parsedUrl.searchParams.delete("currentJobId");
-      return parsedUrl.toString();
-    }
-
-    case "indeed": {
-      // remove the 'vjk' query param
-      const parsedUrl = new URL(url);
-      parsedUrl.searchParams.delete("vjk");
-      return parsedUrl.toString();
-    }
-
-    default:
-      return url;
+export function cleanJobUrl({
+  allJobSites,
+  url,
+}: {
+  allJobSites: JobSite[];
+  url: string;
+}): string {
+  const site = getJobSite({ allJobSites, url });
+  if (!site) {
+    throw new Error(`Could not find a site for url ${url}`);
   }
+
+  if (site.queryParamsToRemove) {
+    const parsedUrl = new URL(url);
+    site.queryParamsToRemove.forEach((param) => {
+      parsedUrl.searchParams.delete(param);
+    });
+    return parsedUrl.toString();
+  }
+
+  return url;
 }
 
 /**
  * Parse a job page from a given url.
  */
 export function parseJobPage({
+  allJobSites,
   url,
   html,
 }: {
+  allJobSites: JobSite[];
   url: string;
   html: string;
 }): ParsedJob[] {
-  const provider = getJobProvider(url);
-  if (!provider) {
+  const site = getJobSite({ allJobSites, url });
+  if (!site) {
     const parsedUrl = new URL(url);
     throw new Error(
       `We currently don't support scanning for jobs on ${parsedUrl.hostname}. Contact our support to request it.`
@@ -92,27 +99,27 @@ export function parseJobPage({
   }
 
   let foundJobs: ParsedJob[] = [];
-  switch (provider) {
-    case "linkedin":
-      foundJobs = parseLinkedInJobs(html);
+  switch (site.name) {
+    case "LinkedIn":
+      foundJobs = parseLinkedInJobs({ siteId: site.id, html });
       break;
-    case "glassdoor":
-      foundJobs = parseGlassDoorJobs(html);
+    case "Glassdoor":
+      foundJobs = parseGlassDoorJobs({ siteId: site.id, html });
       break;
-    case "indeed":
-      foundJobs = parseIndeedJobs(html);
+    case "Indeed":
+      foundJobs = parseIndeedJobs({ siteId: site.id, html });
       break;
-    case "remoteok":
-      foundJobs = parseRemoteOkJobs(html);
+    case "Remote OK":
+      foundJobs = parseRemoteOkJobs({ siteId: site.id, html });
       break;
-    case "weworkremotely":
-      foundJobs = parseWeWorkRemotelyJobs(html);
+    case "We Work Remotely":
+      foundJobs = parseWeWorkRemotelyJobs({ siteId: site.id, html });
       break;
   }
 
   if (foundJobs.length === 0) {
     console.error(
-      `[${provider}] no jobs found on ${url}, this might indicate a problem with the parser`
+      `[${site.name}] no jobs found on ${url}, this might indicate a problem with the parser`
     );
   }
 
@@ -122,7 +129,13 @@ export function parseJobPage({
 /**
  * Method used to parse a linkedin job page.
  */
-export function parseLinkedInJobs(html: string): ParsedJob[] {
+export function parseLinkedInJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -166,19 +179,14 @@ export function parseLinkedInJobs(html: string): ParsedJob[] {
       .replace(/\(on\-site\)/i, "")
       .replace(/\(hybrid\)/i, "");
 
-    let jobType: JobType = "onsite";
-    if (rawLocation?.toLowerCase().includes("remote")) jobType = "remote";
-    if (rawLocation?.toLowerCase().includes("hybrid")) jobType = "hybrid";
-
     return {
-      provider: "linkedin",
+      siteId,
       externalId,
       externalUrl,
       title,
       companyName,
       companyLogo,
       location,
-      jobType,
     };
   });
 
@@ -189,7 +197,13 @@ export function parseLinkedInJobs(html: string): ParsedJob[] {
 /**
  * Method used to parse a remoteok job page.
  */
-export function parseRemoteOkJobs(html: string): ParsedJob[] {
+export function parseRemoteOkJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -248,7 +262,7 @@ export function parseRemoteOkJobs(html: string): ParsedJob[] {
     );
 
     return {
-      provider: "remoteok",
+      siteId,
       externalId,
       externalUrl,
       title,
@@ -268,7 +282,13 @@ export function parseRemoteOkJobs(html: string): ParsedJob[] {
 /**
  * Method used to parse a weworkremotely job page.
  */
-export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
+export function parseWeWorkRemotelyJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -329,7 +349,7 @@ export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
       .join("/");
 
     return {
-      provider: "weworkremotely",
+      siteId,
       externalId,
       externalUrl,
       title,
@@ -350,7 +370,13 @@ export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
 /**
  * Method used to parse a glassdoor job page.
  */
-export function parseGlassDoorJobs(html: string): ParsedJob[] {
+export function parseGlassDoorJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -397,7 +423,7 @@ export function parseGlassDoorJobs(html: string): ParsedJob[] {
       ?.textContent?.trim();
 
     return {
-      provider: "glassdoor",
+      siteId,
       externalId,
       externalUrl,
       title,
@@ -415,7 +441,13 @@ export function parseGlassDoorJobs(html: string): ParsedJob[] {
 /**
  * Method used to parse a indeed job page.
  */
-export function parseIndeedJobs(html: string): ParsedJob[] {
+export function parseIndeedJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -456,7 +488,7 @@ export function parseIndeedJobs(html: string): ParsedJob[] {
     if (location?.toLowerCase().includes("hybrid")) jobType = "hybrid";
 
     return {
-      provider: "indeed",
+      siteId,
       externalId,
       externalUrl,
       title,
