@@ -12,8 +12,8 @@ function parseSalary({ salary }: { salary?: string }): string | undefined {
   if (!salary) return;
 
   // remove all non numeric characters, but keep currency symbols and dashes
-  const cleanedSalary = salary.trim().replace(/[^0-9$€£-\s]/g, "");
-  return cleanedSalary.toLowerCase();
+  const cleanedSalary = salary.trim().replace(/[^0-9$€£-\skK]/g, "");
+  return cleanedSalary.trim();
 }
 
 /**
@@ -242,17 +242,30 @@ export function parseRemoteOkJobs({
         ?.querySelector("a > img")
         ?.getAttribute("data-src") || undefined;
 
-    let [locationEl, salaryEl] = companyEl.querySelectorAll("div.location");
-    if (!salaryEl) [salaryEl, locationEl] = [locationEl, salaryEl]; // location can be missing
-    let location = parseLocation({
-      location: locationEl?.textContent?.trim(),
-    })
-      ?.replace(/remote/i, "")
-      ?.replace(/probably/i, "")
-      .trim();
-    if (location === "job") location = undefined;
+    const localtionEls = Array.from(
+      companyEl.querySelectorAll("div.location")
+    ) as Element[];
+    const locationTexts = localtionEls
+      .map((el) =>
+        el.textContent
+          ?.trim()
+          ?.replace(/remote/i, "")
+          ?.replace(/probably/i, "")
+          ?.replace(/\sor\s/i, "")
+          ?.trim()
+      )
+      .filter((t) => !!t);
+    const locations = locationTexts
+      .filter((t) => !t.includes("$"))
+      .map((l) =>
+        parseLocation({
+          location: l,
+        })
+      );
+    const location = locations.join("/");
 
-    const salary = parseSalary({ salary: salaryEl?.textContent?.trim() });
+    const salaryText = locationTexts.find((t) => t.includes("$"));
+    const salary = parseSalary({ salary: salaryText?.trim() });
 
     const tagsElements = Array.from(
       el.querySelector("td.tags")?.querySelectorAll("a") ?? []
@@ -415,12 +428,15 @@ export function parseGlassDoorJobs({
       ?.trim();
 
     const location = el
-      .querySelector(`job-location-${externalId}`)
+      .querySelector(`#job-location-${externalId}`)
       ?.textContent?.trim();
 
-    const salary = el
-      .querySelector(`#jobSalary-${externalId}`)
-      ?.textContent?.trim();
+    const salary = parseSalary({
+      salary: el
+        .querySelector(`#job-salary-${externalId}`)
+        ?.textContent?.replace(/employer est/i, "")
+        ?.trim(),
+    });
 
     return {
       siteId,
@@ -479,13 +495,49 @@ export function parseIndeedJobs({
       ?.textContent?.trim();
     if (!companyName) return null;
 
-    const location = companyEl
+    let location = companyEl
       ?.querySelector(":scope > div > div")
       ?.textContent?.trim();
 
     let jobType: JobType = "onsite";
     if (location?.toLowerCase().includes("remote")) jobType = "remote";
     if (location?.toLowerCase().includes("hybrid")) jobType = "hybrid";
+
+    location = location
+      ?.replace(/remote/i, "")
+      .replace(/hybrid/i, "")
+      .replace(/\sin\s/i, "")
+      .trim();
+
+    console.log(
+      el.querySelector(".salary-snippet-container")?.textContent?.trim()
+    );
+    let salary = el
+      .querySelector(".salary-snippet-container")
+      ?.textContent?.trim()
+      ?.replace(/a year/, "")
+      ?.trim();
+    if (salary?.includes("hour")) {
+      salary = parseSalary({ salary: salary }) + "/hr";
+    } else {
+      salary = salary
+        ?.replace(/a year/, "")
+        ?.trim()
+        ?.split("-")
+        .map(
+          (s) =>
+            `$${Math.round(
+              parseInt(
+                s
+                  .trim()
+                  .slice(1)
+                  .replace(/\.[0-9]+/i, "")
+                  .replace(/,/i, "")
+              ) / 1000
+            )}k`
+        )
+        .join(" - ");
+    }
 
     return {
       siteId,
@@ -495,6 +547,7 @@ export function parseIndeedJobs({
       companyName,
       jobType,
       location,
+      salary,
     };
   });
 
