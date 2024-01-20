@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 import {
   getProbeSettings,
   listJobs,
+  openExternalUrl,
   updateProbeSettings,
 } from "@/lib/electronMainSdk";
 import { useScrollToSection } from "@/hooks/useScrollToSection";
@@ -102,7 +103,13 @@ export function Home() {
           />
         </div>
         <hr className="w-full text-muted-foreground" />
-        <JobsList jobs={jobs} />
+        <JobsList
+          jobs={jobs}
+          onApply={(job) => {
+            openExternalUrl(job.externalUrl);
+          }}
+          onDismiss={(job) => {}}
+        />
       </section>
     </DefaultLayout>
   );

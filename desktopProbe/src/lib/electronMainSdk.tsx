@@ -105,3 +105,11 @@ export async function getProbeSettings(): Promise<JobScannerSettings> {
   const settings = await window.electron.invoke("get-job-scanner-settings", {});
   return settings;
 }
+
+/**
+ * Open a url in the default browser.
+ */
+export async function openExternalUrl(url: string): Promise<void> {
+  // @ts-ignore
+  await window.electron.invoke("open-external-url", { url });
+}
