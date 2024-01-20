@@ -47,6 +47,33 @@ export function getJobProvider(url: string): JobProviders | undefined {
 }
 
 /**
+ * Clean a job url, might have to remove some query params for some providers.
+ */
+export function cleanJobUrl(url: string): string {
+  const provider = getJobProvider(url);
+  if (!provider) return url;
+
+  switch (provider) {
+    case "linkedin": {
+      // remove the 'currentJobId' query param
+      const parsedUrl = new URL(url);
+      parsedUrl.searchParams.delete("currentJobId");
+      return parsedUrl.toString();
+    }
+
+    case "indeed": {
+      // remove the 'vjk' query param
+      const parsedUrl = new URL(url);
+      parsedUrl.searchParams.delete("vjk");
+      return parsedUrl.toString();
+    }
+
+    default:
+      return url;
+  }
+}
+
+/**
  * Parse a job page from a given url.
  */
 export function parseJobPage({
@@ -57,20 +84,39 @@ export function parseJobPage({
   html: string;
 }): ParsedJob[] {
   const provider = getJobProvider(url);
-  if (!provider) return [];
+  if (!provider) {
+    const parsedUrl = new URL(url);
+    throw new Error(
+      `We currently don't support scanning for jobs on ${parsedUrl.hostname}. Contact our support to request it.`
+    );
+  }
 
+  let foundJobs: ParsedJob[] = [];
   switch (provider) {
     case "linkedin":
-      return parseLinkedInJobs(html);
+      foundJobs = parseLinkedInJobs(html);
+      break;
     case "glassdoor":
-      return parseGlassDoorJobs(html);
+      foundJobs = parseGlassDoorJobs(html);
+      break;
     case "indeed":
-      return parseIndeedJobs(html);
+      foundJobs = parseIndeedJobs(html);
+      break;
     case "remoteok":
-      return parseRemoteOkJobs(html);
+      foundJobs = parseRemoteOkJobs(html);
+      break;
     case "weworkremotely":
-      return parseWeWorkRemotelyJobs(html);
+      foundJobs = parseWeWorkRemotelyJobs(html);
+      break;
   }
+
+  if (foundJobs.length === 0) {
+    console.error(
+      `[${provider}] no jobs found on ${url}, this might indicate a problem with the parser`
+    );
+  }
+
+  return foundJobs;
 }
 
 /**
@@ -84,26 +130,45 @@ export function parseLinkedInJobs(html: string): ParsedJob[] {
   if (!jobsList) return [];
 
   const jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
-  const jobs = jobElements.map((el): ParsedJob => {
-    const title =
-      el.querySelector(".base-search-card__title")?.textContent?.trim() || "";
+  console.log(`[linkedin] found ${jobElements.length} elements`);
 
-    const externalUrl =
-      el.querySelector(".base-card__full-link")?.getAttribute("href") || "";
-    const externalId = externalUrl.split("?")[0].split("/").pop() || "";
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalUrl = el
+      .querySelector(".base-card__full-link")
+      ?.getAttribute("href");
+    if (!externalUrl) return null;
 
-    const companyName =
-      el
-        .querySelector(".base-search-card__subtitle")
-        ?.querySelector("a")
-        ?.textContent?.trim() || "";
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    if (!externalId) return null;
+
+    const title = el
+      .querySelector(".base-search-card__title")
+      ?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector(".base-search-card__subtitle")
+      ?.querySelector("a")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
     const companyLogo =
       el
         .querySelector(".search-entity-media")
         ?.querySelector("img")
-        ?.getAttribute("data-delayed-url") || "";
-    const location =
-      el.querySelector(".job-search-card__location")?.textContent?.trim() || "";
+        ?.getAttribute("data-delayed-url") || undefined;
+    const rawLocation = el
+      .querySelector(".job-search-card__location")
+      ?.textContent?.trim();
+
+    const location = rawLocation
+      ?.replace(/\(remote\)/i, "")
+      .replace(/\(on\-site\)/i, "")
+      .replace(/\(hybrid\)/i, "");
+
+    let jobType: JobType = "onsite";
+    if (rawLocation?.toLowerCase().includes("remote")) jobType = "remote";
+    if (rawLocation?.toLowerCase().includes("hybrid")) jobType = "hybrid";
 
     return {
       provider: "linkedin",
@@ -113,10 +178,12 @@ export function parseLinkedInJobs(html: string): ParsedJob[] {
       companyName,
       companyLogo,
       location,
+      jobType,
     };
   });
 
-  return jobs;
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
 }
 
 /**
@@ -128,30 +195,33 @@ export function parseRemoteOkJobs(html: string): ParsedJob[] {
 
   const jobsList = document.querySelector("#jobsboard");
   if (!jobsList) {
-    throw new Error("Could not find jobs list");
+    return [];
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll("tr.job")
   ) as Element[];
   console.log(`[remoteok] found ${jobElements.length} elements`);
-  const jobs = jobElements.map((el): ParsedJob => {
-    const externalId = el.getAttribute("data-slug")?.trim() || "";
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalId = el.getAttribute("data-slug")?.trim();
+    if (!externalId) return null;
     const externalUrl = `https://remoteok.io/remote-jobs/${externalId}`.trim();
 
     const companyEl = el.querySelector("td.company");
-    if (!companyEl) throw new Error("Could not find company element");
-    const title =
-      companyEl
-        .querySelector("a[itemprop='url'] > h2[itemprop='title']")
-        ?.textContent.trim() || "";
+    if (!companyEl) return null;
+    const title = companyEl
+      .querySelector("a[itemprop='url'] > h2[itemprop='title']")
+      ?.textContent.trim();
+    if (!title) return null;
 
-    const companyName =
-      companyEl
-        .querySelector(
-          "span[itemprop='hiringOrganization'] > h3[itemprop='name']"
-        )
-        ?.textContent.trim() || "";
+    const companyName = companyEl
+      .querySelector(
+        "span[itemprop='hiringOrganization'] > h3[itemprop='name']"
+      )
+      ?.textContent.trim();
+    if (!companyName) return null;
+
     const companyLogo =
       el
         .querySelector("td.image.has-logo")
@@ -191,7 +261,8 @@ export function parseRemoteOkJobs(html: string): ParsedJob[] {
     };
   });
 
-  return jobs;
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
 }
 
 /**
@@ -203,7 +274,7 @@ export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
 
   const jobsList = document.querySelector("#job_list");
   if (!jobsList) {
-    throw new Error("Could not find jobs list");
+    return [];
   }
 
   const jobElements = Array.from(
@@ -225,14 +296,16 @@ export function parseWeWorkRemotelyJobs(html: string): ParsedJob[] {
 
     const externalUrl = `https://weworkremotely.com${linkToJob
       .getAttribute("href")
-      ?.trim()}`.trim();
+      ?.trim()}`;
 
-    const title =
-      linkToJob.querySelector("span.title")?.textContent?.trim() || "";
+    const title = linkToJob.querySelector("span.title")?.textContent?.trim();
     if (!title) return null;
 
-    const companyName =
-      linkToJob.querySelector("span.company")?.textContent?.trim() || "";
+    const companyName = linkToJob
+      .querySelector("span.company")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
     // background-image:url(https://we-work-remotely.imgix.net/logos/0082/0572/logo.gif?ixlib=rails-4.0.0&w=50&h=50&dpr=2&fit=fill&auto=compress)
     const companyLogo =
       el
@@ -283,41 +356,45 @@ export function parseGlassDoorJobs(html: string): ParsedJob[] {
 
   const jobsList = document.querySelector(".JobsList_jobsList__Ey2Vo");
   if (!jobsList) {
-    throw new Error("Could not find jobs list");
+    return [];
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(":scope > li")
   ) as Element[];
-  console.log(`[gd] found ${jobElements.length} elements`);
+  console.log(`[glassdoor] found ${jobElements.length} elements`);
 
-  const location = document
-    .querySelector("#searchBar-location")
-    ?.getAttribute("value")
-    ?.trim();
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el.getAttribute("data-jobid")?.trim();
     if (!externalId) return null;
 
     const externalUrl = el
-      .querySelector(".JobCard_seoLink__WdqHZ")
+      .querySelector(`#job-title-${externalId}`)
       ?.getAttribute("href")
       ?.trim();
     if (!externalUrl) return null;
 
     const title =
-      el.querySelector(".JobCard_seoLink__WdqHZ")?.textContent?.trim() || "";
+      el.querySelector(`#job-title-${externalId}`)?.textContent?.trim() || "";
     if (!title) return null;
 
-    const companyName =
-      el
-        .querySelector(".jobCard .EmployerProfile_employerName__Xemli")
-        ?.textContent?.trim() || "";
+    const companyName = el
+      .querySelector(".jobCard .EmployerProfile_employerName__Xemli")
+      ?.textContent?.trim();
+    if (!companyName) return null;
 
     const companyLogo = el
       .querySelector(".jobCard .EmployerLogo_logoContainer__Ye3F5 > img")
       ?.getAttribute("src")
       ?.trim();
+
+    const location = el
+      .querySelector(`job-location-${externalId}`)
+      ?.textContent?.trim();
+
+    const salary = el
+      .querySelector(`#jobSalary-${externalId}`)
+      ?.textContent?.trim();
 
     return {
       provider: "glassdoor",
@@ -326,8 +403,8 @@ export function parseGlassDoorJobs(html: string): ParsedJob[] {
       title,
       companyName,
       companyLogo,
-      jobType: "remote",
       location,
+      salary,
     };
   });
 
@@ -344,7 +421,7 @@ export function parseIndeedJobs(html: string): ParsedJob[] {
 
   const jobsList = document.querySelector("#mosaic-jobResults ul");
   if (!jobsList) {
-    throw new Error("Could not find jobs list");
+    return [];
   }
 
   const jobElements = Array.from(
@@ -365,9 +442,10 @@ export function parseIndeedJobs(html: string): ParsedJob[] {
     if (!title) return null;
 
     const companyEl = el.querySelector(".company_location");
-    const companyName =
-      companyEl?.querySelector(":scope > div > span")?.textContent?.trim() ||
-      "";
+    const companyName = companyEl
+      ?.querySelector(":scope > div > span")
+      ?.textContent?.trim();
+    if (!companyName) return null;
 
     const location = companyEl
       ?.querySelector(":scope > div > div")
