@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { ipcMain, shell } from "electron";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
 import { JobScanner } from "./jobScanner";
@@ -66,5 +66,9 @@ export function initRendererIpcApi({
   // handler used to fetch the cron schedule
   ipcMain.handle("get-job-scanner-settings", async (event) =>
     _apiCall(async () => jobScanner.getSettings())
+  );
+
+  ipcMain.handle("open-external-url", async (event, { url }) =>
+    shell.openExternal(url)
   );
 }
