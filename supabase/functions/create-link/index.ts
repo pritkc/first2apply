@@ -23,11 +23,19 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    // list all job sites from db
+    const { data, error: selectError } = await supabaseClient
+      .from("sites")
+      .select("*");
+    if (selectError) throw new Error(selectError.message);
+    const allJobSites = data ?? [];
+
     // insert a new link in the db
+    const cleanUrl = cleanJobUrl({ url, allJobSites });
     const { data: createdLinks, error } = await supabaseClient
       .from("links")
       .insert({
-        url: cleanJobUrl(url),
+        url: cleanUrl,
         title,
       })
       .select("*");
@@ -35,11 +43,11 @@ Deno.serve(async (req) => {
 
     // parse the html and save found jobs in the db
     // need to save it to be able to diff the jobs list later
-    const jobs = await parseJobPage({ url, html });
+    const jobs = await parseJobPage({ allJobSites, url: cleanUrl, html });
     console.log(`found ${jobs.length} jobs`);
     const { error: insertError } = await supabaseClient.from("jobs").upsert(
-      jobs.map((j) => ({ ...j, visible: true })),
-      { onConflict: "externalId" }
+      jobs.map((j) => ({ ...j, archived: true })),
+      { onConflict: "externalId", ignoreDuplicates: true }
     );
     if (insertError) throw insertError;
 

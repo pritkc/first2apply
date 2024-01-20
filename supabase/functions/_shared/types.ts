@@ -1,27 +1,10 @@
-export const JOB_PROVIDERS = {
-  linkedin: {
-    url: "https://www.linkedin.com/",
-  },
-  indeed: {
-    url: "https://www.indeed.com/",
-  },
-  glassdoor: {
-    url: "https://www.glassdoor.com/",
-  },
-  remoteok: {
-    url: "https://remoteok.com/",
-  },
-  weworkremotely: {
-    url: "https://weworkremotely.com/",
-  },
+export type JobSite = {
+  id: number;
+  name: string;
+  urls: string[];
+  queryParamsToRemove?: string[];
+  created_at: Date;
 };
-export type JobProviders = keyof typeof JOB_PROVIDERS;
-
-// https://www.breakoutlist.com/
-// https://topstartups.io/#
-// https://www.nowhiteboard.org/?&page=4&languages=JavaScript&level=Senior
-// https://peoplefirstjobs.com/jobs/development
-// https://4dayweek.io/
 
 export type Link = {
   id: string;
@@ -37,7 +20,7 @@ export type Job = {
   user_id: string;
   externalId: string;
   externalUrl: string;
-  provider: JobProviders;
+  siteId: number;
 
   title: string;
   companyName: string;
@@ -48,7 +31,6 @@ export type Job = {
   salary?: string;
   tags?: string[];
 
-  visible: boolean;
   archived: boolean;
 
   created_at: Date;
@@ -61,6 +43,11 @@ export type Job = {
 export type DbSchema = {
   public: {
     Tables: {
+      sites: {
+        Row: JobSite;
+        Insert: Pick<JobSite, "name" | "urls">;
+        Update: never;
+      };
       links: {
         Row: Link;
         Insert: Pick<Link, "url" | "title">;
@@ -70,22 +57,21 @@ export type DbSchema = {
         Row: Job;
         Insert: Pick<
           Job,
-          | "provider"
+          | "siteId"
           | "externalId"
           | "externalUrl"
           | "title"
           | "companyName"
           | "companyLogo"
           | "location"
+          | "salary"
+          | "tags"
+          | "jobType"
+          | "archived"
         >;
         Update: never;
       };
     };
-    Views: {};
-    Functions: {};
-  };
-  private: {
-    Tables: {};
     Views: {};
     Functions: {};
   };

@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { parseJobPage } from "../_shared/jobParser.ts";
-import { DbSchema, Job } from "../_shared/types.ts";
+import { DbSchema } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
 
 Deno.serve(async (req) => {
@@ -36,9 +36,16 @@ Deno.serve(async (req) => {
       .in("id", linkIds);
     if (error) throw new Error(error.message);
 
+    // list all job sites from db
+    const { data, error: selectError } = await supabaseClient
+      .from("sites")
+      .select("*");
+    if (selectError) throw new Error(selectError.message);
+    const allJobSites = data ?? [];
+
     // parse htmls and match them with links
     const parsedJobs = await Promise.all(
-      htmls.map(async (html): Promise<Job[]> => {
+      htmls.map(async (html) => {
         const link = links?.find((link) => link.id === html.linkId);
         // ignore links that are not in the db
         if (!link) {
@@ -46,6 +53,7 @@ Deno.serve(async (req) => {
           return [];
         }
         const jobsList = await parseJobPage({
+          allJobSites,
           url: link.url,
           html: html.content,
         });
@@ -54,34 +62,17 @@ Deno.serve(async (req) => {
       })
     ).then((r) => r.flat());
 
-    // get existing jobs from db
-    const externalIds = parsedJobs.map((job) => job.externalId);
-    console.log(`checking for existing jobs: ${externalIds} ...`);
-    const { data: existingJobsList, error: existingJobsError } =
-      await supabaseClient
-        .from("jobs")
-        .select("*")
-        .in("externalId", externalIds);
-
-    if (existingJobsError) throw new Error(existingJobsError.message);
-    console.log(`found ${existingJobsList?.length} existing jobs`);
-
-    // diff the jobs list and save new jobs in the db
-    const newJobsFound = parsedJobs.filter(
-      (job) =>
-        !existingJobsList?.find(
-          (existingJob) => existingJob.externalId === job.externalId
-        )
-    );
-    console.log(`found ${newJobsFound.length} new jobs`);
-    const { data: newJobs, error: insertError } = await supabaseClient
+    const { data: upsertedJobs, error: insertError } = await supabaseClient
       .from("jobs")
       .upsert(
-        newJobsFound.map((job) => ({ ...job, visible: true })),
+        parsedJobs.map((job) => ({ ...job, archived: false })),
         { onConflict: "externalId", ignoreDuplicates: true }
       )
       .select("*");
     if (insertError) throw new Error(insertError.message);
+
+    const newJobs = upsertedJobs?.filter((job) => job.archived === false) ?? [];
+    console.log(`found ${newJobs.length} new jobs`);
 
     return new Response(JSON.stringify({ newJobs }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
