@@ -3,6 +3,7 @@ import { CORS_HEADERS } from "../_shared/cors.ts";
 import { DbSchema } from "../_shared/types.ts";
 import { parseJobPage } from "../_shared/jobParser.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
+import { cleanJobUrl } from "../_shared/jobParser.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
     const { data: createdLinks, error } = await supabaseClient
       .from("links")
       .insert({
-        url,
+        url: cleanJobUrl(url),
         title,
       })
       .select("*");
