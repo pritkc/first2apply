@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { Icons } from "@/components/icons";
 
 const navItems = [
   { name: "Jobs", path: "/" },
@@ -17,7 +18,10 @@ export function Navbar({ isHidden = false }: { isHidden?: boolean }) {
     >
       <nav className="h-full max-w-7xl mx-auto px-6 md:px-10 xl:px-0 flex justify-between items-center">
         {/* Needs improvement */}
-        <p className="text-lg text-primary font-medium">First 2 Apply</p>
+        <Link to="/" className="flex">
+          <Icons.logo className="w-6 h-6"></Icons.logo>
+          <span className="ml-2 text-lg font-medium">First 2 Apply</span>
+        </Link>
         <div className="flex gap-4 md:gap-6 items-center">
           {navItems.map((item) => (
             <Link
