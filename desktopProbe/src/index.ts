@@ -60,10 +60,12 @@ app.on("window-all-closed", () => {
 
 function onActivate() {
   if (!mainWindow?.isVisible()) {
-    app.dock.show();
+    if (process.platform === "darwin") {
+      app.dock.show();
+    }
     mainWindow?.show();
   }
-  mainWindow.focus();
+  mainWindow?.focus();
 }
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
