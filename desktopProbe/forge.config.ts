@@ -24,6 +24,7 @@ const config: ForgeConfig = {
     new MakerSquirrel({
       authors: "BeastX Industries",
       name: "f2a",
+      setupIcon: path.join(__dirname, "packagers", "icons", "paper-plane.ico"),
     }),
     new MakerDMG({
       format: "ULFO",
