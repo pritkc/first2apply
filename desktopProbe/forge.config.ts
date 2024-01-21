@@ -21,15 +21,17 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      authors: "BeastX Industries",
+    }),
     new MakerDMG({
       format: "ULFO",
       background: path.join(__dirname, "packagers", "macos-dmg-background.png"),
       additionalDMGOptions: {
         window: {
           size: {
-            width: 540,
-            height: 380,
+            width: 658,
+            height: 498,
           },
         },
       },
