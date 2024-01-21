@@ -108,10 +108,10 @@ export class JobScanner {
     });
 
     // Show the notification
-    notification.show();
     notification.on("click", () => {
       this._onNavigate({ path: "/" });
     });
+    notification.show();
   }
 
   /**
