@@ -13,53 +13,66 @@ export function JobsList({
   onDismiss: (job: Job) => void;
 }) {
   return (
-    <ul className="space-y-10">
+    <ul className="space-y-8">
       {jobs.map((job) => {
         return (
-          <li key={job.id} className="flex items-center gap-6 lg:gap-10">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src={job.companyLogo} />
-              <AvatarFallback>LI</AvatarFallback>
-            </Avatar>
+          <>
+            <li key={job.id} className="flex items-center gap-4">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={job.companyLogo} />
+                <AvatarFallback>LI</AvatarFallback>
+              </Avatar>
 
-            <div className="flex-1 overflow-ellipsis w-fit">
-              <p className="text-xs text-muted-foreground">{job.companyName}</p>
-              <p className="font-medium">{job.title}</p>
+              <div className="grow md:flex-auto min-[900px]:shrink-0 overflow-ellipsis w-fit">
+                <p className="text-xs text-muted-foreground">
+                  {job.companyName}
+                </p>
+                <p className="font-medium">{job.title}</p>
 
-              <div className="flex items-center gap-2 pt-0.5">
-                {job.location && (
-                  <Badge variant="secondary">{job.location}</Badge>
-                )}
-                {job.jobType && (
-                  <Badge variant="secondary">{job.jobType}</Badge>
-                )}
-                {job.salary && <Badge variant="secondary">{job.salary}</Badge>}
+                <div className="flex items-center gap-1.5 pt-0.5 flex-wrap lg:flex-nowrap">
+                  {job.location && (
+                    <Badge className="shrink-0">{job.location}</Badge>
+                  )}
+                  {job.jobType && (
+                    <Badge className="shrink-0">{job.jobType}</Badge>
+                  )}
+                  {job.salary && (
+                    <Badge className="shrink-0">{job.salary}</Badge>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {job.tags && (
-              <div className="w-1/6 sm:w-1/4 md:w-1/3 lg:w-1/5 flex flex-wrap gap-1 justify-end">
-                {job.tags?.slice(0, 5).map((tag) => (
-                  <Badge variant="outline">{tag}</Badge>
-                ))}
+              {job.tags && (
+                <div className="grow hidden md:flex flex-wrap gap-1.5 justify-end pl-2">
+                  {job.tags?.slice(0, 5).map((tag) => (
+                    <Badge variant="outline">{tag}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* actions */}
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  className="w-full px-4"
+                  onClick={() => onApply(job)}
+                >
+                  Apply
+                </Button>
+                {!job.archived && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full px-4"
+                    onClick={() => onDismiss(job)}
+                  >
+                    Archive
+                  </Button>
+                )}
               </div>
-            )}
-
-            {/* actions */}
-            <div className="flex items-center gap-1 max-w-">
-              <Button size="sm" className="w-full" onClick={() => onApply(job)}>
-                Apply
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => onDismiss(job)}
-              >
-                Dismiss
-              </Button>
-            </div>
-          </li>
+            </li>
+            <hr className="w-full text-muted-foreground" />
+          </>
         );
       })}
     </ul>
