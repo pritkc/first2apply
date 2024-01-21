@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+
 import { JobScannerSettings } from "@/lib/types";
+import { Link as Links } from "../../../supabase/functions/_shared/types";
+
 import { useError } from "@/hooks/error";
-import { useLocation } from "react-router-dom";
 import {
+  listLinks,
   getProbeSettings,
   listJobs,
   openExternalUrl,
   updateProbeSettings,
 } from "@/lib/electronMainSdk";
-import { useScrollToSection } from "@/hooks/useScrollToSection";
+
 import { DefaultLayout } from "./defaultLayout";
+import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
 import { CronSchedule } from "@/components/cronSchedule";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
  * Component that renders the home page.
@@ -29,15 +33,23 @@ export function Home() {
     preventSleep: false,
   });
 
+  const [links, setLinks] = useState<Links[]>([]);
+
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        // load settings when component is mounted
-        setSettings(await getProbeSettings());
+        // Load links
+        const links = await listLinks();
+        setLinks(links);
+
+        // Load settings
+        const loadedSettings = await getProbeSettings();
+        setSettings(loadedSettings);
       } catch (error) {
         handleError(error);
       }
     };
+
     asyncLoad();
   }, []);
 
@@ -65,52 +77,89 @@ export function Home() {
     }
   };
 
-  const scrollToSection = useScrollToSection(24);
+  // Separate latest and archived jobs in two arrays
+  const { latestJobs, archivedJobs } = jobs.reduce(
+    (acc, job) => {
+      if (job.archived) {
+        acc.archivedJobs.push(job);
+      } else {
+        acc.latestJobs.push(job);
+      }
+      return acc;
+    },
+    { latestJobs: [], archivedJobs: [] }
+  );
 
   return (
-    <DefaultLayout className="px-6 xl:px-0 pb-6">
-      <section className="max-w-[980px] px-6 md:px-10 lg:px-20 pt-32 pb-20 mx-auto flex flex-col items-center gap-10">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
-          Be the: <span className="text-primary">first 2 apply</span>
-        </h1>
-        <p className="text-muted-foreground lg:max-w-[800px] text-center">
-          Save your tailored job searches from top job platforms, and let us do
-          the heavy lifting. We'll monitor your specified job feeds and swiftly
-          notify you of new postings, providing you the edge to be the first in
-          line.
-        </p>
-        <div className="flex flex-row gap-4">
-          <Link to="/links">
-            <Button>Add new search</Button>
-          </Link>
-          <Button
-            variant="outline"
-            onClick={() => scrollToSection("recent-jobs")}
-          >
-            Recent jobs
-          </Button>
-        </div>
-      </section>
-
-      <section className="border rounded-lg p-8 space-y-8" id="recent-jobs">
-        <div>
-          <h2 className="text-2xl font-medium tracking-wide mb-4">
-            Recent job posts
-          </h2>
+    <DefaultLayout
+      className={`px-6 xl:px-0 flex flex-col ${
+        links.length === 0
+          ? "justify-evenly h-screen pb-14 max-w-[800px] w-full px-6 md:px-10 lg:px-20"
+          : "py-6 md:p-10 xl:px-0"
+      }`}
+    >
+      {links.length === 0 ? (
+        <>
+          <div className="flex flex-col items-center gap-10">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
+              Be the: <span className="text-primary">first 2 apply</span>
+            </h1>
+            <p className="text-muted-foreground text-center">
+              Save your tailored job searches from top job platforms, and let us
+              do the heavy lifting. We'll monitor your specified job feeds and
+              swiftly notify you of new postings, providing you the edge to be
+              the first in line.
+            </p>
+            <Link to="/links">
+              <Button>Add new search</Button>
+            </Link>
+          </div>
           <CronSchedule
             cronRule={settings.cronRule}
             onCronRuleChange={onCronRuleChange}
           />
+        </>
+      ) : (
+        <div className="space-y-10">
+          <CronSchedule
+            cronRule={settings.cronRule}
+            onCronRuleChange={onCronRuleChange}
+          />
+          {/* <h2 className="text-2xl font-medium tracking-wide pt-4">
+            Recent job posts
+          </h2>
+          <hr className="w-full text-muted-foreground" /> */}
+
+          <Tabs defaultValue="latest" className="w-full flex flex-col gap-6">
+            <TabsList className="h-fit p-2">
+              <TabsTrigger value="latest" className="px-6 py-4 flex-1">
+                Latest Jobs
+              </TabsTrigger>
+              <TabsTrigger value="archived" className="px-6 py-4 flex-1">
+                Archives
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="latest">
+              <JobsList
+                jobs={latestJobs}
+                onApply={(job) => {
+                  openExternalUrl(job.externalUrl);
+                }}
+                onDismiss={(job) => {}}
+              />
+            </TabsContent>
+            <TabsContent value="archived">
+              <JobsList
+                jobs={archivedJobs}
+                onApply={(job) => {
+                  openExternalUrl(job.externalUrl);
+                }}
+                onDismiss={(job) => {}}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
-        <hr className="w-full text-muted-foreground" />
-        <JobsList
-          jobs={jobs}
-          onApply={(job) => {
-            openExternalUrl(job.externalUrl);
-          }}
-          onDismiss={(job) => {}}
-        />
-      </section>
+      )}
     </DefaultLayout>
   );
 }

@@ -20,7 +20,7 @@ export function CronSchedule({
   return (
     <div className="space-y-4">
       {/* cron rule */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+      <div className="flex flex-row items-center justify-between rounded-lg border border-[#809966]/40 gap-6 p-4">
         <div className="space-y-0.5">
           <p className="text-base">Search Frequency</p>
           <span className="text-sm">
