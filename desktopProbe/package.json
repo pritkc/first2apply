@@ -1,6 +1,6 @@
 {
-  "name": "desktopprobe",
-  "productName": "desktopprobe",
+  "name": "@beastx/desktopprobe",
+  "productName": "First 2 Apply",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
@@ -20,6 +20,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.2.0",
     "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-dmg": "^7.2.0",
     "@electron-forge/maker-rpm": "^7.2.0",
     "@electron-forge/maker-squirrel": "^7.2.0",
     "@electron-forge/maker-zip": "^7.2.0",
