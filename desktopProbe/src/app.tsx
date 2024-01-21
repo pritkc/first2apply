@@ -67,6 +67,7 @@ function App() {
             attribute="class"
             // @ts-ignore
             defaultTheme={window.electron?.theme || "light"}
+            // defaultTheme={"light"}
             disableTransitionOnChange
           >
             <RouterProvider router={router}></RouterProvider>
