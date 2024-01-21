@@ -23,6 +23,7 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       authors: "BeastX Industries",
+      name: "f2a",
     }),
     new MakerDMG({
       format: "ULFO",

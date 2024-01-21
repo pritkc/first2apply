@@ -3,7 +3,8 @@ import path from "path";
 
 export class TrayMenu {
   private _tray: Tray;
-  private _iconPath = "/images/trayIconTemplate.png";
+  private _iconPathMacOs = "/images/trayIconTemplate.png";
+  private _iconPathWin = "/images/trayIcon.ico";
 
   constructor({
     onQuit,
@@ -12,10 +13,13 @@ export class TrayMenu {
     onQuit: () => void;
     onNavigate: (_: { path: string }) => void;
   }) {
-    const iconPath = path.join(__dirname, this._iconPath);
-    console.log(`Tray icon path: ${iconPath}`);
+    const iconName =
+      process.platform === "win32" ? this._iconPathWin : this._iconPathMacOs;
+    const iconPath = path.join(__dirname, iconName);
     const image = nativeImage.createFromPath(iconPath);
-    image.setTemplateImage(true);
+    if (process.platform === "darwin") {
+      image.setTemplateImage(true);
+    }
 
     this._tray = new Tray(image);
 
