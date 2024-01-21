@@ -3,7 +3,7 @@ import path from "path";
 
 export class TrayMenu {
   private _tray: Tray;
-  private _iconPath = "/images/tray_icon.png";
+  private _iconPath = "/images/trayIconTemplate.png";
 
   constructor({
     onQuit,
