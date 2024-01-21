@@ -38,7 +38,9 @@ const createMainWindow = (): void => {
     event.preventDefault();
     mainWindow?.hide();
     mainWindow?.setSkipTaskbar(true);
-    app.dock.hide();
+    if (process.platform === "darwin") {
+      app.dock.hide();
+    }
   });
 };
 
