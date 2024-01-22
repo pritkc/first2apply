@@ -37,9 +37,12 @@ const createMainWindow = (): void => {
   mainWindow.on("close", (event) => {
     event.preventDefault();
     mainWindow?.hide();
-    mainWindow?.setSkipTaskbar(true);
+
+    // hide the dock icon on macOS and hide the taskbar icon on Windows
     if (process.platform === "darwin") {
       app.dock.hide();
+    } else if (process.platform === "win32") {
+      mainWindow?.setSkipTaskbar(true);
     }
   });
 };
@@ -60,9 +63,13 @@ app.on("window-all-closed", () => {
 
 function onActivate() {
   if (!mainWindow?.isVisible()) {
+    // show the dock icon on macOS and show the taskbar icon on Windows
     if (process.platform === "darwin") {
       app.dock.show();
+    } else if (process.platform === "win32") {
+      mainWindow?.setSkipTaskbar(false);
     }
+
     mainWindow?.show();
   }
   mainWindow?.focus();
