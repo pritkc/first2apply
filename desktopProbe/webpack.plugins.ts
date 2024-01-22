@@ -12,7 +12,11 @@ export const plugins = [
   new ForkTsCheckerWebpackPlugin({
     logger: "webpack-infrastructure",
   }),
-  new webpack.EnvironmentPlugin(["SUPABASE_URL", "SUPABASE_KEY"]),
+  new webpack.EnvironmentPlugin([
+    "APP_BUNDLE_ID",
+    "SUPABASE_URL",
+    "SUPABASE_KEY",
+  ]),
   new CopyWebpackPlugin({
     patterns: [{ from: path.join(__dirname, "images"), to: "images" }],
   }),

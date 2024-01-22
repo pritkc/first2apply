@@ -1,4 +1,5 @@
 export const ENV = {
+  appBundleId: process.env.APP_BUNDLE_ID,
   supabase: {
     url: process.env.SUPABASE_URL,
     key: process.env.SUPABASE_KEY,
