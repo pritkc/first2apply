@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, safeStorage, nativeTheme } from "electron";
 import path from "path";
 import { ENV } from "./env";
 
@@ -117,15 +117,19 @@ async function bootstrap() {
     trayMenu = new TrayMenu({ onQuit: quit, onNavigate: navigate });
 
     const userDataPath = app.getPath("userData");
-    const sessionPath = path.join(userDataPath, "session.json");
+    const sessionPath = path.join(userDataPath, "encrypted-session.json");
 
     // manual logout for testing
     // fs.unlinkSync(sessionPath);
 
     // load the session from disk if it exists
     if (fs.existsSync(sessionPath)) {
-      const session = JSON.parse(fs.readFileSync(sessionPath, "utf-8"));
-      console.log(`loading session from disk`);
+      const encryptedSession = fs.readFileSync(sessionPath, "utf-8");
+      const plaintextSession = safeStorage.decryptString(
+        Buffer.from(encryptedSession, "base64")
+      );
+      const session = JSON.parse(plaintextSession);
+      console.log(`finished loading session from disk`);
       const { error } = await supabase.auth.setSession(session);
       if (error) throw error;
     } else {
@@ -146,7 +150,14 @@ async function bootstrap() {
           event === "PASSWORD_RECOVERY"
         ) {
           console.log(`saving new session to disk`);
-          fs.writeFileSync(sessionPath, JSON.stringify(session));
+          const encryptedSession = safeStorage.encryptString(
+            JSON.stringify(session)
+          );
+          fs.writeFileSync(
+            sessionPath,
+            encryptedSession.toString("base64"),
+            "utf-8"
+          );
         }
       } catch (error) {
         console.error(getExceptionMessage(error));
