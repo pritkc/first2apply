@@ -18,6 +18,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     icon: path.join(__dirname, "packagers", "icons", "paper-plane"),
+    appBundleId: "ro.beastx.first2apply",
   },
   rebuildConfig: {},
   makers: [
