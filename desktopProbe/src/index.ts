@@ -104,6 +104,11 @@ function navigate({ path }: { path: string }) {
  */
 async function bootstrap() {
   try {
+    if (!ENV.appBundleId) throw new Error(`missing APP_BUNDLE_ID`);
+    if (process.platform === "win32") {
+      app.setAppUserModelId(ENV.appBundleId);
+    }
+
     // init the HTML downloader
     htmlDownloader.init();
 

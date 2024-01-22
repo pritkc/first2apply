@@ -6,7 +6,7 @@ import {
   createRoutesFromElements,
 } from "react-router-dom";
 import { useEffect } from "react";
-import { SupabaseProvider } from "./hooks/supabase";
+
 import { SessionProvider } from "./hooks/session";
 import { withAuthGuard } from "./components/authGuard";
 import { Home } from "./pages/home";
@@ -61,19 +61,18 @@ function App() {
 
   return (
     <>
-      <SupabaseProvider>
-        <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            // @ts-ignore
-            defaultTheme={window.electron?.theme || "light"}
-            // defaultTheme={"light"}
-            disableTransitionOnChange
-          >
-            <RouterProvider router={router}></RouterProvider>
-          </ThemeProvider>
-        </SessionProvider>
-      </SupabaseProvider>
+      <SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          // @ts-ignore
+          defaultTheme={window.electron?.theme || "light"}
+          // defaultTheme={"light"}
+          disableTransitionOnChange
+        >
+          <RouterProvider router={router}></RouterProvider>
+        </ThemeProvider>
+      </SessionProvider>
+
       <Toaster />
     </>
   );
