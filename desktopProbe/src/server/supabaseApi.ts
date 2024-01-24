@@ -101,6 +101,20 @@ export class F2aSupabaseApi {
   }
 
   /**
+   *
+   * Update the archived status of a job.
+   */
+  archiveJob(jobId: string): Promise<void> {
+    return this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("jobs")
+          .update({ archived: true })
+          .eq("id", jobId)
+    );
+  }
+
+  /**
    * Wrapper around a Supabase method that handles errors.
    */
   private async _supabaseApiCall<T, E>(

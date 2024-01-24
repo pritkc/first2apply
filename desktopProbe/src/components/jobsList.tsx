@@ -6,11 +6,11 @@ import { Button } from "./ui/button";
 export function JobsList({
   jobs,
   onApply,
-  onDismiss,
+  onArchive,
 }: {
   jobs: Job[];
   onApply: (job: Job) => void;
-  onDismiss: (job: Job) => void;
+  onArchive: (jobId: string) => void;
 }) {
   return (
     <ul className="space-y-8">
@@ -64,7 +64,7 @@ export function JobsList({
                     variant="outline"
                     size="sm"
                     className="w-full px-4"
-                    onClick={() => onDismiss(job)}
+                    onClick={() => onArchive(job.id)}
                   >
                     Archive
                   </Button>

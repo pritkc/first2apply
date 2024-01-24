@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { JobScannerSettings } from "@/lib/types";
-import { Link as Links } from "../../../supabase/functions/_shared/types";
+import { Job, Link as Links } from "../../../supabase/functions/_shared/types";
 
 import { useError } from "@/hooks/error";
 import {
   listLinks,
   getProbeSettings,
   listJobs,
+  archiveJob,
   openExternalUrl,
   updateProbeSettings,
 } from "@/lib/electronMainSdk";
@@ -90,6 +91,18 @@ export function Home() {
     { latestJobs: [], archivedJobs: [] }
   );
 
+  // Update the archived status of a job
+  const onArchive = async (jobId: string) => {
+    try {
+      await archiveJob(jobId);
+
+      // Update the local state to reflect the change
+      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, archived: true } : j)));
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
   return (
     <DefaultLayout
       className={`px-6 xl:px-0 flex flex-col ${
@@ -145,7 +158,7 @@ export function Home() {
                 onApply={(job) => {
                   openExternalUrl(job.externalUrl);
                 }}
-                onDismiss={(job) => {}}
+                onArchive={onArchive}
               />
             </TabsContent>
             <TabsContent value="archived">
@@ -154,7 +167,7 @@ export function Home() {
                 onApply={(job) => {
                   openExternalUrl(job.externalUrl);
                 }}
-                onDismiss={(job) => {}}
+                onArchive={onArchive}
               />
             </TabsContent>
           </Tabs>
