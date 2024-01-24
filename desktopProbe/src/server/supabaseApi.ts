@@ -124,6 +124,15 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * List all sites.
+   */
+  listSites() {
+    return this._supabaseApiCall(
+      async () => await this._supabase.from("sites").select("*")
+    );
+  }
+
+  /**
    * Wrapper around a Supabase method that handles errors.
    */
   private async _supabaseApiCall<T, E>(
