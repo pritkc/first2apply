@@ -1,8 +1,15 @@
 import { Link } from "../../../supabase/functions/_shared/types";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
-export function LinksList({ links }: { links: Link[] }) {
+export function LinksList({
+  links,
+  onDeleteLink,
+}: {
+  links: Link[];
+  onDeleteLink: (linkId: string) => void;
+}) {
   return (
     <section className="space-y-2">
       <div>
@@ -34,7 +41,11 @@ export function LinksList({ links }: { links: Link[] }) {
 
               {/* actions */}
               <div className="flex items-center">
-                <Button variant="destructive" size="sm">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDeleteLink(link.id)}
+                >
                   Delete
                 </Button>
               </div>

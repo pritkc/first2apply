@@ -74,6 +74,15 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Delete a link.
+   */
+  deleteLink(linkId: string) {
+    return this._supabaseApiCall(
+      async () => await this._supabase.from("links").delete().eq("id", linkId)
+    );
+  }
+
+  /**
    * Scan a list of htmls for new jobs.
    */
   scanHtmls(htmls: { linkId: string; content: string }[]) {
@@ -104,7 +113,7 @@ export class F2aSupabaseApi {
    *
    * Update the archived status of a job.
    */
-  archiveJob(jobId: string): Promise<void> {
+  archiveJob(jobId: string) {
     return this._supabaseApiCall(
       async () =>
         await this._supabase
