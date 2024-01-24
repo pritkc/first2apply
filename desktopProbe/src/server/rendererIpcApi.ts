@@ -55,6 +55,10 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.listLinks())
   );
 
+  ipcMain.handle("delete-link", async (event, { linkId }) =>
+    _apiCall(() => supabaseApi.deleteLink(linkId))
+  );
+
   ipcMain.handle("list-jobs", async (event, {}) =>
     _apiCall(() => supabaseApi.listJobs())
   );

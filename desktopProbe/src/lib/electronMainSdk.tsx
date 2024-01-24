@@ -77,6 +77,14 @@ export async function listLinks(): Promise<Link[]> {
 }
 
 /**
+ * Delete a link.
+ */
+export async function deleteLink(linkId: string): Promise<void> {
+  // @ts-ignore
+  await window.electron.invoke("delete-link", { linkId });
+}
+
+/**
  * List all jobs.
  */
 export async function listJobs(): Promise<Job[]> {
