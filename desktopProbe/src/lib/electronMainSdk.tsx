@@ -1,6 +1,6 @@
 import { User } from "@supabase/supabase-js";
 import { JobScannerSettings } from "./types";
-import { Job, Link } from "../../../supabase/functions/_shared/types";
+import { Job, JobSite, Link } from "../../../supabase/functions/_shared/types";
 
 /**
  * Create a new account with email and password.
@@ -100,6 +100,14 @@ export async function archiveJob(jobId: string): Promise<void> {
   // @ts-ignore
   const job = await window.electron.invoke("archive-job", { jobId });
   return job;
+}
+
+/**
+ * List all sites.
+ */
+export async function listSites(): Promise<JobSite[]> {
+  // @ts-ignore
+  return await window.electron.invoke("list-sites", {});
 }
 
 /**

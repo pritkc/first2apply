@@ -67,6 +67,10 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.archiveJob(jobId))
   );
 
+  ipcMain.handle("list-sites", async (event) =>
+    _apiCall(() => supabaseApi.listSites())
+  );
+
   ipcMain.handle("update-job-scanner-settings", async (event, { settings }) =>
     _apiCall(async () => jobScanner.updateSettings(settings))
   );
