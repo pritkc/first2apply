@@ -69,7 +69,7 @@ export type DbSchema = {
           | "jobType"
           | "archived"
         >;
-        Update: never;
+        Update: Pick<Job, "archived">;
       };
     };
     Views: {};
