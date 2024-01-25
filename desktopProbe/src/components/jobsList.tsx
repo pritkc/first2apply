@@ -1,3 +1,4 @@
+import { useSites } from "@/hooks/sites";
 import { Job } from "../../../supabase/functions/_shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -10,8 +11,10 @@ export function JobsList({
 }: {
   jobs: Job[];
   onApply: (job: Job) => void;
-  onArchive: (jobId: string) => void;
+  onArchive: (jobId: number) => void;
 }) {
+  const { siteLogos } = useSites();
+
   return (
     <ul className="space-y-8">
       {jobs.map((job) => {
@@ -19,7 +22,7 @@ export function JobsList({
           <>
             <li key={job.id} className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={job.companyLogo} />
+                <AvatarImage src={siteLogos[job.siteId]} />
                 <AvatarFallback>LI</AvatarFallback>
               </Avatar>
 

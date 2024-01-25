@@ -31,12 +31,13 @@ Deno.serve(async (req) => {
     const allJobSites = data ?? [];
 
     // insert a new link in the db
-    const cleanUrl = cleanJobUrl({ url, allJobSites });
+    const { cleanUrl, site } = cleanJobUrl({ url, allJobSites });
     const { data: createdLinks, error } = await supabaseClient
       .from("links")
       .insert({
         url: cleanUrl,
         title,
+        site_id: site.id,
       })
       .select("*");
     if (error) throw error;

@@ -96,7 +96,7 @@ export async function listJobs(): Promise<Job[]> {
 /**
  * Update the archived status of a job.
  */
-export async function archiveJob(jobId: string): Promise<void> {
+export async function archiveJob(jobId: number): Promise<void> {
   // @ts-ignore
   const job = await window.electron.invoke("archive-job", { jobId });
   return job;

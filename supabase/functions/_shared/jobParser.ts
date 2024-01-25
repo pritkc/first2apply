@@ -61,21 +61,22 @@ export function cleanJobUrl({
 }: {
   allJobSites: JobSite[];
   url: string;
-}): string {
+}) {
   const site = getJobSite({ allJobSites, url });
   if (!site) {
     throw new Error(`Could not find a site for url ${url}`);
   }
+  let cleanUrl = url;
 
   if (site.queryParamsToRemove) {
     const parsedUrl = new URL(url);
     site.queryParamsToRemove.forEach((param) => {
       parsedUrl.searchParams.delete(param);
     });
-    return parsedUrl.toString();
+    cleanUrl = parsedUrl.toString();
   }
 
-  return url;
+  return { cleanUrl, site };
 }
 
 /**

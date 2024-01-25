@@ -92,7 +92,7 @@ export function Home() {
   );
 
   // Update the archived status of a job
-  const onArchive = async (jobId: string) => {
+  const onArchive = async (jobId: number) => {
     try {
       await archiveJob(jobId);
 
@@ -138,10 +138,6 @@ export function Home() {
             cronRule={settings.cronRule}
             onCronRuleChange={onCronRuleChange}
           />
-          {/* <h2 className="text-2xl font-medium tracking-wide pt-4">
-            Recent job posts
-          </h2>
-          <hr className="w-full text-muted-foreground" /> */}
 
           <Tabs defaultValue="latest" className="w-full flex flex-col gap-6">
             <TabsList className="h-fit p-2">
