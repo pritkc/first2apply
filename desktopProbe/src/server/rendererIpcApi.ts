@@ -36,6 +36,9 @@ export function initRendererIpcApi({
   ipcMain.handle("login-with-email", async (event, { email, password }) =>
     _apiCall(() => supabaseApi.loginWithEmail({ email, password }))
   );
+  ipcMain.handle("logout", async (event, {}) =>
+    _apiCall(() => supabaseApi.logout())
+  );
 
   ipcMain.handle("get-user", async (event) =>
     _apiCall(() => supabaseApi.getUser())

@@ -2,11 +2,19 @@ import { DefaultLayout } from "./defaultLayout";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { JobScannerSettings } from "@/lib/types";
-import { getProbeSettings, updateProbeSettings } from "@/lib/electronMainSdk";
+import {
+  getProbeSettings,
+  logout,
+  updateProbeSettings,
+} from "@/lib/electronMainSdk";
 import { useError } from "@/hooks/error";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { useSession } from "@/hooks/session";
 
 export function SettingsPage() {
   const { handleError } = useError();
+  const { logout: resetUser } = useSession();
 
   const [settings, setSettings] = useState<JobScannerSettings>({
     cronRule: undefined,
@@ -30,6 +38,15 @@ export function SettingsPage() {
     try {
       await updateProbeSettings(newSettings);
       setSettings(newSettings);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const onLogout = async () => {
+    try {
+      await logout();
+      resetUser();
     } catch (error) {
       handleError(error);
     }
@@ -79,6 +96,14 @@ export function SettingsPage() {
           </span>
         </div>
         <Switch disabled value={""} />
+      </div>
+
+      <Separator className="my-5" />
+
+      <div className="flex justify-center">
+        <Button className="w-16" variant="secondary" onClick={onLogout}>
+          Logout
+        </Button>
       </div>
     </DefaultLayout>
   );

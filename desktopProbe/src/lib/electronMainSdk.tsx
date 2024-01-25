@@ -41,6 +41,14 @@ export async function loginWithEmail({
 }
 
 /**
+ * Logout user session.
+ */
+export async function logout(): Promise<void> {
+  // @ts-ignore
+  await window.electron.invoke("logout", {});
+}
+
+/**
  * Get user from the current session.
  */
 export async function getUser(): Promise<User | null> {
