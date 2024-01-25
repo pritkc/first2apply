@@ -32,6 +32,14 @@ export class HtmlDownloader {
     console.log(`downloading url: ${url} ...`);
     await this._scraperWindow.loadURL(url);
 
+    // scroll to bottom a few times to trigger infinite loading
+    for (let i = 0; i < 3; i++) {
+      await this._scraperWindow.webContents.executeJavaScript(
+        'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});'
+      );
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
     const html = await this._scraperWindow.webContents.executeJavaScript(
       "document.documentElement.innerHTML"
     );
