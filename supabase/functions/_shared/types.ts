@@ -4,19 +4,21 @@ export type JobSite = {
   urls: string[];
   queryParamsToRemove?: string[];
   created_at: Date;
+  logo_url: string;
 };
 
 export type Link = {
-  id: string;
+  id: number;
   url: string;
   title: string;
   user_id: string;
+  site_id: number;
   created_at: Date;
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
 export type Job = {
-  id: string;
+  id: number;
   user_id: string;
   externalId: string;
   externalUrl: string;
@@ -50,7 +52,7 @@ export type DbSchema = {
       };
       links: {
         Row: Link;
-        Insert: Pick<Link, "url" | "title">;
+        Insert: Pick<Link, "url" | "title" | "site_id">;
         Update: never;
       };
       jobs: {

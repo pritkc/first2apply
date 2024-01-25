@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const htmls: Array<{ linkId: string; content: string }> = body.htmls;
+    const htmls: Array<{ linkId: number; content: string }> = body.htmls;
     if (htmls.length === 0) {
       return new Response(JSON.stringify({ newJobs: [] }), {
         headers: { "Content-Type": "application/json", ...CORS_HEADERS },

@@ -17,6 +17,7 @@ import { SignupPage } from "./pages/signup";
 import { SettingsPage } from "./pages/settings";
 import { ComponentType } from "react";
 import { LinksPage } from "./pages/links";
+import { SitesProvider } from "./hooks/sites";
 
 // auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
@@ -69,7 +70,9 @@ function App() {
           // defaultTheme={"light"}
           disableTransitionOnChange
         >
-          <RouterProvider router={router}></RouterProvider>
+          <SitesProvider>
+            <RouterProvider router={router}></RouterProvider>
+          </SitesProvider>
         </ThemeProvider>
       </SessionProvider>
 
