@@ -106,6 +106,7 @@ export class F2aSupabaseApi {
           .select("*")
           // .eq("visible", true)
           .order("created_at", { ascending: false })
+          .limit(200)
     );
   }
 
