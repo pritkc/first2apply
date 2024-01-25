@@ -1,5 +1,7 @@
 import { Link } from "../../../supabase/functions/_shared/types";
 
+import { openExternalUrl } from "@/lib/electronMainSdk";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
@@ -32,12 +34,17 @@ export function LinksList({
                 <AvatarFallback>LI</AvatarFallback>
               </Avatar>
 
-              <div className="flex-1 text-ellipsis overflow-hidden">
+              <button
+                className="flex-1 text-ellipsis overflow-hidden flex flex-col items-start"
+                onClick={() => {
+                  openExternalUrl(link.url);
+                }}
+              >
                 <p className="font-medium">{link.title}</p>
                 <p className="text-xs text-muted-foreground text-clip whitespace-nowrap">
                   {link.url}
                 </p>
-              </div>
+              </button>
 
               {/* actions */}
               <div className="flex items-center">
