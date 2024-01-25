@@ -19,7 +19,7 @@ export function JobsList({
     <ul className="space-y-8">
       {jobs.map((job) => {
         return (
-          <li key={job.id}>
+          <li key={job.id} className="space-y-8">
             <div key={job.id} className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={siteLogos[job.siteId]} />
