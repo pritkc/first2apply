@@ -5,6 +5,7 @@ public.sites (
   urls text[] not null,
   created_at timestamp with time zone not null default now(),
   "queryParamsToRemove" text[] null,
+  logo_url text not null,
   constraint sites_pkey primary key (id)
 ) tablespace pg_default;
 
@@ -15,7 +16,9 @@ public.links (
   user_id uuid not null default auth.uid (),
   url text not null,
   title text not null,
+  site_id bigint not null,
   constraint links_pkey primary key (id),
+  constraint links_site_id_fkey foreign key (site_id) references sites (id) on update restrict on delete restrict,
   constraint links_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
 ) tablespace pg_default;
 
