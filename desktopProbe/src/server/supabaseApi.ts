@@ -27,6 +27,14 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Logout the current user.
+   */
+  async logout() {
+    const { error } = await this._supabase.auth.signOut();
+    return this._supabaseApiCall(async () => ({ error, data: null }));
+  }
+
+  /**
    * Get the user from the current supabase session
    */
   getUser(): Promise<{ user: User | null }> {

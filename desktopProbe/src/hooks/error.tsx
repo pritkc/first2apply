@@ -20,7 +20,7 @@ export function useError() {
     console.error(getExceptionMessage(error));
     toast({
       title,
-      description: getExceptionMessage(error),
+      description: getExceptionMessage(error, true),
       variant: "destructive",
     });
   };
