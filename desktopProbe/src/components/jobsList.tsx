@@ -19,8 +19,8 @@ export function JobsList({
     <ul className="space-y-8">
       {jobs.map((job) => {
         return (
-          <>
-            <li key={job.id} className="flex items-center gap-4">
+          <li key={job.id}>
+            <div key={job.id} className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={siteLogos[job.siteId]} />
                 <AvatarFallback>LI</AvatarFallback>
@@ -73,9 +73,9 @@ export function JobsList({
                   </Button>
                 )}
               </div>
-            </li>
+            </div>
             <hr className="w-full text-muted-foreground" />
-          </>
+          </li>
         );
       })}
     </ul>
