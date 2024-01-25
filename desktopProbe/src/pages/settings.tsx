@@ -90,7 +90,9 @@ export function SettingsPage() {
       {/* email notifications */}
       <div className="flex flex-row items-center justify-between rounded-lg border p-4">
         <div className="space-y-0.5">
-          <p className="text-base">Email notifications coming soon</p>
+          <p className="text-base">
+            Email notifications <span className="italic">(coming soon)</span>
+          </p>
           <span className="text-sm">
             Get notified of new jobs even when you are on the go
           </span>
