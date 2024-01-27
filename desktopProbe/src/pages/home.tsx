@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { JobScannerSettings } from "@/lib/types";
-import { Job, Link as Links } from "../../../supabase/functions/_shared/types";
+import { Link as Links } from "../../../supabase/functions/_shared/types";
 
 import { useError } from "@/hooks/error";
 import {
