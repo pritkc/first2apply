@@ -26,7 +26,7 @@ export function JobsList({
                 <AvatarFallback>LI</AvatarFallback>
               </Avatar>
 
-              <div className="grow md:flex-auto min-[900px]:shrink-0 overflow-ellipsis w-fit">
+              <div className="grow md:flex-auto overflow-ellipsis w-fit">
                 <p className="text-xs text-muted-foreground">
                   {job.companyName}
                 </p>
