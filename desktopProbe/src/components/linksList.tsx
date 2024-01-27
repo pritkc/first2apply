@@ -10,17 +10,11 @@ export function LinksList({
   onDeleteLink,
 }: {
   links: Link[];
-  onDeleteLink: (linkId: string) => void;
+  onDeleteLink: (linkId: number) => void;
 }) {
   return (
     <section className="space-y-2">
-      <div>
-        <h2 className="text-2xl font-medium tracking-wide">Your searches</h2>
-        <p className="text-muted-foreground text-sm">
-          Below, you'll find your previously saved searches. This is your
-          command center to review and manage them as needed.
-        </p>
-      </div>
+      <h2 className="text-2xl font-medium tracking-wide">Your searches</h2>
       <hr className="w-full text-muted-foreground" />
       <ul className="space-y-6 pt-2">
         {links.map((link) => {

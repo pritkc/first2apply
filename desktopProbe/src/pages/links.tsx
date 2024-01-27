@@ -37,7 +37,7 @@ export function LinksPage() {
   };
 
   // Delete an existing link
-  const handleDeleteLink = async (linkId: string) => {
+  const handleDeleteLink = async (linkId: number) => {
     try {
       await deleteLink(linkId);
 
