@@ -3,11 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "../../../supabase/functions/_shared/types";
 import { useError } from "@/hooks/error";
 
-import {
-  createLink,
-  deleteLink,
-  listLinks,
-} from "@/lib/electronMainSdk";
+import { createLink, deleteLink, listLinks } from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
 import { LinksList } from "@/components/linksList";
@@ -23,7 +19,6 @@ export function LinksPage() {
       try {
         const loadedLinks = await listLinks();
         setLinks(loadedLinks);
-
       } catch (error) {
         handleError(error);
       }
@@ -35,7 +30,7 @@ export function LinksPage() {
   const onCreateLink = async (newLink: Pick<Link, "title" | "url">) => {
     try {
       const createdLink = await createLink(newLink);
-      setLinks((currentLinks) => [...currentLinks, createdLink]);
+      setLinks((currentLinks) => [createdLink, ...currentLinks]);
     } catch (error) {
       handleError(error);
     }
