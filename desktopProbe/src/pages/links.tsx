@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { JobSite, Link } from "../../../supabase/functions/_shared/types";
+import { Link } from "../../../supabase/functions/_shared/types";
 import { useError } from "@/hooks/error";
 
 import {
   createLink,
   deleteLink,
   listLinks,
-  listSites,
 } from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
@@ -17,7 +16,6 @@ import { CreateLink } from "@/components/createLink";
 export function LinksPage() {
   const { handleError } = useError();
   const [links, setLinks] = useState<Link[]>([]);
-  const [sites, setSites] = useState<JobSite[]>([]);
 
   // Load links on component mount
   useEffect(() => {
@@ -26,8 +24,6 @@ export function LinksPage() {
         const loadedLinks = await listLinks();
         setLinks(loadedLinks);
 
-        const loadedSites = await listSites();
-        setSites(loadedSites);
       } catch (error) {
         handleError(error);
       }
@@ -61,7 +57,7 @@ export function LinksPage() {
 
   return (
     <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
-      <CreateLink sites={sites} onCreateLink={onCreateLink} />
+      <CreateLink onCreateLink={onCreateLink} />
       <LinksList links={links} onDeleteLink={handleDeleteLink} />
     </DefaultLayout>
   );
