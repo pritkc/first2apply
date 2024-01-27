@@ -87,7 +87,7 @@ export async function listLinks(): Promise<Link[]> {
 /**
  * Delete a link.
  */
-export async function deleteLink(linkId: string): Promise<void> {
+export async function deleteLink(linkId: number): Promise<void> {
   // @ts-ignore
   await window.electron.invoke("delete-link", { linkId });
 }
