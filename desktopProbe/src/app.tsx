@@ -18,6 +18,7 @@ import { SettingsPage } from "./pages/settings";
 import { ComponentType } from "react";
 import { LinksPage } from "./pages/links";
 import { SitesProvider } from "./hooks/sites";
+import { LinksProvider } from "./hooks/links";
 
 // auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
@@ -71,7 +72,9 @@ function App() {
           disableTransitionOnChange
         >
           <SitesProvider>
-            <RouterProvider router={router}></RouterProvider>
+            <LinksProvider>
+              <RouterProvider router={router}></RouterProvider>
+            </LinksProvider>
           </SitesProvider>
         </ThemeProvider>
       </SessionProvider>
