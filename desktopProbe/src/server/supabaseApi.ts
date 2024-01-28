@@ -93,7 +93,7 @@ export class F2aSupabaseApi {
   /**
    * Scan a list of htmls for new jobs.
    */
-  scanHtmls(htmls: { linkId: string; content: string }[]) {
+  scanHtmls(htmls: { linkId: number; content: string }[]) {
     return this._supabaseApiCall(() =>
       this._supabase.functions.invoke("scan-urls", {
         body: {
