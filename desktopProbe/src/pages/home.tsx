@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-import { JobScannerSettings } from "@/lib/types";
-import { Link as Links } from "../../../supabase/functions/_shared/types";
-
 import { useError } from "@/hooks/error";
+import { useLinks } from "@/hooks/links";
+
 import {
-  listLinks,
   getProbeSettings,
   listJobs,
   archiveJob,
   openExternalUrl,
   updateProbeSettings,
 } from "@/lib/electronMainSdk";
+import { JobScannerSettings } from "@/lib/types";
 
 import { DefaultLayout } from "./defaultLayout";
+import { CronScheduleSkeleton } from "@/components/skeletons/CronScheduleSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { JobsListSkeleton } from "@/components/skeletons/JobsListSkeleton";
 import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
 import { CronSchedule } from "@/components/cronSchedule";
@@ -34,16 +36,12 @@ export function Home() {
     preventSleep: false,
   });
 
-  const [links, setLinks] = useState<Links[]>([]);
+  const { links, isLoading } = useLinks(); // Use the useLinks hook
 
+  // Load settings on component mount
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        // Load links
-        const links = await listLinks();
-        setLinks(links);
-
-        // Load settings
         const loadedSettings = await getProbeSettings();
         setSettings(loadedSettings);
       } catch (error) {
@@ -54,7 +52,7 @@ export function Home() {
     asyncLoad();
   }, []);
 
-  // update jobs when search changes
+  // Update jobs when search changes
   useEffect(() => {
     const asyncLoad = async () => {
       try {
@@ -67,7 +65,7 @@ export function Home() {
     asyncLoad();
   }, [search]);
 
-  // update cron rule when form is updated
+  // Update cron rule when form is updated
   const onCronRuleChange = async (cronRule: string | undefined) => {
     try {
       const newSettings = { ...settings, cronRule };
@@ -102,6 +100,23 @@ export function Home() {
       handleError(error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <DefaultLayout className="px-6 xl:px-0 flex flex-col py-6 md:p-10">
+        <div className="space-y-10">
+          <CronScheduleSkeleton />
+
+          <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-2 p-2 animate-pulse">
+            <Skeleton className="px-6 py-4 flex-1" />
+            <Skeleton className="px-6 py-4 flex-1" />
+          </div>
+
+          <JobsListSkeleton />
+        </div>
+      </DefaultLayout>
+    );
+  }
 
   return (
     <DefaultLayout

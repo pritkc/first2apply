@@ -1,36 +1,21 @@
-import { useEffect, useState } from "react";
-
 import { Link } from "../../../supabase/functions/_shared/types";
 import { useError } from "@/hooks/error";
-
-import { createLink, deleteLink, listLinks } from "@/lib/electronMainSdk";
+import { useLinks } from "@/hooks/links";
 
 import { DefaultLayout } from "./defaultLayout";
-import { LinksList } from "@/components/linksList";
 import { CreateLink } from "@/components/createLink";
+import { LinksList } from "@/components/linksList";
+import { CreateLinkSkeleton } from "@/components/skeletons/CreateLinkSkeleton";
+import { LinksListSkeleton } from "@/components/skeletons/LinksListSkeleton";
 
 export function LinksPage() {
   const { handleError } = useError();
-  const [links, setLinks] = useState<Link[]>([]);
-
-  // Load links on component mount
-  useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        const loadedLinks = await listLinks();
-        setLinks(loadedLinks);
-      } catch (error) {
-        handleError(error);
-      }
-    };
-    asyncLoad();
-  }, []);
+  const { isLoading, links, createLink, removeLink } = useLinks();
 
   // Create a new link
   const onCreateLink = async (newLink: Pick<Link, "title" | "url">) => {
     try {
-      const createdLink = await createLink(newLink);
-      setLinks((currentLinks) => [createdLink, ...currentLinks]);
+      await createLink(newLink);
     } catch (error) {
       handleError(error);
     }
@@ -39,16 +24,20 @@ export function LinksPage() {
   // Delete an existing link
   const handleDeleteLink = async (linkId: number) => {
     try {
-      await deleteLink(linkId);
-
-      // Update the local state to reflect the change
-      setLinks((currentLinks) =>
-        currentLinks.filter((link) => link.id !== linkId)
-      );
+      await removeLink(linkId);
     } catch (error) {
       handleError(error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
+        <CreateLinkSkeleton />
+        <LinksListSkeleton />
+      </DefaultLayout>
+    );
+  }
 
   return (
     <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
