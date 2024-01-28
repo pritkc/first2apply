@@ -21,11 +21,11 @@ export function CronSchedule({
     <div className="space-y-4">
       {/* cron rule */}
       <div className="flex flex-row items-center justify-between rounded-lg border gap-6 p-4 bg-card">
-        <div className="space-y-0.5">
-          <p className="text-base">Search Frequency</p>
-          <span className="text-sm">
+        <div className="space-y-1">
+          <h2 className="text-base w-fit">Search Frequency</h2>
+          <p className="text-sm">
             How often do you want to receive job notifications?
-          </span>
+          </p>
         </div>
         <Select value={cronRule} onValueChange={onCronRuleChange}>
           <SelectTrigger className="w-[180px]">
