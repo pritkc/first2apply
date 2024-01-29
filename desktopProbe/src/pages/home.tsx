@@ -132,10 +132,10 @@ export function Home() {
           <Tabs defaultValue="latest" className="w-full flex flex-col gap-6">
             <TabsList className="h-fit p-2">
               <TabsTrigger value="latest" className="px-6 py-4 flex-1">
-                Latest Jobs
+                Latest Jobs {`(${latestJobs.length})`}
               </TabsTrigger>
               <TabsTrigger value="archived" className="px-6 py-4 flex-1">
-                Archives
+                Archived {`(${archivedJobs.length})`}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="latest">
