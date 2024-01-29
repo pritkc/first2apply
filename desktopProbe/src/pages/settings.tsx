@@ -1,48 +1,28 @@
 import { DefaultLayout } from "./defaultLayout";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState } from "react";
 import { JobScannerSettings } from "@/lib/types";
-import {
-  getProbeSettings,
-  logout,
-  updateProbeSettings,
-} from "@/lib/electronMainSdk";
+import { logout } from "@/lib/electronMainSdk";
 import { useError } from "@/hooks/error";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/session";
+import { useSettings } from "@/hooks/settings";
+import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 
 export function SettingsPage() {
   const { handleError } = useError();
   const { logout: resetUser } = useSession();
+  const { isLoading, settings, updateSettings } = useSettings();
 
-  const [settings, setSettings] = useState<JobScannerSettings>({
-    cronRule: undefined,
-    useSound: false,
-    preventSleep: false,
-  });
-
-  useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        // load settings when component is mounted
-        setSettings(await getProbeSettings());
-      } catch (error) {
-        handleError(error);
-      }
-    };
-    asyncLoad();
-  }, []);
-
+  // Update settings
   const onUpdatedSettings = async (newSettings: JobScannerSettings) => {
     try {
-      await updateProbeSettings(newSettings);
-      setSettings(newSettings);
+      await updateSettings(newSettings);
     } catch (error) {
       handleError(error);
     }
   };
 
+  // Logout
   const onLogout = async () => {
     try {
       await logout();
@@ -52,9 +32,19 @@ export function SettingsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-3">
+        <SettingsSkeleton />
+      </DefaultLayout>
+    );
+  }
+
   return (
     <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-3">
-      <h1 className="text-2xl font-medium tracking-wide pb-3">Settings</h1>
+      <h1 className="text-2xl font-medium tracking-wide pb-3 w-fit">
+        Settings
+      </h1>
       {/* sleep settings */}
       <div className="flex flex-row items-center justify-between rounded-lg border p-4">
         <div className="space-y-0.5">
@@ -100,10 +90,8 @@ export function SettingsPage() {
         <Switch disabled value={""} />
       </div>
 
-      <Separator className="my-5" />
-
-      <div className="flex justify-center">
-        <Button className="w-16" variant="secondary" onClick={onLogout}>
+      <div className="flex justify-end pt-4">
+        <Button className="w-16" variant="destructive" onClick={onLogout}>
           Logout
         </Button>
       </div>

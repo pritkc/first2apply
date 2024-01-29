@@ -1,26 +1,31 @@
-import { createRoot } from "react-dom/client";
+import { useEffect, ComponentType } from "react";
+
+import { withAuthGuard } from "./components/authGuard";
+
 import {
   createMemoryRouter,
   RouterProvider,
   Route,
   createRoutesFromElements,
 } from "react-router-dom";
-import { useEffect } from "react";
+
+import { createRoot } from "react-dom/client";
 
 import { SessionProvider } from "./hooks/session";
-import { withAuthGuard } from "./components/authGuard";
-import { Home } from "./pages/home";
-import { Toaster } from "./components/ui/toaster";
 import { ThemeProvider } from "./components/themeProvider";
+import { SitesProvider } from "./hooks/sites";
+import { LinksProvider } from "./hooks/links";
+import { SettingsProvider } from "./hooks/settings";
+
+import { Home } from "./pages/home";
 import { LoginPage } from "./pages/login";
 import { SignupPage } from "./pages/signup";
 import { SettingsPage } from "./pages/settings";
-import { ComponentType } from "react";
 import { LinksPage } from "./pages/links";
-import { SitesProvider } from "./hooks/sites";
-import { LinksProvider } from "./hooks/links";
 
-// auth guarded component wrapper
+import { Toaster } from "./components/ui/toaster";
+
+// Auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
   const Component = withAuthGuard(component);
   return <Component />;
@@ -71,11 +76,13 @@ function App() {
           // defaultTheme={"light"}
           disableTransitionOnChange
         >
-          <SitesProvider>
-            <LinksProvider>
-              <RouterProvider router={router}></RouterProvider>
-            </LinksProvider>
-          </SitesProvider>
+          <SettingsProvider>
+            <SitesProvider>
+              <LinksProvider>
+                <RouterProvider router={router}></RouterProvider>
+              </LinksProvider>
+            </SitesProvider>
+          </SettingsProvider>
         </ThemeProvider>
       </SessionProvider>
 
@@ -84,6 +91,6 @@ function App() {
   );
 }
 
-// render the app
+// Render the app
 const root = createRoot(document.body.querySelector("#app")!);
 root.render(<App />);
