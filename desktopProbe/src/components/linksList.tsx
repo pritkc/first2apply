@@ -1,4 +1,5 @@
 import { Link } from "../../../supabase/functions/_shared/types";
+import { useSites } from "@/hooks/sites";
 
 import { openExternalUrl } from "@/lib/electronMainSdk";
 
@@ -12,6 +13,8 @@ export function LinksList({
   links: Link[];
   onDeleteLink: (linkId: number) => void;
 }) {
+  const { siteLogos } = useSites();
+
   return (
     <section className="space-y-2">
       <h2 className="text-2xl font-medium tracking-wide">Your searches</h2>
@@ -24,7 +27,7 @@ export function LinksList({
               className="flex items-center gap-4 justify-between"
             >
               <Avatar className="w-11 h-11">
-                <AvatarImage src="https://github.com/shadcn.png" />
+                <AvatarImage src={siteLogos[link.site_id]} />
                 <AvatarFallback>LI</AvatarFallback>
               </Avatar>
 
