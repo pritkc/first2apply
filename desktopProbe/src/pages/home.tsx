@@ -2,16 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { useError } from "@/hooks/error";
+import { useSettings } from "@/hooks/settings";
 import { useLinks } from "@/hooks/links";
 
-import {
-  getProbeSettings,
-  listJobs,
-  archiveJob,
-  openExternalUrl,
-  updateProbeSettings,
-} from "@/lib/electronMainSdk";
-import { JobScannerSettings } from "@/lib/types";
+import { listJobs, archiveJob, openExternalUrl } from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
 import { CronScheduleSkeleton } from "@/components/skeletons/CronScheduleSkeleton";
@@ -29,28 +23,10 @@ export function Home() {
   const { handleError } = useError();
   const { search } = useLocation();
 
+  const { links, isLoading } = useLinks();
+  const { settings, updateSettings } = useSettings();
+
   const [jobs, setJobs] = useState([]);
-  const [settings, setSettings] = useState<JobScannerSettings>({
-    cronRule: undefined,
-    useSound: false,
-    preventSleep: false,
-  });
-
-  const { links, isLoading } = useLinks(); // Use the useLinks hook
-
-  // Load settings on component mount
-  useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        const loadedSettings = await getProbeSettings();
-        setSettings(loadedSettings);
-      } catch (error) {
-        handleError(error);
-      }
-    };
-
-    asyncLoad();
-  }, []);
 
   // Update jobs when search changes
   useEffect(() => {
@@ -65,12 +41,11 @@ export function Home() {
     asyncLoad();
   }, [search]);
 
-  // Update cron rule when form is updated
+  // Update cron rule
   const onCronRuleChange = async (cronRule: string | undefined) => {
     try {
       const newSettings = { ...settings, cronRule };
-      await updateProbeSettings(newSettings);
-      setSettings(newSettings);
+      await updateSettings(newSettings);
     } catch (error) {
       handleError(error);
     }
