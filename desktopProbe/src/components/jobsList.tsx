@@ -15,7 +15,7 @@ export function JobsList({
 }) {
   const { siteLogos } = useSites();
 
-  return (
+  return jobs.length > 0 ? (
     <ul className="space-y-8">
       {jobs.map((job) => {
         return (
@@ -79,5 +79,7 @@ export function JobsList({
         );
       })}
     </ul>
+  ) : (
+    <p className="text-center">No jobs available yet.</p>
   );
 }
