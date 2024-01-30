@@ -80,6 +80,9 @@ export function JobsList({
       })}
     </ul>
   ) : (
-    <p className="text-center">No jobs available yet.</p>
+    <p className="text-center mt-10 max-w-md mx-auto">
+      No new job listings right now, but don't worry! We're on the lookout and
+      will update you as soon as we find anything.
+    </p>
   );
 }
