@@ -1,4 +1,10 @@
-import { app, BrowserWindow, safeStorage, nativeTheme } from "electron";
+import {
+  app,
+  BrowserWindow,
+  safeStorage,
+  nativeTheme,
+  session,
+} from "electron";
 import path from "path";
 import { ENV } from "./env";
 
@@ -111,6 +117,7 @@ function navigate({ path }: { path: string }) {
  */
 async function bootstrap() {
   try {
+    session.defaultSession.clearCache();
     if (!ENV.appBundleId) throw new Error(`missing APP_BUNDLE_ID`);
     if (process.platform === "win32") {
       app.setAppUserModelId(ENV.appBundleId);
