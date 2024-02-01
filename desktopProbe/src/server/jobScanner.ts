@@ -68,7 +68,11 @@ export class JobScanner {
 
       const htmls = await promiseAllSequence(links, async (link) => ({
         linkId: link.id,
-        content: await this._htmlDownloader.loadUrl(link.url),
+        content: await this._htmlDownloader.loadUrl(link.url).catch((error) => {
+          const errorMessage = getExceptionMessage(error);
+          console.error(errorMessage);
+          return `<html><body class="error">${errorMessage}<body><html>`;
+        }),
       }));
       console.log(`downloaded html for ${htmls.length} links`);
 

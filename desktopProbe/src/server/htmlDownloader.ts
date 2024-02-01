@@ -37,7 +37,7 @@ export class HtmlDownloader {
       await this._scraperWindow.webContents.executeJavaScript(
         'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});'
       );
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     const html = await this._scraperWindow.webContents.executeJavaScript(
