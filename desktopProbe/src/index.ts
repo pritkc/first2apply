@@ -138,7 +138,7 @@ async function handleDeepLink(url: string) {
 
     // handle password reset links, parse hash and extract supabase tokens
     if (path.startsWith("/reset-password")) {
-      const hash = path.replace("/reset-password#", "");
+      const hash = path.replace(/\/reset-password\/?#/i, "");
       const params = new URLSearchParams(hash);
       const allHashParams = Object.fromEntries(params.entries());
 
@@ -252,7 +252,7 @@ async function bootstrap() {
 
   // handle deep links on Windows
   app.on("second-instance", (event, commandLine) => {
-    handleDeepLink(commandLine[1]);
+    handleDeepLink(commandLine[commandLine.length - 1]);
   });
 }
 
