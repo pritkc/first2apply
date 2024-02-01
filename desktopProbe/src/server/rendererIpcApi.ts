@@ -94,6 +94,6 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle("open-external-url", async (event, { url }) =>
-    shell.openExternal(url)
+    _apiCall(async () => shell.openExternal(url))
   );
 }
