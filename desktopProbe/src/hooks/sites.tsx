@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { JobSite } from "../../../supabase/functions/_shared/types";
 import { useError } from "./error";
 import { listSites } from "@/lib/electronMainSdk";
+import { useSession } from "./session";
 
 /**
  * Context that stores supported sites.
@@ -26,6 +27,7 @@ export const useSites = () => {
 // Create a provider for the sites
 export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
   const { handleError } = useError();
+  const { isLoggedIn } = useSession();
 
   const [isLoading, setIsLoading] = useState(true);
   const [sites, setSites] = useState<JobSite[]>([]);
@@ -34,6 +36,7 @@ export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        if (!isLoggedIn) return;
         setSites(await listSites());
         setIsLoading(false);
       } catch (error) {
@@ -42,7 +45,7 @@ export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
     };
 
     asyncLoad();
-  }, []);
+  }, [isLoggedIn]);
 
   const siteLogos = Object.fromEntries(
     sites.map((site) => [site.id, site.logo_url])

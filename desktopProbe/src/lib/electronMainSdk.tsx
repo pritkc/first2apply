@@ -2,6 +2,17 @@ import { User } from "@supabase/supabase-js";
 import { JobScannerSettings } from "./types";
 import { Job, JobSite, Link } from "../../../supabase/functions/_shared/types";
 
+async function _mainProcessApiCall<T>(
+  channel: string,
+  params?: object
+): Promise<T> {
+  // @ts-ignore
+  const { data, error } = await window.electron.invoke(channel, params);
+  if (error) throw new Error(error);
+
+  return data;
+}
+
 /**
  * Create a new account with email and password.
  */
@@ -12,11 +23,13 @@ export async function signupWithEmail({
   email: string;
   password: string;
 }): Promise<User> {
-  // @ts-ignore
-  const { user } = await window.electron.invoke("signup-with-email", {
-    email,
-    password,
-  });
+  const { user } = await _mainProcessApiCall<{ user: User }>(
+    "signup-with-email",
+    {
+      email,
+      password,
+    }
+  );
 
   return user;
 }
@@ -31,12 +44,40 @@ export async function loginWithEmail({
   email: string;
   password: string;
 }): Promise<User> {
-  // @ts-ignore
-  const { user } = await window.electron.invoke("login-with-email", {
-    email,
-    password,
-  });
+  const { user } = await _mainProcessApiCall<{ user: User }>(
+    "login-with-email",
+    {
+      email,
+      password,
+    }
+  );
 
+  return user;
+}
+
+/**
+ * Send a password reset email.
+ */
+export async function sendPasswordResetEmail({
+  email,
+}: {
+  email: string;
+}): Promise<void> {
+  await _mainProcessApiCall("send-password-reset-email", { email });
+}
+
+/**
+ * Change the password of the current user.
+ */
+export async function changePassword({
+  password,
+}: {
+  password: string;
+}): Promise<User> {
+  const { user } = await _mainProcessApiCall<{ user: User }>(
+    "change-password",
+    { password }
+  );
   return user;
 }
 
@@ -44,16 +85,17 @@ export async function loginWithEmail({
  * Logout user session.
  */
 export async function logout(): Promise<void> {
-  // @ts-ignore
-  await window.electron.invoke("logout", {});
+  await _mainProcessApiCall("logout", {});
 }
 
 /**
  * Get user from the current session.
  */
 export async function getUser(): Promise<User | null> {
-  // @ts-ignore
-  const { user } = await window.electron.invoke("get-user", {});
+  const { user } = await _mainProcessApiCall<{ user: User | null }>(
+    "get-user",
+    {}
+  );
   return user;
 }
 
@@ -67,8 +109,7 @@ export async function createLink({
   title: string;
   url: string;
 }): Promise<Link> {
-  // @ts-ignore
-  const { link } = await window.electron.invoke("create-link", {
+  const { link } = await _mainProcessApiCall<{ link: Link }>("create-link", {
     title,
     url,
   });
@@ -79,8 +120,7 @@ export async function createLink({
  * List all links.
  */
 export async function listLinks(): Promise<Link[]> {
-  // @ts-ignore
-  const links = await window.electron.invoke("list-links", {});
+  const links = await _mainProcessApiCall<Link[]>("list-links", {});
   return links;
 }
 
@@ -88,16 +128,14 @@ export async function listLinks(): Promise<Link[]> {
  * Delete a link.
  */
 export async function deleteLink(linkId: number): Promise<void> {
-  // @ts-ignore
-  await window.electron.invoke("delete-link", { linkId });
+  await _mainProcessApiCall("delete-link", { linkId });
 }
 
 /**
  * List all jobs.
  */
 export async function listJobs(): Promise<Job[]> {
-  // @ts-ignore
-  const jobs = await window.electron.invoke("list-jobs", {});
+  const jobs = await _mainProcessApiCall<Job[]>("list-jobs", {});
   return jobs;
 }
 
@@ -105,17 +143,14 @@ export async function listJobs(): Promise<Job[]> {
  * Update the archived status of a job.
  */
 export async function archiveJob(jobId: number): Promise<void> {
-  // @ts-ignore
-  const job = await window.electron.invoke("archive-job", { jobId });
-  return job;
+  await _mainProcessApiCall("archive-job", { jobId });
 }
 
 /**
  * List all sites.
  */
 export async function listSites(): Promise<JobSite[]> {
-  // @ts-ignore
-  return await window.electron.invoke("list-sites", {});
+  return await _mainProcessApiCall<JobSite[]>("list-sites", {});
 }
 
 /**
@@ -124,8 +159,7 @@ export async function listSites(): Promise<JobSite[]> {
 export async function updateProbeSettings(
   settings: JobScannerSettings
 ): Promise<void> {
-  // @ts-ignore
-  await window.electron.invoke("update-job-scanner-settings", {
+  await _mainProcessApiCall("update-job-scanner-settings", {
     settings,
   });
 }
@@ -134,8 +168,10 @@ export async function updateProbeSettings(
  * Get the current settings of the probe.
  */
 export async function getProbeSettings(): Promise<JobScannerSettings> {
-  // @ts-ignore
-  const settings = await window.electron.invoke("get-job-scanner-settings", {});
+  const settings = await _mainProcessApiCall<JobScannerSettings>(
+    "get-job-scanner-settings",
+    {}
+  );
   return settings;
 }
 
@@ -143,6 +179,5 @@ export async function getProbeSettings(): Promise<JobScannerSettings> {
  * Open a url in the default browser.
  */
 export async function openExternalUrl(url: string): Promise<void> {
-  // @ts-ignore
-  await window.electron.invoke("open-external-url", { url });
+  await _mainProcessApiCall("open-external-url", { url });
 }

@@ -4,6 +4,7 @@ import {
   safeStorage,
   nativeTheme,
   session,
+  dialog,
 } from "electron";
 import path from "path";
 import { ENV } from "./env";
@@ -130,6 +131,32 @@ function navigate({ path }: { path: string }) {
   onActivate(); // make sure the window is visible
 }
 
+async function handleDeepLink(url: string) {
+  try {
+    onActivate();
+    const path = url.replace(`${APP_PROTOCOL}:/`, "");
+
+    // handle password reset links, parse hash and extract supabase tokens
+    if (path.startsWith("/reset-password")) {
+      const hash = path.replace("/reset-password#", "");
+      const params = new URLSearchParams(hash);
+      const allHashParams = Object.fromEntries(params.entries());
+
+      dialog.showMessageBoxSync({
+        type: "info",
+        message: `allHashParams: ${JSON.stringify(allHashParams)}`,
+      });
+
+      // @ts-ignore
+      await supabase.auth.setSession(allHashParams);
+    }
+
+    navigate({ path });
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+  }
+}
+
 /**
  * Bootstrap probe service.
  */
@@ -220,17 +247,12 @@ async function bootstrap() {
   // handle deep links on macOS and linux
   app.on("open-url", (event, url) => {
     event.preventDefault();
-    onActivate();
-    const path = url.replace(`${APP_PROTOCOL}:/`, "");
-    navigate({ path });
+    handleDeepLink(url);
   });
 
   // handle deep links on Windows
   app.on("second-instance", (event, commandLine) => {
-    onActivate();
-    const url = commandLine[1];
-    const path = url.replace(`${APP_PROTOCOL}:/`, "");
-    navigate({ path: commandLine[1] });
+    handleDeepLink(commandLine[1]);
   });
 }
 

@@ -9,10 +9,11 @@ import { HtmlDownloader } from "./htmlDownloader";
  */
 async function _apiCall<T>(method: () => Promise<T>) {
   try {
-    return await method();
+    const data = await method();
+    return { data };
   } catch (error) {
     console.error(getExceptionMessage(error));
-    throw error;
+    return { error: getExceptionMessage(error, true) };
   }
 }
 
@@ -36,6 +37,15 @@ export function initRendererIpcApi({
   ipcMain.handle("login-with-email", async (event, { email, password }) =>
     _apiCall(() => supabaseApi.loginWithEmail({ email, password }))
   );
+
+  ipcMain.handle("send-password-reset-email", async (event, { email }) =>
+    _apiCall(() => supabaseApi.sendPasswordResetEmail({ email }))
+  );
+
+  ipcMain.handle("change-password", async (event, { password }) =>
+    _apiCall(() => supabaseApi.updatePassword({ password }))
+  );
+
   ipcMain.handle("logout", async (event, {}) =>
     _apiCall(() => supabaseApi.logout())
   );

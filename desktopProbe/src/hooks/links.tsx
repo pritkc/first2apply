@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Link } from "../../../supabase/functions/_shared/types";
 import { useError } from "./error";
 import { createLink, deleteLink, listLinks } from "@/lib/electronMainSdk";
+import { useSession } from "./session";
 
 // Define the shape of the context data
 type LinksContextType = {
@@ -35,6 +36,7 @@ export const useLinks = () => {
 // Provider component
 export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
   const { handleError } = useError();
+  const { isLoggedIn } = useSession();
 
   const [isLoading, setIsLoading] = useState(true);
   const [links, setLinks] = useState<Link[]>([]);
@@ -43,6 +45,7 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
   useEffect(() => {
     const fetchLinks = async () => {
       try {
+        if (!isLoggedIn) return;
         const fetchedLinks = await listLinks();
         setLinks(fetchedLinks);
         setIsLoading(false);
@@ -52,7 +55,7 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
     };
 
     fetchLinks();
-  }, []);
+  }, [isLoggedIn]);
 
   // Create a new link
   const onCreateLink = async (newLink: Pick<Link, "title" | "url">) => {
