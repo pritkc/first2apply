@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { JobScannerSettings } from "@/lib/types";
 import { getProbeSettings, updateProbeSettings } from "@/lib/electronMainSdk";
 import { useError } from "@/hooks/error";
+import { useSession } from "./session";
 
 // Define the shape of the context data
 interface SettingsContextType {
@@ -27,6 +28,7 @@ export const useSettings = () => {
 // Provider component
 export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
   const { handleError } = useError();
+  const { isLoggedIn } = useSession();
 
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<JobScannerSettings>({
@@ -39,6 +41,7 @@ export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        if (!isLoggedIn) return;
         const fetchedSettings = await getProbeSettings();
         setSettings(fetchedSettings);
         setIsLoading(false);
@@ -48,7 +51,7 @@ export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
     };
 
     loadSettings();
-  }, []);
+  }, [isLoggedIn]);
 
   // Update settings
   const onUpdateSettings = async (newSettings: JobScannerSettings) => {

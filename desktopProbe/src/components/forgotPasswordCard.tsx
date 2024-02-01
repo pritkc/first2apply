@@ -14,50 +14,47 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Icons } from "./icons";
 
 // Schema definition for form validation using Zod
 const schema = z.object({
   email: z.string().email({ message: "Invalid email format" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
 });
 
 type LoginFormValues = z.infer<typeof schema>;
 
-export function LoginCard({
-  onLoginWithEmail,
+export function ForgotPasswordCard({
+  isSubmitting,
+  onResetPassword,
 }: {
-  onLoginWithEmail: (params: { email: string; password: string }) => void;
+  isSubmitting: boolean;
+  onResetPassword: (params: { email: string }) => void;
 }) {
   // Initialize form handling with react-hook-form and Zod for schema validation
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: "",
-      password: "",
     },
     mode: "onChange",
+    disabled: isSubmitting,
   });
 
   const onSubmit = (values: LoginFormValues) => {
-    // Check if email and password are present
-    if (values.email && values.password) {
-      onLoginWithEmail({ email: values.email, password: values.password });
+    if (values.email) {
+      onResetPassword({ email: values.email });
     }
   };
 
   return (
-    <Card className="min-w-80 space-y-2.5">
+    <Card className="w-80 space-y-2.5">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center tracking-wide">
-          Login
+          Reset Password
         </CardTitle>
         <CardDescription className="text-center">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-primary hover:underline">
-            Sign up
-          </Link>
+          Enter your email address and we will send you a link to reset your
+          password.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -80,30 +77,16 @@ export function LoginCard({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel>Password</FormLabel>
-                  <FormControl className="flex gap-2">
-                    <Input id="password" type="password" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pt-2 pb-7">
             <Button className="w-full" disabled={!form.formState.isValid}>
-              Log In
+              {isSubmitting && <Icons.spinner2 className="mr-1 animate-spin" />}
+              Send Reset Link
             </Button>
 
             <div className="justify-self-end">
-              <Link
-                to="/forgot-password"
-                className="text-xs w-fit text-muted-foreground"
-              >
-                Forgot password?
+              <Link to="/login" className="text-xs w-fit text-muted-foreground">
+                Back to login
               </Link>
             </div>
           </CardFooter>

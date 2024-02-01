@@ -1,5 +1,4 @@
-import { getExceptionMessage } from "../lib/error";
-import { SupabaseClient, User } from "@supabase/supabase-js";
+import { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
 import { DbSchema, Link } from "../../../supabase/functions/_shared/types";
 
 /**
@@ -27,11 +26,30 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Send a password reset email.
+   */
+  sendPasswordResetEmail({ email }: { email: string }) {
+    return this._supabaseApiCall(() =>
+      this._supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "first2apply://reset-password",
+      })
+    );
+  }
+
+  /**
+   * Update the password for the current user.
+   */
+  updatePassword({ password }: { password: string }) {
+    return this._supabaseApiCall(() =>
+      this._supabase.auth.updateUser({ password })
+    );
+  }
+
+  /**
    * Logout the current user.
    */
   async logout() {
-    const { error } = await this._supabase.auth.signOut();
-    return this._supabaseApiCall(async () => ({ error, data: null }));
+    return this._supabaseApiCall(async () => this._supabase.auth.signOut());
   }
 
   /**
@@ -72,21 +90,17 @@ export class F2aSupabaseApi {
    * Get all registered links for the current user.
    */
   listLinks() {
-    return this._supabaseApiCall(async () => {
-      const res = await this._supabase
-        .from("links")
-        .select("*")
-        .order("id", { ascending: false });
-      return res;
-    });
+    return this._supabaseApiCall(async () =>
+      this._supabase.from("links").select("*").order("id", { ascending: false })
+    );
   }
 
   /**
    * Delete a link.
    */
   deleteLink(linkId: string) {
-    return this._supabaseApiCall(
-      async () => await this._supabase.from("links").delete().eq("id", linkId)
+    return this._supabaseApiCall(async () =>
+      this._supabase.from("links").delete().eq("id", linkId)
     );
   }
 
@@ -144,16 +158,13 @@ export class F2aSupabaseApi {
   /**
    * Wrapper around a Supabase method that handles errors.
    */
-  private async _supabaseApiCall<T, E>(
-    method: () => Promise<{ data: T; error: E }>
+  private async _supabaseApiCall<T, E extends Error | PostgrestError>(
+    method: () => Promise<{ data?: T; error: E }>
   ) {
-    try {
-      const { data, error } = await method();
-      if (error) throw error;
+    // this._supabase.auth.updateUser({password: 'test'});
+    const { data, error } = await method();
+    if (error) throw error;
 
-      return data;
-    } catch (error) {
-      throw new Error(getExceptionMessage(error.message));
-    }
+    return data;
   }
 }
