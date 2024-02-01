@@ -19,15 +19,17 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
+const APP_PROTOCOL = "first2apply";
+
 // register the custom protocol
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient("first2apply", process.execPath, [
+    app.setAsDefaultProtocolClient(APP_PROTOCOL, process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
-  app.setAsDefaultProtocolClient("first2apply");
+  app.setAsDefaultProtocolClient(APP_PROTOCOL);
 }
 
 let mainWindow: BrowserWindow | null = null;
@@ -218,12 +220,16 @@ async function bootstrap() {
   // handle deep links on macOS and linux
   app.on("open-url", (event, url) => {
     event.preventDefault();
-    navigate({ path: url });
+    onActivate();
+    const path = url.replace(`${APP_PROTOCOL}:/`, "");
+    navigate({ path });
   });
 
   // handle deep links on Windows
   app.on("second-instance", (event, commandLine) => {
     onActivate();
+    const url = commandLine[1];
+    const path = url.replace(`${APP_PROTOCOL}:/`, "");
     navigate({ path: commandLine[1] });
   });
 }
