@@ -19,6 +19,17 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
+// register the custom protocol
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("first2apply", process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient("first2apply");
+}
+
 let mainWindow: BrowserWindow | null = null;
 const createMainWindow = (): void => {
   // Create the browser window.
@@ -78,6 +89,11 @@ function onActivate() {
 
     mainWindow?.show();
   }
+
+  if (mainWindow?.isMinimized()) {
+    mainWindow?.restore();
+  }
+
   mainWindow?.focus();
 }
 app.on("activate", () => {
@@ -117,6 +133,13 @@ function navigate({ path }: { path: string }) {
  */
 async function bootstrap() {
   try {
+    // do not allow multiple instances on Windows
+    const gotTheLock = app.requestSingleInstanceLock();
+    if (!gotTheLock) {
+      app.quit();
+      return;
+    }
+
     session.defaultSession.clearCache();
     if (!ENV.appBundleId) throw new Error(`missing APP_BUNDLE_ID`);
     if (process.platform === "win32") {
@@ -191,6 +214,18 @@ async function bootstrap() {
 
   // create the main window after everything is setup
   createMainWindow();
+
+  // handle deep links on macOS and linux
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    navigate({ path: url });
+  });
+
+  // handle deep links on Windows
+  app.on("second-instance", (event, commandLine) => {
+    onActivate();
+    navigate({ path: commandLine[1] });
+  });
 }
 
 /**
@@ -202,10 +237,13 @@ async function quit() {
     if (trayMenu) trayMenu.close();
 
     if (mainWindow) {
-      mainWindow.removeAllListeners();
       mainWindow.close();
     }
   } catch (error) {
     console.error(getExceptionMessage(error));
+  } finally {
+    if (mainWindow) {
+      mainWindow.close();
+    }
   }
 }

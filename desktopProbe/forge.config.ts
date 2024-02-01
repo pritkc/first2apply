@@ -19,6 +19,12 @@ const config: ForgeConfig = {
     asar: true,
     icon: path.join(__dirname, "packagers", "icons", "paper-plane"),
     appBundleId: process.env.APP_BUNDLE_ID,
+    protocols: [
+      {
+        name: "First 2 Apply",
+        schemes: ["first2apply"],
+      },
+    ],
   },
   rebuildConfig: {},
   makers: [
