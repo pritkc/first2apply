@@ -53,6 +53,6 @@ export class HtmlDownloader {
    * Close the headless window.
    */
   close() {
-    if (this._scraperWindow) this._scraperWindow.close();
+    this._scraperWindow?.close();
   }
 }

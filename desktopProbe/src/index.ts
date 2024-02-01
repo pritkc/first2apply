@@ -239,17 +239,23 @@ async function bootstrap() {
  */
 async function quit() {
   try {
-    htmlDownloader.close();
-    if (trayMenu) trayMenu.close();
+    console.log(`quitting...`);
 
-    if (mainWindow) {
-      mainWindow.close();
-    }
+    jobScanner?.close();
+    console.log(`closed job scanner`);
+
+    htmlDownloader.close();
+    console.log(`closed html downloader`);
+
+    trayMenu?.close();
+    console.log(`closed tray menu`);
+
+    mainWindow?.removeAllListeners();
+    console.log(`removed all main window listeners`);
   } catch (error) {
     console.error(getExceptionMessage(error));
   } finally {
-    if (mainWindow) {
-      mainWindow.close();
-    }
+    mainWindow?.close();
+    console.log(`closed main window`);
   }
 }
