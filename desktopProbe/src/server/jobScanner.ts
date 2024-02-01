@@ -130,6 +130,23 @@ export class JobScanner {
   }
 
   /**
+   * Close the scanner.
+   */
+  close() {
+    // end cron job
+    if (this._cronJob) {
+      console.log(`stopping cron schedule`);
+      this._cronJob.stop();
+    }
+
+    // stop power blocker
+    if (typeof this._prowerSaveBlockerId === "number") {
+      console.log(`stopping prevent sleep`);
+      powerSaveBlocker.stop(this._prowerSaveBlockerId);
+    }
+  }
+
+  /**
    * Persist settings to disk.
    */
   private _saveSettings() {
