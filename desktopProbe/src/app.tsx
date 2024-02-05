@@ -59,7 +59,7 @@ const router = createMemoryRouter(
       <Route path="/reset-password" element={<ResetPasswordPage />} />
     </>
   ),
-  { initialEntries: ["/help"] }
+  { initialEntries: ["/"] }
 );
 
 /**
