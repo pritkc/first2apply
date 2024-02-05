@@ -5,6 +5,7 @@ const navItems = [
   { name: "Jobs", path: "/" },
   { name: "Searches", path: "/links" },
   { name: "Settings", path: "/settings" },
+  { name: "Help", path: "/help" },
 ];
 
 export function Navbar({ isHidden = false }: { isHidden?: boolean }) {
