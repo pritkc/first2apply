@@ -1,12 +1,15 @@
-import { DefaultLayout } from "./defaultLayout";
-import { Switch } from "@/components/ui/switch";
 import { JobScannerSettings } from "@/lib/types";
-import { logout } from "@/lib/electronMainSdk";
+
 import { useError } from "@/hooks/error";
-import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/session";
 import { useSettings } from "@/hooks/settings";
+
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
+import { DefaultLayout } from "./defaultLayout";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+
+import { logout } from "@/lib/electronMainSdk";
 
 export function SettingsPage() {
   const { handleError } = useError();
@@ -46,12 +49,12 @@ export function SettingsPage() {
         Settings
       </h1>
       {/* sleep settings */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <p className="text-base">Prevent computer from entering sleep</p>
-          <span className="text-sm">
+      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+        <div className="space-y-1">
+          <p className="text-lg">Prevent computer from entering sleep</p>
+          <p className="text-sm font-light">
             First2Apply needs to run in the background to notify you of new jobs
-          </span>
+          </p>
         </div>
         <Switch
           checked={settings.preventSleep}
@@ -61,13 +64,13 @@ export function SettingsPage() {
         />
       </div>
 
-      {/* sleep settings */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <p className="text-base">Enable notification sounds</p>
-          <span className="text-sm">
+      {/* notification settings */}
+      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+        <div className="space-y-1">
+          <p className="text-lg">Enable notification sounds</p>
+          <p className="text-sm font-light">
             Play a sound when a new job is found in order to get your attention
-          </span>
+          </p>
         </div>
         <Switch
           checked={settings.useSound}
@@ -78,20 +81,20 @@ export function SettingsPage() {
       </div>
 
       {/* email notifications */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <p className="text-base">
+      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+        <div className="space-y-1">
+          <p className="text-lg">
             Email notifications <span className="italic">(coming soon)</span>
           </p>
-          <span className="text-sm">
+          <p className="text-sm font-light">
             Get notified of new jobs even when you are on the go
-          </span>
+          </p>
         </div>
         <Switch disabled value={""} />
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button className="w-16" variant="destructive" onClick={onLogout}>
+        <Button className="w-fit" variant="destructive" onClick={onLogout}>
           Logout
         </Button>
       </div>
