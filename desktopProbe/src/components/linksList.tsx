@@ -37,8 +37,8 @@ export function LinksList({
                   openExternalUrl(link.url);
                 }}
               >
-                <p className="font-medium">{link.title}</p>
-                <p className="text-xs text-muted-foreground text-clip whitespace-nowrap">
+                <p className="text-lg">{link.title}</p>
+                <p className="text-xs text-muted-foreground text-clip whitespace-nowrap font-extralight">
                   {link.url}
                 </p>
               </button>
