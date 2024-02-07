@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useError } from "@/hooks/error";
 import { useSettings } from "@/hooks/settings";
@@ -21,25 +21,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
  */
 export function Home() {
   const { handleError } = useError();
-  const { search } = useLocation();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Parse the query parameters to determine the active tab
+  const activeTab = new URLSearchParams(location.search).get("tab") || "new";
 
   const { links, isLoading } = useLinks();
   const { settings, updateSettings } = useSettings();
 
   const [jobs, setJobs] = useState([]);
 
-  // Update jobs when search changes
+  // Update jobs when location changes
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        console.log("search changed");
         setJobs(await listJobs());
       } catch (error) {
         handleError(error);
       }
     };
     asyncLoad();
-  }, [search]);
+  }, [location]);
 
   // Update cron rule
   const onCronRuleChange = async (cronRule: string | undefined) => {
@@ -51,17 +55,17 @@ export function Home() {
     }
   };
 
-  // Separate latest and archived jobs in two arrays
-  const { latestJobs, archivedJobs } = jobs.reduce(
+  // Separate new and archived jobs in two arrays
+  const { newJobs, archivedJobs } = jobs.reduce(
     (acc, job) => {
       if (job.archived) {
         acc.archivedJobs.push(job);
       } else {
-        acc.latestJobs.push(job);
+        acc.newJobs.push(job);
       }
       return acc;
     },
-    { latestJobs: [], archivedJobs: [] }
+    { newJobs: [], archivedJobs: [] }
   );
 
   // Update the archived status of a job
@@ -74,6 +78,12 @@ export function Home() {
     } catch (error) {
       handleError(error);
     }
+  };
+
+  // Handle tab change
+  const onTabChange = (tabValue: string) => {
+    // Update the URL with the new tab value
+    navigate(`?tab=${tabValue}`, { replace: true });
   };
 
   if (isLoading) {
@@ -129,18 +139,35 @@ export function Home() {
             onCronRuleChange={onCronRuleChange}
           />
 
-          <Tabs defaultValue="latest" className="w-full flex flex-col gap-6">
+          <Tabs
+            defaultValue={activeTab}
+            className="w-full flex flex-col gap-6"
+            onValueChange={(value) => onTabChange(value)}
+          >
             <TabsList className="h-fit p-2">
-              <TabsTrigger value="latest" className="px-6 py-4 flex-1">
-                Latest Jobs {`(${latestJobs.length})`}
+              <TabsTrigger value="new" className="px-6 py-4 flex-1">
+                New Jobs {`(${newJobs.length})`}
+              </TabsTrigger>
+              <TabsTrigger value="applied" className="px-6 py-4 flex-1">
+                Applied {`(${archivedJobs.length})`}
               </TabsTrigger>
               <TabsTrigger value="archived" className="px-6 py-4 flex-1">
                 Archived {`(${archivedJobs.length})`}
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="latest">
+
+            <TabsContent value="new">
               <JobsList
-                jobs={latestJobs}
+                jobs={newJobs}
+                onApply={(job) => {
+                  openExternalUrl(job.externalUrl);
+                }}
+                onArchive={onArchive}
+              />
+            </TabsContent>
+            <TabsContent value="applied">
+              <JobsList
+                jobs={newJobs}
                 onApply={(job) => {
                   openExternalUrl(job.externalUrl);
                 }}
