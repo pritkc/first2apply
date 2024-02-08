@@ -1,5 +1,9 @@
 import { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
-import { DbSchema, Link } from "../../../supabase/functions/_shared/types";
+import {
+  DbSchema,
+  JobStatus,
+  Link,
+} from "../../../supabase/functions/_shared/types";
 
 /**
  * Class used to interact with our Supabase API.
@@ -120,29 +124,58 @@ export class F2aSupabaseApi {
   /**
    * List all jobs for the current user.
    */
-  listJobs() {
-    return this._supabaseApiCall(
-      async () =>
-        await this._supabase
+  async listJobs({
+    status,
+    limit = 50,
+    afterId,
+  }: {
+    status: JobStatus;
+    limit?: number;
+    afterId?: number;
+  }) {
+    const jobs = await this._supabaseApiCall(async () => {
+      const q = this._supabase
+        .from("jobs")
+        .select("*")
+        .eq("status", status)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (afterId) {
+        q.gt("id", afterId);
+      }
+
+      return await q;
+    });
+
+    // also return counters for grouped statuses
+    const statusses: JobStatus[] = ["new", "archived", "applied"];
+    const counters = await Promise.all(
+      statusses.map(async (status) => {
+        const { count, error } = await this._supabase
           .from("jobs")
-          .select("*")
-          // .eq("visible", true)
-          .order("created_at", { ascending: false })
-          .limit(200)
+          .select("*", { count: "exact", head: true })
+          .eq("status", status);
+        if (error) throw error;
+
+        return { status, count };
+      })
     );
+
+    return {
+      jobs,
+      new: counters[0].count,
+      archived: counters[1].count,
+      applied: counters[2].count,
+    };
   }
 
   /**
-   *
-   * Update the archived status of a job.
+   * Update the status of a job.
    */
-  archiveJob(jobId: string) {
+  updateJobStatus({ jobId, status }: { jobId: string; status: JobStatus }) {
     return this._supabaseApiCall(
       async () =>
-        await this._supabase
-          .from("jobs")
-          .update({ archived: true })
-          .eq("id", jobId)
+        await this._supabase.from("jobs").update({ status }).eq("id", jobId)
     );
   }
 

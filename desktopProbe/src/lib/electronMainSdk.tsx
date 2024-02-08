@@ -1,6 +1,11 @@
 import { User } from "@supabase/supabase-js";
 import { JobScannerSettings } from "./types";
-import { Job, JobSite, Link } from "../../../supabase/functions/_shared/types";
+import {
+  Job,
+  JobSite,
+  JobStatus,
+  Link,
+} from "../../../supabase/functions/_shared/types";
 
 async function _mainProcessApiCall<T>(
   channel: string,
@@ -134,22 +139,46 @@ export async function deleteLink(linkId: number): Promise<void> {
 /**
  * List all jobs.
  */
-export async function listJobs(): Promise<Job[]> {
-  const jobs = await _mainProcessApiCall<Job[]>("list-jobs", {});
-  return jobs;
+export async function listJobs({
+  status,
+  limit,
+  afterId,
+}: {
+  status: JobStatus;
+  limit?: number;
+  afterId?: number;
+}) {
+  const result = await _mainProcessApiCall<{
+    jobs: Job[];
+    new: number;
+    applied: number;
+    archived: number;
+  }>("list-jobs", {
+    status,
+    limit,
+    afterId,
+  });
+
+  return result;
 }
 
 /**
  * Update the archived status of a job.
  */
-export async function archiveJob(jobId: number): Promise<void> {
-  await _mainProcessApiCall("archive-job", { jobId });
+export async function updateJobStatus({
+  jobId,
+  status,
+}: {
+  jobId: number;
+  status: JobStatus;
+}): Promise<void> {
+  await _mainProcessApiCall("update-job-status", { jobId, status });
 }
 
 /**
  * List all sites.
  */
-export async function listSites(): Promise<JobSite[]> {
+export async function listSites() {
   return await _mainProcessApiCall<JobSite[]>("list-sites", {});
 }
 

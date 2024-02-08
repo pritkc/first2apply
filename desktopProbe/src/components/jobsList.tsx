@@ -62,7 +62,7 @@ export function JobsList({
                 >
                   Apply
                 </Button>
-                {!job.archived && (
+                {job.status !== "archived" && (
                   <Button
                     variant="outline"
                     size="sm"

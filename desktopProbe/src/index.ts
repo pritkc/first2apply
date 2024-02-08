@@ -238,7 +238,9 @@ async function bootstrap() {
     });
 
     // perform an initial scan
-    // await jobScanner.scanLinks();
+    jobScanner.scanLinks().catch((error) => {
+      console.error(getExceptionMessage(error));
+    });
   } catch (error) {
     console.error(getExceptionMessage(error));
   }

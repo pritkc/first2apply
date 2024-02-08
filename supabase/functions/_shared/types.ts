@@ -17,6 +17,7 @@ export type Link = {
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
+export type JobStatus = "new" | "applied" | "archived";
 export type Job = {
   id: number;
   user_id: string;
@@ -33,7 +34,7 @@ export type Job = {
   salary?: string;
   tags?: string[];
 
-  archived: boolean;
+  status: JobStatus;
 
   created_at: Date;
   updated_at: Date;
@@ -69,9 +70,9 @@ export type DbSchema = {
           | "salary"
           | "tags"
           | "jobType"
-          | "archived"
+          | "status"
         >;
-        Update: Pick<Job, "archived">;
+        Update: Pick<Job, "status">;
       };
     };
     Views: {};

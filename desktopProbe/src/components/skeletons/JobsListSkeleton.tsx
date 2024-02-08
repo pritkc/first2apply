@@ -4,7 +4,7 @@ import { Skeleton } from "../ui/skeleton";
 export const JobsListSkeleton: FC = () => {
   return (
     <ul className="space-y-8">
-      {Array.from({ length: 10 }).map((_, index) => (
+      {Array.from({ length: 5 }).map((_, index) => (
         <li key={index} className="space-y-8">
           <div className="flex items-center gap-4">
             {/* Avatar */}
