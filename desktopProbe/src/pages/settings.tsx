@@ -13,7 +13,7 @@ import { logout } from "@/lib/electronMainSdk";
 
 export function SettingsPage() {
   const { handleError } = useError();
-  const { logout: resetUser } = useSession();
+  const { logout: resetUser, user } = useSession();
   const { isLoading, settings, updateSettings } = useSettings();
 
   // Update settings
@@ -46,7 +46,7 @@ export function SettingsPage() {
   return (
     <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-3">
       <h1 className="text-2xl font-medium tracking-wide pb-3 w-fit">
-        Settings
+        Settings ({user.email})
       </h1>
       {/* sleep settings */}
       <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
