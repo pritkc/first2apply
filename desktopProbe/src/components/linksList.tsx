@@ -17,7 +17,7 @@ export function LinksList({
 
   return (
     <section className="space-y-2">
-      <h2 className="text-2xl font-medium tracking-wide">Your searches</h2>
+      <h2 className="text-2xl tracking-wide">Your searches</h2>
       <hr className="w-full text-muted-foreground" />
       <ul className="space-y-6 pt-2">
         {links.map((link) => {

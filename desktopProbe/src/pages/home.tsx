@@ -89,27 +89,6 @@ export function Home() {
     }
   };
 
-  // Update the archived status of a job
-  const onArchive = async (jobId: number) => {
-    try {
-      await updateJobStatus({ jobId, status: "archived" });
-
-      setListing((listing) => {
-        const jobs = listing.jobs.filter((job) => job.id !== jobId);
-
-        return {
-          ...listing,
-          jobs,
-          new: status === "new" ? listing.new - 1 : listing.new,
-          applied: status === "applied" ? listing.applied - 1 : listing.applied,
-          archived: listing.archived + 1,
-        };
-      });
-    } catch (error) {
-      handleError({ error, title: "Failed to archive job" });
-    }
-  };
-
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
     try {
       await updateJobStatus({ jobId, status: newStatus });
@@ -258,7 +237,7 @@ export function Home() {
                       onApply={(job) => {
                         openExternalUrl(job.externalUrl);
                       }}
-                      onArchive={onArchive}
+                      onUpdateJobStatus={onUpdateJobStatus}
                       onLoadMore={onLoadMore}
                     />
                   )}
