@@ -1,6 +1,14 @@
 import { useSites } from "@/hooks/sites";
-import { Job } from "../../../supabase/functions/_shared/types";
+import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { ArchiveIcon, CheckIcon } from "@radix-ui/react-icons";
+import {
+  TooltipProvider,
+  TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+} from "./ui/tooltip";
 import { Icons } from "@/components/icons";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -10,13 +18,13 @@ export function JobsList({
   jobs,
   hasMore,
   onApply,
-  onArchive,
   onLoadMore,
+  onUpdateJobStatus,
 }: {
   jobs: Job[];
   hasMore: boolean;
   onApply: (job: Job) => void;
-  onArchive: (jobId: number) => void;
+  onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
   onLoadMore: () => void;
 }) {
   const { siteLogos } = useSites();
@@ -24,7 +32,7 @@ export function JobsList({
   return jobs.length > 0 ? (
     <ul className="space-y-8">
       <InfiniteScroll
-        dataLength={jobs.length} //This is important field to render the next data
+        dataLength={jobs.length}
         next={onLoadMore}
         hasMore={hasMore}
         loader={<Icons.spinner2 />}
@@ -76,15 +84,43 @@ export function JobsList({
                   >
                     Apply
                   </Button>
+                  {job.status !== "applied" && (
+                    <TooltipProvider delayDuration={500}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-8"
+                            onClick={() => onUpdateJobStatus(job.id, "applied")}
+                          >
+                            <CheckIcon className="h-5 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+                          </Button>
+                        </TooltipTrigger>
+
+                        <TooltipContent>Mark as applied</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   {job.status !== "archived" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full px-4"
-                      onClick={() => onArchive(job.id)}
-                    >
-                      Archive
-                    </Button>
+                    <TooltipProvider delayDuration={500}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-8"
+                            onClick={() =>
+                              onUpdateJobStatus(job.id, "archived")
+                            }
+                          >
+                            <ArchiveIcon className="h-4 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+                          </Button>
+                        </TooltipTrigger>
+
+                        <TooltipContent>Archive</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </div>

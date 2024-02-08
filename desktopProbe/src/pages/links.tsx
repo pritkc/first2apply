@@ -42,7 +42,9 @@ export function LinksPage() {
   return (
     <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
       <CreateLink onCreateLink={onCreateLink} />
-      <LinksList links={links} onDeleteLink={handleDeleteLink} />
+      {links.length > 0 && (
+        <LinksList links={links} onDeleteLink={handleDeleteLink} />
+      )}
     </DefaultLayout>
   );
 }
