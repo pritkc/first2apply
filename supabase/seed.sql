@@ -40,7 +40,7 @@ public.jobs (
   salary text null,
   tags text[] null,
   "jobType" text null,
-  status public.Job Status not null default 'new'::"Job Status",
+  status public."Job Status" not null default 'new'::"Job Status",
   constraint jobs_pkey primary key (id),
   constraint jobs_externalId_key unique ("externalId"),
   constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
