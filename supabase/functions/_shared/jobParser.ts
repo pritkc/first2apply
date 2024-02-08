@@ -33,7 +33,7 @@ function parseLocation({
 
 type ParsedJob = Omit<
   Job,
-  "id" | "user_id" | "visible" | "archived" | "created_at" | "updated_at"
+  "id" | "user_id" | "visible" | "status" | "created_at" | "updated_at"
 >;
 
 /**

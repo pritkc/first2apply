@@ -113,7 +113,7 @@ export class JobScanner {
 
     // Show the notification
     notification.on("click", () => {
-      this._onNavigate({ path: "/" });
+      this._onNavigate({ path: "/?status=new" });
     });
     notification.show();
   }

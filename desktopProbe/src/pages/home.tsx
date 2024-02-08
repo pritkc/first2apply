@@ -5,7 +5,11 @@ import { useError } from "@/hooks/error";
 import { useSettings } from "@/hooks/settings";
 import { useLinks } from "@/hooks/links";
 
-import { listJobs, archiveJob, openExternalUrl } from "@/lib/electronMainSdk";
+import {
+  listJobs,
+  updateJobStatus,
+  openExternalUrl,
+} from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
 import { CronScheduleSkeleton } from "@/components/skeletons/CronScheduleSkeleton";
@@ -15,6 +19,10 @@ import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
 import { CronSchedule } from "@/components/cronSchedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+
+const JOB_BATCH_SIZE = 20;
+const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
 
 /**
  * Component that renders the home page.
@@ -25,25 +33,45 @@ export function Home() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { links, isLoading: isLoadingLinks } = useLinks();
+  const {
+    settings,
+    updateSettings,
+    isLoading: isLoadingSettings,
+  } = useSettings();
+
   // Parse the query parameters to determine the active tab
-  const activeTab = new URLSearchParams(location.search).get("tab") || "new";
+  const status = (new URLSearchParams(location.search).get("status") ||
+    "new") as JobStatus;
 
-  const { links, isLoading } = useLinks();
-  const { settings, updateSettings } = useSettings();
-
-  const [jobs, setJobs] = useState([]);
+  const [listing, setListing] = useState<{
+    isLoading: boolean;
+    jobs: Job[];
+    new: number;
+    applied: number;
+    archived: number;
+  }>({
+    isLoading: true,
+    jobs: [],
+    new: 0,
+    applied: 0,
+    archived: 0,
+  });
 
   // Update jobs when location changes
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        setJobs(await listJobs());
+        setListing((listing) => ({ ...listing, isLoading: true }));
+        const result = await listJobs({ status, limit: JOB_BATCH_SIZE });
+
+        setListing({ ...result, isLoading: false });
       } catch (error) {
-        handleError(error);
+        handleError({ error, title: "Failed to load jobs" });
       }
     };
     asyncLoad();
-  }, [location]);
+  }, [status]);
 
   // Update cron rule
   const onCronRuleChange = async (cronRule: string | undefined) => {
@@ -51,42 +79,37 @@ export function Home() {
       const newSettings = { ...settings, cronRule };
       await updateSettings(newSettings);
     } catch (error) {
-      handleError(error);
+      handleError({ error, title: "Failed to update notification frequency" });
     }
   };
-
-  // Separate new and archived jobs in two arrays
-  const { newJobs, archivedJobs } = jobs.reduce(
-    (acc, job) => {
-      if (job.archived) {
-        acc.archivedJobs.push(job);
-      } else {
-        acc.newJobs.push(job);
-      }
-      return acc;
-    },
-    { newJobs: [], archivedJobs: [] }
-  );
 
   // Update the archived status of a job
   const onArchive = async (jobId: number) => {
     try {
-      await archiveJob(jobId);
+      await updateJobStatus({ jobId, status: "archived" });
 
-      // Update the local state to reflect the change
-      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, archived: true } : j)));
+      setListing((listing) => {
+        const jobs = listing.jobs.filter((job) => job.id !== jobId);
+
+        return {
+          ...listing,
+          jobs,
+          new: status === "new" ? listing.new - 1 : listing.new,
+          applied: status === "applied" ? listing.applied - 1 : listing.applied,
+          archived: listing.archived + 1,
+        };
+      });
     } catch (error) {
-      handleError(error);
+      handleError({ error, title: "Failed to archive job" });
     }
   };
 
   // Handle tab change
   const onTabChange = (tabValue: string) => {
-    // Update the URL with the new tab value
-    navigate(`?tab=${tabValue}`, { replace: true });
+    navigate(`?status=${tabValue}`);
   };
 
-  if (isLoading) {
+  if (isLoadingLinks || isLoadingSettings) {
     return (
       <DefaultLayout className="px-6 xl:px-0 flex flex-col py-6 md:p-10">
         <div className="space-y-10">
@@ -140,49 +163,39 @@ export function Home() {
           />
 
           <Tabs
-            defaultValue={activeTab}
+            value={status}
             className="w-full flex flex-col gap-6"
             onValueChange={(value) => onTabChange(value)}
           >
             <TabsList className="h-fit p-2">
               <TabsTrigger value="new" className="px-6 py-4 flex-1">
-                New Jobs {`(${newJobs.length})`}
+                New Jobs {`(${listing.new})`}
               </TabsTrigger>
               <TabsTrigger value="applied" className="px-6 py-4 flex-1">
-                Applied {`(${archivedJobs.length})`}
+                Applied {`(${listing.applied})`}
               </TabsTrigger>
               <TabsTrigger value="archived" className="px-6 py-4 flex-1">
-                Archived {`(${archivedJobs.length})`}
+                Archived {`(${listing.archived})`}
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="new">
-              <JobsList
-                jobs={newJobs}
-                onApply={(job) => {
-                  openExternalUrl(job.externalUrl);
-                }}
-                onArchive={onArchive}
-              />
-            </TabsContent>
-            <TabsContent value="applied">
-              <JobsList
-                jobs={newJobs}
-                onApply={(job) => {
-                  openExternalUrl(job.externalUrl);
-                }}
-                onArchive={onArchive}
-              />
-            </TabsContent>
-            <TabsContent value="archived">
-              <JobsList
-                jobs={archivedJobs}
-                onApply={(job) => {
-                  openExternalUrl(job.externalUrl);
-                }}
-                onArchive={onArchive}
-              />
-            </TabsContent>
+            {ALL_JOB_STATUSES.map((statusItem) => {
+              return (
+                <TabsContent key={statusItem} value={statusItem}>
+                  {listing.isLoading || statusItem !== status ? (
+                    <JobsListSkeleton />
+                  ) : (
+                    <JobsList
+                      jobs={listing.jobs}
+                      onApply={(job) => {
+                        openExternalUrl(job.externalUrl);
+                      }}
+                      onArchive={onArchive}
+                    />
+                  )}
+                </TabsContent>
+              );
+            })}
           </Tabs>
         </div>
       )}

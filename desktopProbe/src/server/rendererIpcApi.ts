@@ -72,12 +72,12 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.deleteLink(linkId))
   );
 
-  ipcMain.handle("list-jobs", async (event, {}) =>
-    _apiCall(() => supabaseApi.listJobs())
+  ipcMain.handle("list-jobs", async (event, { status, limit, afterId }) =>
+    _apiCall(() => supabaseApi.listJobs({ status, limit, afterId }))
   );
 
-  ipcMain.handle("archive-job", async (event, { jobId }) =>
-    _apiCall(() => supabaseApi.archiveJob(jobId))
+  ipcMain.handle("update-job-status", async (event, { jobId, status }) =>
+    _apiCall(() => supabaseApi.updateJobStatus({ jobId, status }))
   );
 
   ipcMain.handle("list-sites", async (event) =>

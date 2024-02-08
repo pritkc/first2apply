@@ -70,7 +70,12 @@ function App() {
   useEffect(() => {
     // @ts-ignore
     window.electron?.on("navigate", (_, { path }) => {
-      router.navigate(`${path}?r=${Date.now()}`, {});
+      // add a cache buster to the path to force a reload
+      let pathWithRefresh = path;
+      const separator = path.includes("?") ? "&" : "?";
+      pathWithRefresh += `${separator}r=${Date.now().toString()}`;
+
+      router.navigate(pathWithRefresh.toString(), {});
     });
   }, []);
 

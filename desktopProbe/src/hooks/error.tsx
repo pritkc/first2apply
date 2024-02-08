@@ -13,16 +13,23 @@ export function useError() {
   const handleError = ({
     error,
     title = "Oops, something went wrong!",
+    silent = false,
   }: {
     error: unknown;
     title?: string;
+    silent?: boolean;
   }) => {
     console.error(getExceptionMessage(error));
-    toast({
-      title,
-      description: getExceptionMessage(error, true),
-      variant: "destructive",
-    });
+
+    if (!silent) {
+      toast({
+        title,
+        description: getExceptionMessage(error, true),
+        variant: "destructive",
+      });
+    }
+
+    setError(error);
   };
 
   const resetError = () => {

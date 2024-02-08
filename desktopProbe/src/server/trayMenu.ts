@@ -28,7 +28,7 @@ export class TrayMenu {
         label: "Jobs",
         type: "normal",
         click: () => {
-          onNavigate({ path: "/" });
+          onNavigate({ path: "/?status=new" });
         },
       },
       {
