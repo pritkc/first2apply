@@ -148,12 +148,14 @@ async function handleDeepLink(url: string) {
       });
 
       // @ts-ignore
-      await supabase.auth.setSession(allHashParams);
+      const { error } = await supabase.auth.setSession(allHashParams);
+      if (error) throw error;
     }
 
     navigate({ path });
   } catch (error) {
     console.error(getExceptionMessage(error));
+    dialog.showErrorBox("Error", getExceptionMessage(error, true));
   }
 }
 
