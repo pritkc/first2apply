@@ -110,6 +110,49 @@ export function Home() {
     }
   };
 
+  const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
+    try {
+      await updateJobStatus({ jobId, status: newStatus });
+
+      setListing((listing) => {
+        const oldJob = listing.jobs.find((job) => job.id === jobId);
+        const jobs = listing.jobs.filter((job) => job.id !== jobId);
+
+        const tabToDecrement = oldJob?.status as JobStatus;
+        const tabToIncrement = newStatus;
+
+        const newCount =
+          tabToIncrement === "new"
+            ? listing.new + 1
+            : tabToDecrement === "new"
+            ? listing.new - 1
+            : listing.new;
+        const appliedCount =
+          tabToIncrement === "applied"
+            ? listing.applied + 1
+            : tabToDecrement === "applied"
+            ? listing.applied - 1
+            : listing.applied;
+        const archivedCount =
+          tabToIncrement === "archived"
+            ? listing.archived + 1
+            : tabToDecrement === "archived"
+            ? listing.archived - 1
+            : listing.archived;
+
+        return {
+          ...listing,
+          jobs,
+          new: newCount,
+          applied: appliedCount,
+          archived: archivedCount,
+        };
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to update job status" });
+    }
+  };
+
   // Handle tab change
   const onTabChange = (tabValue: string) => {
     navigate(`?status=${tabValue}`);
