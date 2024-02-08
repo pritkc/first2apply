@@ -51,8 +51,10 @@ const createMainWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  if (ENV.nodeEnv === "development") {
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+  }
 
   mainWindow.on("close", (event) => {
     event.preventDefault();
