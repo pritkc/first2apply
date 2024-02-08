@@ -46,12 +46,14 @@ export function Home() {
 
   const [listing, setListing] = useState<{
     isLoading: boolean;
+    hasMore: boolean;
     jobs: Job[];
     new: number;
     applied: number;
     archived: number;
   }>({
     isLoading: true,
+    hasMore: true,
     jobs: [],
     new: 0,
     applied: 0,
@@ -65,7 +67,11 @@ export function Home() {
         setListing((listing) => ({ ...listing, isLoading: true }));
         const result = await listJobs({ status, limit: JOB_BATCH_SIZE });
 
-        setListing({ ...result, isLoading: false });
+        setListing({
+          ...result,
+          isLoading: false,
+          hasMore: result.jobs.length === JOB_BATCH_SIZE,
+        });
       } catch (error) {
         handleError({ error, title: "Failed to load jobs" });
       }
@@ -107,6 +113,24 @@ export function Home() {
   // Handle tab change
   const onTabChange = (tabValue: string) => {
     navigate(`?status=${tabValue}`);
+  };
+
+  const onLoadMore = async () => {
+    try {
+      const result = await listJobs({
+        status,
+        limit: JOB_BATCH_SIZE,
+        afterId: listing.jobs[listing.jobs.length - 1].id,
+      });
+
+      setListing((listing) => ({
+        ...listing,
+        jobs: [...listing.jobs, ...result.jobs],
+        hasMore: result.jobs.length === JOB_BATCH_SIZE,
+      }));
+    } catch (error) {
+      handleError({ error, title: "Failed to load more jobs" });
+    }
   };
 
   if (isLoadingLinks || isLoadingSettings) {
@@ -187,10 +211,12 @@ export function Home() {
                   ) : (
                     <JobsList
                       jobs={listing.jobs}
+                      hasMore={listing.hasMore}
                       onApply={(job) => {
                         openExternalUrl(job.externalUrl);
                       }}
                       onArchive={onArchive}
+                      onLoadMore={onLoadMore}
                     />
                   )}
                 </TabsContent>

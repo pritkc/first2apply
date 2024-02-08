@@ -138,10 +138,10 @@ export class F2aSupabaseApi {
         .from("jobs")
         .select("*")
         .eq("status", status)
-        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(limit);
       if (afterId) {
-        q.gt("id", afterId);
+        q.lt("id", afterId);
       }
 
       return await q;
