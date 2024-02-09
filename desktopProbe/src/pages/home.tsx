@@ -80,6 +80,43 @@ export function Home() {
     asyncLoad();
   }, [status]);
 
+  // effect used to load a new batch of jobs after updating the status of a job
+  // and there are still jobs to load
+  useEffect(() => {
+    const asyncLoad = async () => {
+      try {
+        if (
+          !listing.isLoading &&
+          listing.jobs.length < JOB_BATCH_SIZE / 2 &&
+          listing.hasMore &&
+          listing.nextPageToken
+        ) {
+          setListing((l) => ({ ...l, isLoading: true }));
+          const result = await listJobs({
+            status,
+            limit: JOB_BATCH_SIZE,
+            after: listing.nextPageToken,
+          });
+          setListing((l) => ({
+            ...result,
+            jobs: l.jobs.concat(result.jobs),
+            isLoading: false,
+            hasMore: !!result.nextPageToken,
+          }));
+        }
+      } catch (error) {
+        handleError({ error });
+      }
+    };
+
+    asyncLoad();
+  }, [listing]);
+
+  // Handle tab change
+  const onTabChange = (tabValue: string) => {
+    navigate(`?status=${tabValue}`);
+  };
+
   // Update cron rule
   const onCronRuleChange = async (cronRule: string | undefined) => {
     try {
@@ -131,11 +168,6 @@ export function Home() {
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
     }
-  };
-
-  // Handle tab change
-  const onTabChange = (tabValue: string) => {
-    navigate(`?status=${tabValue}`);
   };
 
   const onLoadMore = async () => {
