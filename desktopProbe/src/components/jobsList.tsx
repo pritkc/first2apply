@@ -30,16 +30,17 @@ export function JobsList({
   const { siteLogos } = useSites();
 
   return jobs.length > 0 ? (
-    <ul className="space-y-8">
+    <ul className="space-y-6">
       <InfiniteScroll
         dataLength={jobs.length}
         next={onLoadMore}
         hasMore={hasMore}
         loader={<Icons.spinner2 />}
+        className="space-y-6"
       >
         {jobs.map((job) => {
           return (
-            <li key={job.id} className="space-y-8">
+            <li key={job.id} className="space-y-6">
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={siteLogos[job.siteId]} />

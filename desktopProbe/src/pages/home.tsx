@@ -158,16 +158,14 @@ export function Home() {
   if (isLoadingLinks || isLoadingSettings) {
     return (
       <DefaultLayout className="px-6 xl:px-0 flex flex-col py-6 md:p-10">
-        <div className="space-y-10">
-          <CronScheduleSkeleton />
+        <CronScheduleSkeleton />
 
-          <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-2 p-2 animate-pulse">
-            <Skeleton className="px-6 py-4 flex-1" />
-            <Skeleton className="px-6 py-4 flex-1" />
-          </div>
-
-          <JobsListSkeleton />
+        <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-2 p-2 animate-pulse mt-10 mb-6">
+          <Skeleton className="px-6 py-4 flex-1" />
+          <Skeleton className="px-6 py-4 flex-1" />
         </div>
+
+        <JobsListSkeleton />
       </DefaultLayout>
     );
   }
@@ -210,7 +208,7 @@ export function Home() {
 
           <Tabs
             value={status}
-            className="w-full flex flex-col gap-6"
+            className="w-full flex flex-col gap-5"
             onValueChange={(value) => onTabChange(value)}
           >
             <TabsList className="h-fit p-2">
