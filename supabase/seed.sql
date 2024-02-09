@@ -46,7 +46,7 @@ public.jobs (
   constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
   constraint jobs_siteId_fkey foreign key ("siteId") references sites (id) on update restrict on delete restrict
 ) tablespace pg_default;
-create index jobs_user_id_status_idx on public.jobs (user_id, status);
+create index jobs_user_id_updated_at_id_status_idx on public.jobs (user_id, updated_at desc, id desc, status);
 
 alter table public.sites enable row level security;
 alter table public.jobs enable row level security;
@@ -75,3 +75,30 @@ for all
 to authenticated 
 using (auth.uid() = user_id) 
 with check (auth.uid() = user_id);
+
+-- create custom DB functions
+create or replace function list_jobs(jobs_status "Job Status", jobs_after text, jobs_page_size integer)
+returns setof jobs as $$
+declare
+  after_id integer;
+  after_updated_at timestamp;
+begin
+  if jobs_after is not null then
+    after_id := split_part(jobs_after, '!', 1)::integer;
+    after_updated_at := split_part(jobs_after, '!', 2)::timestamp;
+    return query
+    select *
+    from jobs
+    where status = jobs_status and (updated_at, id) < (after_updated_at, after_id)
+    order by updated_at desc, id desc
+    limit jobs_page_size;
+  else
+    return query
+    select *
+    from jobs
+    where status = jobs_status
+    order by updated_at desc, id desc
+    limit jobs_page_size;
+  end if;
+end; $$
+language plpgsql;

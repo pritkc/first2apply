@@ -1,6 +1,7 @@
 import { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
 import {
   DbSchema,
+  Job,
   JobStatus,
   Link,
 } from "../../../supabase/functions/_shared/types";
@@ -134,23 +135,18 @@ export class F2aSupabaseApi {
     limit?: number;
     after?: string;
   }) {
-    const jobs = await this._supabaseApiCall(async () => {
-      const q = this._supabase
-        .from("jobs")
-        .select("*")
-        .eq("status", status)
-        .order("updated_at", { ascending: false })
-        .order("id", { ascending: false })
-        .limit(limit);
-      if (after) {
-        const [afterId, afterUpdatedAt] = after.split("!");
+    const jobs = await this._supabaseApiCall<Job[], PostgrestError>(
+      async () => {
+        // @ts-ignore
+        const res = await this._supabase.rpc("list_jobs", {
+          jobs_status: status,
+          jobs_after: after ?? null,
+          jobs_page_size: limit,
+        });
 
-        q.lte("updated_at", afterUpdatedAt);
-        q.lt("id", afterId);
+        return res;
       }
-
-      return await q;
-    });
+    );
 
     // also return counters for grouped statuses
     const statusses: JobStatus[] = ["new", "archived", "applied"];
