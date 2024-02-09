@@ -148,11 +148,6 @@ async function handleDeepLink(url: string) {
       const params = new URLSearchParams(hash);
       const allHashParams = Object.fromEntries(params.entries());
 
-      dialog.showMessageBoxSync({
-        type: "info",
-        message: `allHashParams: ${JSON.stringify(allHashParams)}`,
-      });
-
       // @ts-ignore
       const { error } = await supabase.auth.setSession(allHashParams);
       if (error) throw error;
