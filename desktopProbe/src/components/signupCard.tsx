@@ -1,10 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-import { useSession } from "@/hooks/session";
-import { signupWithEmail } from "@/lib/electronMainSdk";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import {
   Card,
   CardContent,
@@ -14,9 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { Button } from "@/components/ui/button";
-import { useError } from "@/hooks/error";
+import { Icons } from "./icons";
 
 // Schema definition for form validation using Zod
 const schema = z.object({
@@ -28,30 +26,25 @@ const schema = z.object({
 
 type SignupFormValues = z.infer<typeof schema>;
 
-export function SignupCard() {
-  const { handleError } = useError();
-  const { login } = useSession();
-  const navigate = useNavigate();
-
+export function SignupCard({
+  onSignupWithEmail,
+  isSubmitting,
+}: {
+  onSignupWithEmail: (params: { email: string; password: string }) => void;
+  isSubmitting: boolean;
+}) {
+  // Initialize form handling with react-hook-form and Zod for schema validation
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
     mode: "onChange",
+    disabled: isSubmitting,
   });
 
-  const onSubmit = async (values: SignupFormValues) => {
-    try {
-      // Since the form validates email and password, we can assert their presence
-      const user = await signupWithEmail(
-        values as { email: string; password: string }
-      );
-      login(user);
-      navigate("/");
-    } catch (error) {
-      handleError({ error });
+  const onSubmit = (values: SignupFormValues) => {
+    // Check if email and password are present
+    if (values.email && values.password) {
+      onSignupWithEmail({ email: values.email, password: values.password });
     }
   };
 
@@ -72,8 +65,8 @@ export function SignupCard() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <CardContent className="space-y-2.5">
             <FormField
-              control={form.control}
               name="email"
+              control={form.control}
               render={({ field }) => (
                 <FormItem className="space-y-1">
                   <FormLabel>Email</FormLabel>
@@ -89,8 +82,8 @@ export function SignupCard() {
               )}
             />
             <FormField
-              control={form.control}
               name="password"
+              control={form.control}
               render={({ field }) => (
                 <FormItem className="space-y-1">
                   <FormLabel>Password</FormLabel>
@@ -102,8 +95,18 @@ export function SignupCard() {
             />
           </CardContent>
           <CardFooter className="pb-[68px] pt-2">
-            <Button className="w-full" disabled={!form.formState.isValid}>
-              Sign up
+            <Button
+              className="w-full"
+              disabled={!form.formState.isValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Icons.spinner2 className="mr-1 animate-spin w-4 h-4" />
+                  Signing in
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </CardFooter>
         </form>

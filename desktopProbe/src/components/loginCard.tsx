@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Icons } from "./icons";
 
 // Schema definition for form validation using Zod
 const schema = z.object({
@@ -27,8 +28,10 @@ type LoginFormValues = z.infer<typeof schema>;
 
 export function LoginCard({
   onLoginWithEmail,
+  isSubmitting,
 }: {
   onLoginWithEmail: (params: { email: string; password: string }) => void;
+  isSubmitting: boolean;
 }) {
   // Initialize form handling with react-hook-form and Zod for schema validation
   const form = useForm<LoginFormValues>({
@@ -38,6 +41,7 @@ export function LoginCard({
       password: "",
     },
     mode: "onChange",
+    disabled: isSubmitting,
   });
 
   const onSubmit = (values: LoginFormValues) => {
@@ -51,7 +55,7 @@ export function LoginCard({
     <Card className="min-w-80 space-y-2.5">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center tracking-wide">
-          Login
+          Log in
         </CardTitle>
         <CardDescription className="text-center">
           Don't have an account?{" "}
@@ -94,14 +98,24 @@ export function LoginCard({
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pt-2 pb-7">
-            <Button className="w-full" disabled={!form.formState.isValid}>
-              Log In
+            <Button
+              className="w-full"
+              disabled={!form.formState.isValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Icons.spinner2 className="mr-1 animate-spin w-4 h-4" />
+                  Logging in
+                </>
+              ) : (
+                "Log in"
+              )}
             </Button>
 
             <div className="justify-self-end">
               <Link
                 to="/forgot-password"
-                className="text-xs w-fit text-muted-foreground"
+                className="text-xs w-fit text-muted-foreground hover:underline"
               >
                 Forgot password?
               </Link>

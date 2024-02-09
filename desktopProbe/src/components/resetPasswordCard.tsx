@@ -51,7 +51,7 @@ export function ResetPasswordCard({
     <Card className="w-80 space-y-2.5">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center tracking-wide">
-          Reset Password
+          Reset password
         </CardTitle>
         <CardDescription className="text-center">
           Enter your new password below, maybe one that you can remember this
@@ -76,8 +76,14 @@ export function ResetPasswordCard({
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pt-2 pb-7">
             <Button className="w-full" disabled={!form.formState.isValid}>
-              {isSubmitting && <Icons.spinner2 className="mr-1 animate-spin" />}
-              Change Password
+              {isSubmitting ? (
+                <>
+                  <Icons.spinner2 className="mr-1 animate-spin w-4 h-4" />
+                  Changing password
+                </>
+              ) : (
+                "Change password"
+              )}
             </Button>
           </CardFooter>
         </form>
