@@ -147,12 +147,12 @@ export function CreateLink({
             <Button
               type="submit"
               disabled={!form.formState.isValid || isSubmitting}
-              className="w-32 flex justify-center items-center gap-2"
+              className="flex justify-center items-center gap-2"
             >
               {isSubmitting ? (
                 <>
                   <Icons.spinner2 className="animate-spin h-4 w-4" />
-                  Saving...
+                  Scanning site...
                 </>
               ) : (
                 "Save"
