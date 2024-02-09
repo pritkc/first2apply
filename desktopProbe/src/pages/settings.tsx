@@ -21,7 +21,7 @@ export function SettingsPage() {
     try {
       await updateSettings(newSettings);
     } catch (error) {
-      handleError(error);
+      handleError({ error });
     }
   };
 
@@ -31,7 +31,7 @@ export function SettingsPage() {
       await logout();
       resetUser();
     } catch (error) {
-      handleError(error);
+      handleError({ error });
     }
   };
 

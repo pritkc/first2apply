@@ -64,7 +64,10 @@ export function cleanJobUrl({
 }) {
   const site = getJobSite({ allJobSites, url });
   if (!site) {
-    throw new Error(`Could not find a site for url ${url}`);
+    const parsedUrl = new URL(url);
+    throw new Error(
+      `We do not yet support scanning for jobs on ${parsedUrl.hostname}. Contact our support to request it.`
+    );
   }
   let cleanUrl = url;
 

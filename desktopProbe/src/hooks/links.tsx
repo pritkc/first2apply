@@ -50,7 +50,7 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
         setLinks(fetchedLinks);
         setIsLoading(false);
       } catch (error) {
-        handleError(error);
+        handleError({ error });
       }
     };
 

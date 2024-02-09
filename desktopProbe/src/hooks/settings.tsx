@@ -46,7 +46,7 @@ export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
         setSettings(fetchedSettings);
         setIsLoading(false);
       } catch (error) {
-        handleError(error);
+        handleError({ error });
       }
     };
 

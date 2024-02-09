@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof schema>;
 export function CreateLink({
   onCreateLink,
 }: {
-  onCreateLink: (params: { title: string; url: string }) => void;
+  onCreateLink: (params: { title: string; url: string }) => Promise<void>;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,20 +46,11 @@ export function CreateLink({
   // Handler for form submission
   const onSubmit = async (values: FormValues) => {
     if (!values.title || !values.url) return;
-    // Start loading
+
     setIsSubmitting(true);
-
-    try {
-      await onCreateLink({ title: values.title, url: values.url });
-
-      // Reset form on success
-      form.reset();
-    } catch (error) {
-      console.error("Error creating link:", error);
-    } finally {
-      // Stop loading regardless of outcome
-      setIsSubmitting(false);
-    }
+    await onCreateLink({ title: values.title, url: values.url });
+    form.reset();
+    setIsSubmitting(false);
   };
 
   const { sites } = useSites();

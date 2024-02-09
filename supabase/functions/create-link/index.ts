@@ -62,7 +62,9 @@ Deno.serve(async (req) => {
       JSON.stringify({ errorMessage: getExceptionMessage(error, true) }),
       {
         headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-        status: 500,
+        // until this is fixed: https://github.com/supabase/functions-js/issues/45
+        // we have to return 200 and handle the error on the client side
+        // status: 400,
       }
     );
   }
