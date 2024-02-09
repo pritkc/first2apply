@@ -37,6 +37,7 @@ export function JobsList({
         hasMore={hasMore}
         loader={<Icons.spinner2 />}
         className="space-y-6"
+        scrollThreshold={0.8}
       >
         {jobs.map((job) => {
           return (
