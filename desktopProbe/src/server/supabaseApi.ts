@@ -1,4 +1,9 @@
-import { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
+import {
+  FunctionsHttpError,
+  PostgrestError,
+  SupabaseClient,
+  User,
+} from "@supabase/supabase-js";
 import {
   DbSchema,
   Job,
@@ -206,11 +211,24 @@ export class F2aSupabaseApi {
   /**
    * Wrapper around a Supabase method that handles errors.
    */
-  private async _supabaseApiCall<T, E extends Error | PostgrestError>(
-    method: () => Promise<{ data?: T; error: E }>
-  ) {
-    // this._supabase.auth.updateUser({password: 'test'});
+  private async _supabaseApiCall<
+    T,
+    E extends Error | PostgrestError | FunctionsHttpError
+  >(method: () => Promise<{ data?: T; error: E }>) {
     const { data, error } = await method();
+
+    // edge functions don't throw errors, instead they return an errorMessage field in the data object
+    // work around for this issue https://github.com/supabase/functions-js/issues/45
+    if (
+      typeof data === "object" &&
+      "errorMessage" in data &&
+      // @ts-ignore
+      typeof data.errorMessage === "string"
+    ) {
+      // @ts-ignore
+      throw new Error(data.errorMessage);
+    }
+
     if (error) throw error;
 
     return data;

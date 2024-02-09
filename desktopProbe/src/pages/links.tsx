@@ -26,15 +26,7 @@ export function LinksPage() {
         variant: "success",
       });
     } catch (error) {
-      handleError(error);
-
-      // Show error toast
-      toast({
-        title: "Error",
-        description:
-          "Failed to save job search. Make sure the URL is from a supported website.",
-        variant: "destructive",
-      });
+      handleError({ error });
     }
   };
 
@@ -43,7 +35,7 @@ export function LinksPage() {
     try {
       await removeLink(linkId);
     } catch (error) {
-      handleError(error);
+      handleError({ error });
     }
   };
 

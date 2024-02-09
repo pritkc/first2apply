@@ -40,7 +40,7 @@ export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
         setSites(await listSites());
         setIsLoading(false);
       } catch (error) {
-        handleError(error);
+        handleError({ error });
       }
     };
 
