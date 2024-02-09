@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { useSites } from "@/hooks/sites";
+
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { ArchiveIcon, CheckIcon } from "@radix-ui/react-icons";
+import { ArchiveIcon, ArrowUpIcon, CheckIcon } from "@radix-ui/react-icons";
 import {
   TooltipProvider,
   TooltipTrigger,
@@ -28,9 +30,37 @@ export function JobsList({
   onLoadMore: () => void;
 }) {
   const { siteLogos } = useSites();
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 500);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return jobs.length > 0 ? (
     <ul className="space-y-6">
+      {showScrollToTop && (
+        <Button
+          variant="outline"
+          style={
+            window.innerWidth > 1560
+              ? { right: "calc((100% - 1470px) / 2)" }
+              : { right: "40px" }
+          }
+          className="fixed bottom-10 z-[100] rounded-full h-16 w-16 shadow-sm shadow-foreground/10"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <ArrowUpIcon className="h-6 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+        </Button>
+      )}
+
       <InfiniteScroll
         dataLength={jobs.length}
         next={onLoadMore}
