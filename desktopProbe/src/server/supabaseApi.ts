@@ -220,6 +220,7 @@ export class F2aSupabaseApi {
     // edge functions don't throw errors, instead they return an errorMessage field in the data object
     // work around for this issue https://github.com/supabase/functions-js/issues/45
     if (
+      !!data &&
       typeof data === "object" &&
       "errorMessage" in data &&
       // @ts-ignore
