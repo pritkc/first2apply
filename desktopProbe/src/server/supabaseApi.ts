@@ -4,6 +4,7 @@ import {
   JobStatus,
   Link,
 } from "../../../supabase/functions/_shared/types";
+import * as luxon from "luxon";
 
 /**
  * Class used to interact with our Supabase API.
@@ -127,20 +128,24 @@ export class F2aSupabaseApi {
   async listJobs({
     status,
     limit = 50,
-    afterId,
+    after,
   }: {
     status: JobStatus;
     limit?: number;
-    afterId?: number;
+    after?: string;
   }) {
     const jobs = await this._supabaseApiCall(async () => {
       const q = this._supabase
         .from("jobs")
         .select("*")
         .eq("status", status)
+        .order("updated_at", { ascending: false })
         .order("id", { ascending: false })
         .limit(limit);
-      if (afterId) {
+      if (after) {
+        const [afterId, afterUpdatedAt] = after.split("!");
+
+        q.lte("updated_at", afterUpdatedAt);
         q.lt("id", afterId);
       }
 
@@ -161,11 +166,19 @@ export class F2aSupabaseApi {
       })
     );
 
+    let nextPageToken: string | undefined;
+    if (jobs.length === limit) {
+      // the next page token will include the last id as well as it's last updated_at
+      const lastJob = jobs[jobs.length - 1];
+      nextPageToken = `${lastJob.id}!${lastJob.updated_at}`;
+    }
+
     return {
       jobs,
       new: counters[0].count,
       archived: counters[1].count,
       applied: counters[2].count,
+      nextPageToken,
     };
   }
 
@@ -175,7 +188,13 @@ export class F2aSupabaseApi {
   updateJobStatus({ jobId, status }: { jobId: string; status: JobStatus }) {
     return this._supabaseApiCall(
       async () =>
-        await this._supabase.from("jobs").update({ status }).eq("id", jobId)
+        await this._supabase
+          .from("jobs")
+          .update({
+            status,
+            updated_at: luxon.DateTime.now().toUTC().toJSDate(),
+          })
+          .eq("id", jobId)
     );
   }
 

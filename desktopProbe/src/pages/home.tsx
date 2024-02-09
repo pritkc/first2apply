@@ -21,7 +21,7 @@ import { CronSchedule } from "@/components/cronSchedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 
-const JOB_BATCH_SIZE = 20;
+const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
 
 /**
@@ -51,6 +51,7 @@ export function Home() {
     new: number;
     applied: number;
     archived: number;
+    nextPageToken?: string;
   }>({
     isLoading: true,
     hasMore: true,
@@ -142,12 +143,13 @@ export function Home() {
       const result = await listJobs({
         status,
         limit: JOB_BATCH_SIZE,
-        afterId: listing.jobs[listing.jobs.length - 1].id,
+        after: listing.nextPageToken,
       });
 
       setListing((listing) => ({
-        ...listing,
+        ...result,
         jobs: [...listing.jobs, ...result.jobs],
+        isLoading: false,
         hasMore: result.jobs.length === JOB_BATCH_SIZE,
       }));
     } catch (error) {

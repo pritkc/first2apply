@@ -142,21 +142,22 @@ export async function deleteLink(linkId: number): Promise<void> {
 export async function listJobs({
   status,
   limit,
-  afterId,
+  after,
 }: {
   status: JobStatus;
   limit?: number;
-  afterId?: number;
+  after?: string;
 }) {
   const result = await _mainProcessApiCall<{
     jobs: Job[];
     new: number;
     applied: number;
     archived: number;
+    nextPageToken?: string;
   }>("list-jobs", {
     status,
     limit,
-    afterId,
+    after,
   });
 
   return result;
