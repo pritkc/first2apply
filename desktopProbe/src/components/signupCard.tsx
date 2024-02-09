@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { Button } from "@/components/ui/button";
+import { useError } from "@/hooks/error";
 
 // Schema definition for form validation using Zod
 const schema = z.object({
@@ -28,6 +29,7 @@ const schema = z.object({
 type SignupFormValues = z.infer<typeof schema>;
 
 export function SignupCard() {
+  const { handleError } = useError();
   const { login } = useSession();
   const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ export function SignupCard() {
       login(user);
       navigate("/");
     } catch (error) {
-      console.log(error);
+      handleError({ error });
     }
   };
 
