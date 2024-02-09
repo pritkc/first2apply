@@ -66,6 +66,10 @@ const createMainWindow = (): void => {
     } else if (process.platform === "win32") {
       mainWindow?.setSkipTaskbar(true);
     }
+
+    // dirty hack to fix navigating to the right tab in home page
+    // when closing we navigate to help page
+    mainWindow?.webContents.send("navigate", { path: "/help" });
   });
 };
 
