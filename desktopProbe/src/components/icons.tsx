@@ -147,7 +147,6 @@ export const Icons = {
   ),
   spinner2: (props: IconProps) => (
     <svg
-      className="animate-spin h-4 w-4 text-white flex justify-center"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -161,7 +160,7 @@ export const Icons = {
         cy="12"
         r="10"
         stroke="currentColor"
-        stroke-width="4"
+        strokeWidth="4"
       ></circle>
       <path
         className="opacity-75"
