@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useSites } from "@/hooks/sites";
-import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -35,8 +34,6 @@ export function CreateLink({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { toast } = useToast();
-
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -54,12 +51,6 @@ export function CreateLink({
 
     try {
       await onCreateLink({ title: values.title, url: values.url });
-      // Show success toast
-      toast({
-        title: "Success",
-        description: "Job search saved successfully!",
-        variant: "success",
-      });
 
       // Reset form on success
       form.reset();

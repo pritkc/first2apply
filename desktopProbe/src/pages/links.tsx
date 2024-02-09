@@ -1,6 +1,7 @@
 import { Link } from "../../../supabase/functions/_shared/types";
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
+import { useToast } from "@/components/ui/use-toast";
 
 import { DefaultLayout } from "./defaultLayout";
 import { CreateLink } from "@/components/createLink";
@@ -11,13 +12,29 @@ import { LinksListSkeleton } from "@/components/skeletons/LinksListSkeleton";
 export function LinksPage() {
   const { handleError } = useError();
   const { isLoading, links, createLink, removeLink } = useLinks();
+  const { toast } = useToast();
 
   // Create a new link
   const onCreateLink = async (newLink: Pick<Link, "title" | "url">) => {
     try {
       await createLink(newLink);
+
+      // Show success toast
+      toast({
+        title: "Success",
+        description: "Job search saved successfully!",
+        variant: "success",
+      });
     } catch (error) {
       handleError(error);
+
+      // Show error toast
+      toast({
+        title: "Error",
+        description:
+          "Failed to save job search. Make sure the URL is from a supported website.",
+        variant: "destructive",
+      });
     }
   };
 
