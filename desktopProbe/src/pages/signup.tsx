@@ -31,7 +31,7 @@ export function SignupPage() {
       login(user);
       navigate("/");
     } catch (error) {
-      handleError(error);
+      handleError({ error });
     } finally {
       setIsSubmitting(false);
     }
