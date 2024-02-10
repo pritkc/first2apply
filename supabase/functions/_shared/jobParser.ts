@@ -48,8 +48,8 @@ export function getJobSite({
 }): JobSite | undefined {
   const getUrlDomain = (url: string) => {
     const hostname = new URL(url).hostname;
-    const [tld, domain] = hostname.split(".").reverse();
-    return `${domain}.${tld}`;
+    const [_, domain] = hostname.split(".").reverse();
+    return domain;
   };
 
   const urlDomain = getUrlDomain(url);
