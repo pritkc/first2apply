@@ -9,11 +9,7 @@
   "author": "BeastX Industries",
   "license": "ISC",
   "devDependencies": {
-    "@types/luxon": "^3.4.2",
     "electron": "^28.1.3",
     "supabase": "^1.131.4"
-  },
-  "dependencies": {
-    "luxon": "^3.4.4"
   }
 }
