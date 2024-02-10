@@ -1,9 +1,14 @@
 import { useState } from "react";
+
+import { useError } from "@/hooks/error";
+import { useLinks } from "@/hooks/links";
+import { useToast } from "@/components/ui/use-toast";
 import { useSites } from "@/hooks/sites";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
+import { Link } from "../../../supabase/functions/_shared/types";
 import { openExternalUrl } from "@/lib/electronMainSdk";
 
 import { Button } from "./ui/button";
@@ -27,12 +32,12 @@ const schema = z.object({
 // Types for form values
 type FormValues = z.infer<typeof schema>;
 
-export function CreateLink({
-  onCreateLink,
-}: {
-  onCreateLink: (params: { title: string; url: string }) => Promise<void>;
-}) {
+export function CreateLink() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { handleError } = useError();
+  const { createLink } = useLinks();
+
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -48,9 +53,22 @@ export function CreateLink({
     if (!values.title || !values.url) return;
 
     setIsSubmitting(true);
-    await onCreateLink({ title: values.title, url: values.url });
-    form.reset();
-    setIsSubmitting(false);
+
+    try {
+      await createLink({ title: values.title, url: values.url });
+      // Reset form and stop submitting only if creation is successful
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Job search saved successfully!",
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error });
+    } finally {
+      // Stop loading regardless of outcome
+      setIsSubmitting(false);
+    }
   };
 
   const { sites } = useSites();
