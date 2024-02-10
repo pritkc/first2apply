@@ -46,8 +46,18 @@ export function getJobSite({
   allJobSites: JobSite[];
   url: string;
 }): JobSite | undefined {
+  const getUrlDomain = (url: string) => {
+    const hostname = new URL(url).hostname;
+    const [tld, domain] = hostname.split(".").reverse();
+    return `${domain}.${tld}`;
+  };
+
+  const urlDomain = getUrlDomain(url);
   const site = allJobSites.find((site) => {
-    return site.urls.some((siteUrl) => url.startsWith(siteUrl));
+    return site.urls.some((siteUrl) => {
+      const knownSiteDomain = getUrlDomain(siteUrl);
+      return knownSiteDomain === urlDomain;
+    });
   });
   return site;
 }
