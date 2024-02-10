@@ -102,10 +102,10 @@ export function SignupCard({
               {isSubmitting ? (
                 <>
                   <Icons.spinner2 className="mr-1 animate-spin w-4 h-4" />
-                  Signing in
+                  Signing up
                 </>
               ) : (
-                "Sign in"
+                "Sign up"
               )}
             </Button>
           </CardFooter>
