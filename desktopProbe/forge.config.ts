@@ -53,7 +53,7 @@ const config: ForgeConfig = {
       },
     }),
     new MakerAppX({
-      publisher: "CN=developmentca",
+      publisher: "CN=ro.beastx.first2apply",
     }),
     new MakerRpm({}),
     new MakerDeb({}),
