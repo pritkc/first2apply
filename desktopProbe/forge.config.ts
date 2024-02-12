@@ -53,7 +53,7 @@ const config: ForgeConfig = {
       },
     }),
     new MakerAppX({
-      packageName: "first2apply",
+      packageName: "BeastXIndustries.First2Apply",
       publisher: "CN=A2CA7EBA-28F4-4422-B08E-763EC4EEEACE",
       makeVersionWinStoreCompatible: true,
       // @ts-ignore
