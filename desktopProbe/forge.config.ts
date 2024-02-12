@@ -8,6 +8,7 @@ import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { MakerDMG } from "@electron-forge/maker-dmg";
+import { MakerAppX } from "@electron-forge/maker-appx";
 import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
 import { WebpackPlugin } from "@electron-forge/plugin-webpack";
 
@@ -50,6 +51,9 @@ const config: ForgeConfig = {
           },
         },
       },
+    }),
+    new MakerAppX({
+      publisher: "CN=developmentca",
     }),
     new MakerRpm({}),
     new MakerDeb({}),
