@@ -58,7 +58,8 @@ const config: ForgeConfig = {
       makeVersionWinStoreCompatible: true,
       // @ts-ignore
       publisherDisplayName: "BeastX Industries",
-      assets: "./packagers/appx",
+      assets: "./packagers/appx/icons",
+      manifest: "./packagers/appx/AppXManifest.xml",
     }),
     new MakerRpm({}),
     new MakerDeb({}),
