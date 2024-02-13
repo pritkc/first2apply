@@ -432,12 +432,13 @@ export function parseGlassDoorJobs({
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".jobCard .EmployerProfile_employerName__Xemli")
+      .querySelector(".jobCard .EmployerProfile_employerName__8w0tV")
       ?.textContent?.trim();
+    console.log(companyName);
     if (!companyName) return null;
 
     const companyLogo = el
-      .querySelector(".jobCard .EmployerLogo_logoContainer__Ye3F5 > img")
+      .querySelector(".jobCard .EmployerLogo_logoContainer__7hw16 > img")
       ?.getAttribute("src")
       ?.trim();
 
