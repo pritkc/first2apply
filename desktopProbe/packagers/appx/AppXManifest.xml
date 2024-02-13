@@ -25,6 +25,7 @@
   <Applications>
     <Application Id="BeastXIndustries.First2Apply" Executable="app\First 2 Apply.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
+       BackgroundColor="#84986b"
        DisplayName="First 2 Apply"
        Square150x150Logo="assets\SampleAppx.150x150.png"
        Square44x44Logo="assets\SampleAppx.44x44.png"
