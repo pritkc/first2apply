@@ -59,6 +59,20 @@ export function getJobSite({
       return knownSiteDomain === urlDomain;
     });
   });
+
+  // check if the path is blacklisted
+  const parsedUrl = new URL(url);
+  site?.blacklisted_paths.forEach((path) => {
+    const pathname = parsedUrl.pathname.toLowerCase();
+    const blacklistedPath = path.toLowerCase();
+    console.log(pathname, path);
+    if (pathname === blacklistedPath || pathname + "/" === blacklistedPath) {
+      throw new Error(
+        `Looks like the URL you are trying to save does not contain any search params. Make sure to configure your desired filters like role/tech stach, location, etc. on ${parsedUrl.hostname} and try again. Optionally add the last 24h filter when possible.`
+      );
+    }
+  });
+
   return site;
 }
 
