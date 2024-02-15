@@ -6,6 +6,7 @@ public.sites (
   created_at timestamp with time zone not null default now(),
   "queryParamsToRemove" text[] null,
   logo_url text not null,
+  blacklisted_paths text[] not null default '{/}'::text[],
   constraint sites_pkey primary key (id)
 ) tablespace pg_default;
 

@@ -3,6 +3,7 @@ export type JobSite = {
   name: string;
   urls: string[];
   queryParamsToRemove?: string[];
+  blacklisted_paths: string[];
   created_at: Date;
   logo_url: string;
 };
