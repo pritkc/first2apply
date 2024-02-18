@@ -123,8 +123,10 @@ import { JobScanner } from "./server/jobScanner";
 import { initRendererIpcApi } from "./server/rendererIpcApi";
 import { TrayMenu } from "./server/trayMenu";
 import { HtmlDownloader } from "./server/htmlDownloader";
+import { F2aAutoUpdater } from "./server/autoUpdater";
 
 // globals
+const autoUpdater = new F2aAutoUpdater();
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
 const supabaseApi = new F2aSupabaseApi(supabase);
 const htmlDownloader = new HtmlDownloader();
@@ -177,6 +179,9 @@ async function bootstrap() {
     if (process.platform === "win32") {
       app.setAppUserModelId(ENV.appBundleId);
     }
+
+    // start auto-updater
+    autoUpdater.start();
 
     // init the HTML downloader
     htmlDownloader.init();
@@ -279,6 +284,9 @@ async function quit() {
 
     trayMenu?.close();
     console.log(`closed tray menu`);
+
+    autoUpdater.stop();
+    console.log(`stopped auto updater`);
 
     mainWindow?.removeAllListeners();
     console.log(`removed all main window listeners`);
