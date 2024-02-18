@@ -1,5 +1,3 @@
-import { DefaultLayout } from "./defaultLayout";
-
 import { sendPasswordResetEmail } from "@/lib/electronMainSdk";
 import { useError } from "@/hooks/error";
 import { ForgotPasswordCard } from "@/components/forgotPasswordCard";
@@ -33,11 +31,11 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
+    <main className="flex justify-center items-center min-h-screen">
       <ForgotPasswordCard
         onResetPassword={resetPasswordRequest}
         isSubmitting={isSubmitting}
       />
-    </DefaultLayout>
+    </main>
   );
 }
