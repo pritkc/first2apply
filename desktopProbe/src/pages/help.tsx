@@ -8,7 +8,7 @@ import {
 
 export function HelpPage() {
   return (
-    <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-6 flex flex-col">
+    <DefaultLayout className="p-6 md:p-10 space-y-6 flex flex-col">
       <h1 className="text-2xl font-medium tracking-wide w-fit">FAQs</h1>
 
       <Accordion

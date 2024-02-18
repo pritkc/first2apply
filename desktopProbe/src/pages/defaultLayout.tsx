@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Navbar } from "./navbar";
+import { Navbar } from "../components/navbar";
 
 /**
  * Default layout for all pages
@@ -16,8 +16,10 @@ export function DefaultLayout({
   return (
     <>
       <Navbar isHidden={isNavbarHidden} />
-      <main className={cn("min-h-screen max-w-7xl mx-auto", className)}>
-        {children}
+      <main className="ml-16 xl:ml-56">
+        <div className={cn("min-h-screen mx-auto max-w-[1536px]", className)}>
+          {children}
+        </div>
       </main>
     </>
   );

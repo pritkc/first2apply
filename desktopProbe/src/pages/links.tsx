@@ -22,7 +22,7 @@ export function LinksPage() {
 
   if (isLoading) {
     return (
-      <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
+      <DefaultLayout className="p-6 md:p-10 space-y-16">
         <CreateLinkSkeleton />
         <LinksListSkeleton />
       </DefaultLayout>
@@ -30,7 +30,7 @@ export function LinksPage() {
   }
 
   return (
-    <DefaultLayout className="p-6 md:p-10 xl:px-0 space-y-16">
+    <DefaultLayout className="p-6 md:p-10 space-y-16">
       <CreateLink />
       {links.length > 0 && (
         <LinksList links={links} onDeleteLink={handleDeleteLink} />
