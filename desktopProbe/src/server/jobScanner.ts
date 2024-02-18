@@ -74,17 +74,25 @@ export class JobScanner {
         links_count: links.length,
       });
 
-      const htmls = await promiseAllSequence(links, async (link) => ({
-        linkId: link.id,
-        content: await this._htmlDownloader.loadUrl(link.url).catch((error) => {
-          const errorMessage = getExceptionMessage(error);
-          console.error(errorMessage);
-          return `<html><body class="error">${errorMessage}<body><html>`;
-        }),
-      }));
-      this._logger.info(`downloaded html for ${htmls.length} links`);
+      const newJobs = await promiseAllSequence(links, async (link) => {
+        const html = await this._htmlDownloader
+          .loadUrl(link.url)
+          .catch((error) => {
+            const errorMessage = getExceptionMessage(error);
+            console.error(errorMessage);
+            return `<html><body class="error">${errorMessage}<body><html>`;
+          });
 
-      const { newJobs } = await this._supabaseApi.scanHtmls(htmls);
+        const { newJobs } = await this._supabaseApi.scanHtmls([html]);
+
+        return newJobs;
+      }).then((r) => r.flat());
+      this._logger.info(`downloaded html for ${links.length} links`);
+
+      // scan job descriptions
+      await this.scanJobs(newJobs);
+
+      // fire a notification if there are new jobs
       this.showNewJobsNotification({ newJobs });
 
       this._logger.info("scan complete");
@@ -92,6 +100,32 @@ export class JobScanner {
         links_count: links.length,
         new_jobs_count: newJobs.length,
       });
+    } catch (error) {
+      console.error(getExceptionMessage(error));
+    }
+  }
+
+  /**
+   * Scan a list of new jobs to extract the description.
+   */
+  async scanJobs(jobs: Job[]) {
+    try {
+      console.log(`scanning ${jobs.length} jobs descriptions...`);
+
+      await promiseAllSequence(jobs, async (job) => {
+        const html = await this._htmlDownloader
+          .loadUrl(job.externalUrl)
+          .catch((error) => {
+            const errorMessage = getExceptionMessage(error);
+            console.error(errorMessage);
+            return `<html><body class="error">${errorMessage}<body><html>`;
+          });
+        console.log(`downloaded html for ${job.title}`);
+
+        await this._supabaseApi.scanJobDescription({ jobId: job.id, html });
+      });
+
+      console.log("finished scanning job descriptions");
     } catch (error) {
       console.error(getExceptionMessage(error));
     }
