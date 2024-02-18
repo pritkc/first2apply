@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { signupWithEmail } from "@/lib/electronMainSdk";
 
-import { DefaultLayout } from "./defaultLayout";
 import { SignupCard } from "@/components/signupCard";
 
 /**
@@ -38,11 +37,11 @@ export function SignupPage() {
   };
 
   return (
-    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
+    <main className="flex justify-center items-center min-h-screen">
       <SignupCard
         onSignupWithEmail={onSignupWithEmail}
         isSubmitting={isSubmitting}
       />
-    </DefaultLayout>
+    </main>
   );
 }

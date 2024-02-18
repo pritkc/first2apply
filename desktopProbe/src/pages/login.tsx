@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { loginWithEmail } from "@/lib/electronMainSdk";
 
-import { DefaultLayout } from "./defaultLayout";
 import { LoginCard } from "@/components/loginCard";
 
 /**
@@ -38,11 +37,11 @@ export function LoginPage() {
   };
 
   return (
-    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
+    <main className="flex justify-center items-center min-h-screen">
       <LoginCard
         onLoginWithEmail={onLoginWithEmail}
         isSubmitting={isSubmitting}
       />
-    </DefaultLayout>
+    </main>
   );
 }

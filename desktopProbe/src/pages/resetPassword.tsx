@@ -1,4 +1,3 @@
-import { DefaultLayout } from "./defaultLayout";
 import { useNavigate } from "react-router-dom";
 import { changePassword } from "@/lib/electronMainSdk";
 import { useError } from "@/hooks/error";
@@ -38,11 +37,11 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <DefaultLayout className="flex justify-center items-center" isNavbarHidden>
+    <main className="flex justify-center items-center min-h-screen">
       <ResetPasswordCard
         onChangePassword={handlePasswordChange}
         isSubmitting={isSubmitting}
       />
-    </DefaultLayout>
+    </main>
   );
 }
