@@ -23,14 +23,14 @@ export class F2aAutoUpdater {
    * Start checking for updates.
    */
   start() {
-    // if (!this._canAutoUpdate) return;
+    if (!this._canAutoUpdate) return;
 
     updateElectronApp({
       updateSource: {
         type: UpdateSourceType.StaticStorage,
         baseUrl: `${S3_BUCKET}/${process.platform}/${process.arch}`,
       },
-      updateInterval: "5 minutes",
+      updateInterval: "1 hour",
       notifyUser: true,
       logger: console,
     });
