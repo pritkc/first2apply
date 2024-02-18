@@ -191,7 +191,7 @@ export function Home() {
 
   if (isLoadingLinks || isLoadingSettings) {
     return (
-      <DefaultLayout className="px-6 xl:px-0 flex flex-col py-6 md:p-10">
+      <DefaultLayout className="px-6 flex flex-col py-6 md:p-10">
         <CronScheduleSkeleton />
 
         <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-2 p-2 animate-pulse mt-10 mb-6">
@@ -206,10 +206,10 @@ export function Home() {
 
   return (
     <DefaultLayout
-      className={`px-6 xl:px-0 flex flex-col ${
+      className={`px-6 flex flex-col ${
         links.length === 0
           ? "justify-evenly h-screen pb-14 max-w-[800px] w-full px-6 md:px-10 lg:px-20"
-          : "py-6 md:p-10 xl:px-0"
+          : "py-6 md:p-10"
       }`}
     >
       {links.length === 0 ? (

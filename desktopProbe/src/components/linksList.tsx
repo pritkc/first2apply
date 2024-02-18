@@ -31,8 +31,8 @@ export function LinksList({
                 <AvatarFallback>LI</AvatarFallback>
               </Avatar>
 
-              <button
-                className="flex-1 text-ellipsis overflow-hidden flex flex-col items-start"
+              <a
+                className="flex-1 overflow-hidden"
                 onClick={() => {
                   openExternalUrl(link.url);
                 }}
@@ -41,7 +41,7 @@ export function LinksList({
                 <p className="text-xs text-muted-foreground text-clip whitespace-nowrap font-extralight">
                   {link.url}
                 </p>
-              </button>
+              </a>
 
               {/* actions */}
               <div className="flex items-center">
