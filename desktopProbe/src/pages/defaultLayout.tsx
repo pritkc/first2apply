@@ -16,7 +16,7 @@ export function DefaultLayout({
   return (
     <>
       <Navbar isHidden={isNavbarHidden} />
-      <main className="ml-16 xl:ml-56">
+      <main className="ml-16 md:ml-20 xl:ml-56">
         <div className={cn("min-h-screen mx-auto max-w-[1536px]", className)}>
           {children}
         </div>
