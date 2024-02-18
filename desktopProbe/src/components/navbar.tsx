@@ -49,7 +49,7 @@ export function Navbar() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`hover:text-primary relative flex items-center gap-3 after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1 xl:pl-0 ${
+                className={`hover:text-primary relative flex items-center gap-3 after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1 ${
                   location.pathname === item.path && "text-primary"
                 }`}
               >
