@@ -55,13 +55,20 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle("create-link", async (event, { title, url }) =>
-    _apiCall(async () =>
-      supabaseApi.createLink({
+    _apiCall(async () => {
+      const { link, newJobs } = await supabaseApi.createLink({
         title,
         url,
         html: await htmlDownloader.loadUrl(url),
-      })
-    )
+      });
+
+      // intentionally not awaited to not have the user wait until JDs are in
+      jobScanner.scanJobs(newJobs).catch((error) => {
+        console.error(getExceptionMessage(error));
+      });
+
+      return { link };
+    })
   );
 
   ipcMain.handle("list-links", async (event, { title, url }) =>
