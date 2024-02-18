@@ -1,5 +1,6 @@
 import { config as loadEnvVars } from "dotenv";
 import path from "path";
+import fs from "fs";
 // load env vars
 loadEnvVars({ path: path.join(__dirname, "..", "desktopProbe", ".env") });
 
@@ -63,6 +64,28 @@ const config: ForgeConfig = {
     }),
     new MakerRpm({}),
     new MakerDeb({}),
+    {
+      name: "@electron-forge/maker-zip",
+      config: (arch: string) => ({
+        // Note that we must provide this S3 URL here
+        // in order to support smooth version transitions
+        // especially when using a CDN to front your updates
+        macUpdateManifestBaseUrl: `https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/${arch}`,
+      }),
+    },
+  ],
+  publishers: [
+    {
+      name: "@electron-forge/publisher-s3",
+      config: {
+        bucket: "first2apply.com",
+        region: "eu-central-1",
+        public: true,
+        keyResolver: (fileName: string, platform: string, arch: string) => {
+          return `releases/${platform}/${arch}/${fileName}`;
+        },
+      },
+    },
   ],
   plugins: [
     new AutoUnpackNativesPlugin({}),
@@ -85,6 +108,21 @@ const config: ForgeConfig = {
       port: 3049,
     }),
   ],
+  hooks: {
+    postMake: async (forgeConfig, makeResults) => {
+      return makeResults.map((makeResult) => {
+        return {
+          ...makeResult,
+          artifacts: makeResult.artifacts.map((artifact) => {
+            // remove whitespace from artifact names because S3 doesn't like them
+            const nameWithoutWhitespace = artifact.replace(/\s/gi, "");
+            fs.renameSync(artifact, nameWithoutWhitespace);
+            return nameWithoutWhitespace;
+          }),
+        };
+      });
+    },
+  },
 };
 
 export default config;
