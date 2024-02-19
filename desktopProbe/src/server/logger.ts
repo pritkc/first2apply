@@ -25,3 +25,13 @@ export const logger = pino(
     targets: transports,
   })
 );
+logger.setBindings({
+  platform: process.platform,
+  arch: process.arch,
+});
+
+export function flushLogger() {
+  return new Promise((resolve) => {
+    logger.flush(resolve);
+  });
+}
