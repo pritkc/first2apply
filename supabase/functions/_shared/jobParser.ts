@@ -143,6 +143,9 @@ export function parseJobPage({
     case "We Work Remotely":
       foundJobs = parseWeWorkRemotelyJobs({ siteId: site.id, html });
       break;
+    case "Dice":
+      foundJobs = parseDiceJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -577,6 +580,72 @@ export function parseIndeedJobs({
       jobType,
       location,
       salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a dice job page.
+ */
+export function parseDiceJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("dhi-search-cards-widget");
+  if (!jobsList) {
+    return [];
+  }
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll("dhi-search-card")
+  ) as Element[];
+  if (!jobElements) return [];
+  else console.log(`[dice] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalId = el
+      .querySelector(".card-title-link")
+      ?.getAttribute("id")
+      ?.trim();
+    if (!externalId) return null;
+
+    const externalUrl = `https://www.dice.com/job-detail/${externalId}`.trim();
+
+    const title = el.querySelector(".card-title-link")?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector(".card-company > a")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo =
+      el
+        .querySelector(".company-page-logo-container")
+        ?.querySelector("img")
+        ?.getAttribute("src") || undefined;
+
+    const location = el
+      .querySelector(".search-result-location")
+      .textContent.trim();
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
     };
   });
 
