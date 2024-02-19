@@ -108,21 +108,6 @@ const config: ForgeConfig = {
       port: 3049,
     }),
   ],
-  hooks: {
-    postMake: async (forgeConfig, makeResults) => {
-      return makeResults.map((makeResult) => {
-        return {
-          ...makeResult,
-          artifacts: makeResult.artifacts.map((artifact) => {
-            // remove whitespace from artifact names because S3 doesn't like them
-            const nameWithoutWhitespace = artifact.replace(/\s/gi, "");
-            fs.renameSync(artifact, nameWithoutWhitespace);
-            return nameWithoutWhitespace;
-          }),
-        };
-      });
-    },
-  },
 };
 
 export default config;
