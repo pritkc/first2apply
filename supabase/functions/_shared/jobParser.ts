@@ -146,6 +146,9 @@ export function parseJobPage({
     case "Dice":
       foundJobs = parseDiceJobs({ siteId: site.id, html });
       break;
+    case "Flexjobs":
+      foundJobs = parseFlexjobsJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -646,6 +649,75 @@ export function parseDiceJobs({
       companyName,
       companyLogo,
       location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a flexjobs job page.
+ */
+export function parseFlexjobsJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#job-list");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
+  console.log(`[flexjobs] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalUrl = `https://www.flexjobs.com/${el.getAttribute(
+      "data-url"
+    )}`.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el?.getAttribute("data-job")?.trim();
+    if (!externalId) return null;
+
+    const title = el.querySelector(".job-title")?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = "";
+
+    let location = el.querySelector(".job-locations")?.textContent.trim();
+    if (location.includes(",")) {
+      const locationParts = location.split(",");
+      location = locationParts.slice(0, 3).join(",");
+      if (locationParts.length > 3) {
+        location += ` + ${locationParts.length - 3} more`;
+      }
+    }
+
+    const jobTags = Array.from(el.querySelectorAll(".job-tags .job-tag") ?? []);
+
+    let salary = jobTags
+      .find((tag) => tag.textContent.includes("$"))
+      ?.textContent.trim();
+
+    if (salary?.includes("hourly")) {
+      salary = parseSalary({ salary: salary }) + "/hr";
+    } else if (salary?.includes("annually")) {
+      salary = salary.replace(" annually", "").trim();
+    }
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
+      salary,
     };
   });
 
