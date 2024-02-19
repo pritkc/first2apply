@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { Logger } from "pino";
 import { Notification, app, powerSaveBlocker } from "electron";
 import { ScheduledTask, schedule } from "node-cron";
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
@@ -28,8 +29,10 @@ export class JobScanner {
   };
   private _cronJob: ScheduledTask | undefined;
   private _prowerSaveBlockerId: number | undefined;
+  private _notificationsMap: Map<string, Notification> = new Map();
 
   constructor(
+    private _logger: Logger,
     private _supabaseApi: F2aSupabaseApi,
     private _htmlDownloader: HtmlDownloader,
     private _onNavigate: (_: { path: string }) => void
@@ -44,11 +47,11 @@ export class JobScanner {
         ...this._settings,
         ...JSON.parse(fs.readFileSync(settingsPath, "utf-8")),
       };
-      console.log(
+      this._logger.info(
         `loadied settings from disk: ${JSON.stringify(settingsToApply)}`
       );
     } else {
-      console.log(`no settings found on disk, using defaults`);
+      this._logger.info(`no settings found on disk, using defaults`);
       settingsToApply = DEFAULT_SETTINGS;
     }
 
@@ -60,11 +63,11 @@ export class JobScanner {
    */
   async scanLinks() {
     try {
-      console.log("scanning links...");
+      this._logger.info("scanning links...");
 
       // fetch all links from the database
       const links = (await this._supabaseApi.listLinks()) ?? [];
-      console.log(`found ${links?.length} links`);
+      this._logger.info(`found ${links?.length} links`);
 
       const htmls = await promiseAllSequence(links, async (link) => ({
         linkId: link.id,
@@ -74,12 +77,12 @@ export class JobScanner {
           return `<html><body class="error">${errorMessage}<body><html>`;
         }),
       }));
-      console.log(`downloaded html for ${htmls.length} links`);
+      this._logger.info(`downloaded html for ${htmls.length} links`);
 
       const { newJobs } = await this._supabaseApi.scanHtmls(htmls);
       this.showNewJobsNotification({ newJobs });
 
-      console.log("scan complete");
+      this._logger.info("scan complete");
     } catch (error) {
       console.error(getExceptionMessage(error));
     }
@@ -108,12 +111,15 @@ export class JobScanner {
         displatedJobs.length > 1 ? "are" : "is"
       } now available!`,
       // sound: "Submarine",
-      silent: this._settings.useSound === false,
+      silent: !this._settings.useSound,
     });
 
     // Show the notification
+    const notificationId = new Date().getTime().toString();
+    this._notificationsMap.set(notificationId, notification);
     notification.on("click", () => {
       this._onNavigate({ path: "/?status=new" });
+      this._notificationsMap.delete(notificationId);
     });
     notification.show();
   }
@@ -139,13 +145,13 @@ export class JobScanner {
   close() {
     // end cron job
     if (this._cronJob) {
-      console.log(`stopping cron schedule`);
+      this._logger.info(`stopping cron schedule`);
       this._cronJob.stop();
     }
 
     // stop power blocker
     if (typeof this._prowerSaveBlockerId === "number") {
-      console.log(`stopping prevent sleep`);
+      this._logger.info(`stopping prevent sleep`);
       powerSaveBlocker.stop(this._prowerSaveBlockerId);
     }
   }
@@ -155,7 +161,7 @@ export class JobScanner {
    */
   private _saveSettings() {
     fs.writeFileSync(settingsPath, JSON.stringify(this._settings));
-    console.log(`settings saved to disk`);
+    this._logger.info(`settings saved to disk`);
   }
 
   /**
@@ -165,20 +171,20 @@ export class JobScanner {
     if (settings.cronRule !== this._settings.cronRule) {
       // stop old cron job
       if (this._cronJob) {
-        console.log(`stopping old cron schedule`);
+        this._logger.info(`stopping old cron schedule`);
         this._cronJob.stop();
       }
       // start new cron job if needed
       if (settings.cronRule) {
         this._cronJob = schedule(settings.cronRule, () => this.scanLinks());
-        console.log(`cron job started successfully`);
+        this._logger.info(`cron job started successfully`);
       }
     }
 
     if (settings.preventSleep !== this._settings.preventSleep) {
       // stop old power blocker
       if (typeof this._prowerSaveBlockerId === "number") {
-        console.log(`stopping old prevent sleep`);
+        this._logger.info(`stopping old prevent sleep`);
         powerSaveBlocker.stop(this._prowerSaveBlockerId);
       }
       // start new power blocker if needed
@@ -186,13 +192,13 @@ export class JobScanner {
         this._prowerSaveBlockerId = powerSaveBlocker.start(
           "prevent-app-suspension"
         );
-        console.log(
+        this._logger.info(
           `prevent sleep started successfully: ${this._prowerSaveBlockerId}`
         );
       }
     }
 
     this._settings = settings;
-    console.log(`settings applied successfully`);
+    this._logger.info(`settings applied successfully`);
   }
 }

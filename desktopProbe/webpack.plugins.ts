@@ -10,7 +10,9 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const { PinoWebpackPlugin } = require("pino-webpack-plugin");
 
 const pinoTransports =
-  process.env.NODE_ENV === "development" ? ["pino-pretty"] : [];
+  process.env.NODE_ENV === "development"
+    ? ["pino-pretty", "pino-logdna"]
+    : ["pino-logdna"];
 
 export const plugins = [
   new ForkTsCheckerWebpackPlugin({
@@ -20,6 +22,7 @@ export const plugins = [
     "APP_BUNDLE_ID",
     "SUPABASE_URL",
     "SUPABASE_KEY",
+    "MEZMO_API_KEY",
   ]),
   new CopyWebpackPlugin({
     patterns: [{ from: path.join(__dirname, "images"), to: "images" }],
