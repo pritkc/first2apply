@@ -126,7 +126,7 @@ import { HtmlDownloader } from "./server/htmlDownloader";
 import { F2aAutoUpdater } from "./server/autoUpdater";
 
 // globals
-const autoUpdater = new F2aAutoUpdater();
+const autoUpdater = new F2aAutoUpdater(quit);
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
 const supabaseApi = new F2aSupabaseApi(supabase);
 const htmlDownloader = new HtmlDownloader();
@@ -290,10 +290,11 @@ async function quit() {
 
     mainWindow?.removeAllListeners();
     console.log(`removed all main window listeners`);
-  } catch (error) {
-    console.error(getExceptionMessage(error));
-  } finally {
+
     mainWindow?.close();
     console.log(`closed main window`);
+  } catch (error) {
+    console.error(getExceptionMessage(error));
+    app.quit(); // force quit
   }
 }

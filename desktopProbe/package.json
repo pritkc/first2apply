@@ -1,7 +1,7 @@
 {
   "name": "@first2apply/desktop-probe",
   "productName": "First 2 Apply",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "First 2 Apply - Job Alert App | Instant Notifications for New Job Listings",
   "main": ".webpack/main",
   "scripts": {
@@ -79,7 +79,6 @@
     "react-router-dom": "^6.21.2",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
-    "update-electron-app": "^3.0.0",
     "zod": "^3.22.4"
   }
 }
