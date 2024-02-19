@@ -1,6 +1,8 @@
-import { getExceptionMessage } from "../lib/error";
 import { app, autoUpdater, Notification } from "electron";
+import { Logger } from "pino";
 import { schedule, ScheduledTask } from "node-cron";
+
+import { getExceptionMessage } from "../lib/error";
 
 const S3_BUCKET =
   "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases";
@@ -17,7 +19,7 @@ export class F2aAutoUpdater {
   /**
    * Class constructor.
    */
-  constructor(private _onQuit: () => Promise<void>) {
+  constructor(private _logger: Logger, private _onQuit: () => Promise<void>) {
     // only enable auto-updates in packaged apps and not for windows
     this._canAutoUpdate = app.isPackaged && process.platform === "darwin";
   }
@@ -36,13 +38,13 @@ export class F2aAutoUpdater {
       console.error("Error fetching updates", getExceptionMessage(error));
     });
     autoUpdater.on("checking-for-update", () => {
-      console.log("Checking for updates ...");
+      this._logger.info("Checking for updates ...");
     });
     autoUpdater.on("update-available", () => {
-      console.log("Update available, downloading in background ...");
+      this._logger.info("Update available, downloading in background ...");
     });
     autoUpdater.on("update-not-available", () => {
-      console.log("No updates available");
+      this._logger.info("No updates available");
     });
 
     autoUpdater.on(
@@ -82,6 +84,7 @@ export class F2aAutoUpdater {
 
     const applyUpdate = async () => {
       try {
+        this._logger.info("Restarting to apply update ...");
         await this._onQuit();
         autoUpdater.quitAndInstall();
       } catch (error) {

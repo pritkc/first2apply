@@ -1,18 +1,23 @@
 import { Tray, Menu, nativeImage } from "electron";
 import path from "path";
+import { Logger } from "pino";
 
 export class TrayMenu {
+  private _logger: Logger;
   private _tray: Tray;
   private _iconPathMacOs = "/images/trayIconTemplate.png";
   private _iconPathWin = "/images/trayIcon.ico";
 
   constructor({
+    logger,
     onQuit,
     onNavigate,
   }: {
+    logger: Logger;
     onQuit: () => void;
     onNavigate: (_: { path: string }) => void;
   }) {
+    this._logger = logger;
     const iconName =
       process.platform === "win32" ? this._iconPathWin : this._iconPathMacOs;
     const iconPath = path.join(__dirname, iconName);
@@ -60,7 +65,7 @@ export class TrayMenu {
         this._tray.popUpContextMenu();
       });
     }
-    console.log("Tray menu initialized");
+    this._logger.info("Tray menu initialized");
   }
 
   /**

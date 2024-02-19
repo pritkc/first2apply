@@ -1,10 +1,16 @@
 import { BrowserWindow } from "electron";
+import { Logger } from "pino";
 
 /**
  * Wrapper over a headless window that can be used to download HTML.
  */
 export class HtmlDownloader {
   private _scraperWindow: BrowserWindow | undefined;
+
+  /**
+   * Class constructor.
+   */
+  constructor(private _logger: Logger) {}
 
   /**
    * Initialize the headless window.
@@ -29,7 +35,7 @@ export class HtmlDownloader {
   async loadUrl(url: string) {
     if (!this._scraperWindow) throw new Error("Scraper window not initialized");
 
-    console.log(`downloading url: ${url} ...`);
+    this._logger.info(`downloading url: ${url} ...`);
     await this._scraperWindow.loadURL(url);
 
     // scroll to bottom a few times to trigger infinite loading
@@ -44,7 +50,7 @@ export class HtmlDownloader {
       "document.documentElement.innerHTML"
     );
     // await this._scraperWindow.webContents.session.clearStorageData();
-    console.log(`finished downloading url: ${url}`);
+    this._logger.info(`finished downloading url: ${url}`);
 
     return html;
   }
