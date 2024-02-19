@@ -6,4 +6,5 @@ export const ENV = {
     key: process.env.SUPABASE_KEY,
   },
   mezmoApiKey: process.env.MEZMO_API_KEY,
+  amplitudeApiKey: process.env.AMPLITUDE_API_KEY,
 };

@@ -23,6 +23,7 @@ export const plugins = [
     "SUPABASE_URL",
     "SUPABASE_KEY",
     "MEZMO_API_KEY",
+    "AMPLITUDE_API_KEY",
   ]),
   new CopyWebpackPlugin({
     patterns: [{ from: path.join(__dirname, "images"), to: "images" }],
