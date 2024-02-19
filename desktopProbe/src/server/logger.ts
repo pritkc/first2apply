@@ -16,18 +16,21 @@ if (ENV.mezmoApiKey) {
     target: "pino-logdna",
     options: {
       key: ENV.mezmoApiKey,
+      hostname: ENV.appBundleId.replace(/\./g, "-"),
+      app: ENV.nodeEnv,
     },
   });
 }
 
-export const logger = pino(
-  pino.transport({
+export const logger = pino({
+  base: {
+    hostname: ENV.appBundleId,
+    platform: process.platform,
+    arch: process.arch,
+  },
+  transport: {
     targets: transports,
-  })
-);
-logger.setBindings({
-  platform: process.platform,
-  arch: process.arch,
+  },
 });
 
 export function flushLogger() {

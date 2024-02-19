@@ -9,6 +9,7 @@ import { getExceptionMessage } from "../lib/error";
 import { Job } from "../../../supabase/functions/_shared/types";
 import { promiseAllSequence } from "./helpers";
 import { HtmlDownloader } from "./htmlDownloader";
+import { IAnalyticsClient } from "@/lib/analytics";
 
 const userDataPath = app.getPath("userData");
 const settingsPath = path.join(userDataPath, "settings.json");
@@ -35,7 +36,8 @@ export class JobScanner {
     private _logger: Logger,
     private _supabaseApi: F2aSupabaseApi,
     private _htmlDownloader: HtmlDownloader,
-    private _onNavigate: (_: { path: string }) => void
+    private _onNavigate: (_: { path: string }) => void,
+    private _analytics: IAnalyticsClient
   ) {
     // used for testing
     // fs.unlinkSync(settingsPath);
@@ -68,6 +70,9 @@ export class JobScanner {
       // fetch all links from the database
       const links = (await this._supabaseApi.listLinks()) ?? [];
       this._logger.info(`found ${links?.length} links`);
+      this._analytics.trackEvent("scan_links_start", {
+        links_count: links.length,
+      });
 
       const htmls = await promiseAllSequence(links, async (link) => ({
         linkId: link.id,
@@ -83,6 +88,10 @@ export class JobScanner {
       this.showNewJobsNotification({ newJobs });
 
       this._logger.info("scan complete");
+      this._analytics.trackEvent("scan_links_complete", {
+        links_count: links.length,
+        new_jobs_count: newJobs.length,
+      });
     } catch (error) {
       console.error(getExceptionMessage(error));
     }
@@ -120,8 +129,14 @@ export class JobScanner {
     notification.on("click", () => {
       this._onNavigate({ path: "/?status=new" });
       this._notificationsMap.delete(notificationId);
+      this._analytics.trackEvent("notification_click", {
+        jobs_count: newJobs.length,
+      });
     });
     notification.show();
+    this._analytics.trackEvent("show_notification", {
+      jobs_count: newJobs.length,
+    });
   }
 
   /**
@@ -130,6 +145,7 @@ export class JobScanner {
   updateSettings(settings: JobScannerSettings) {
     this._applySettings(settings);
     this._saveSettings();
+    this._analytics.trackEvent("update_settings", settings);
   }
 
   /**

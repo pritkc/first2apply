@@ -3,6 +3,7 @@ import { Logger } from "pino";
 import { schedule, ScheduledTask } from "node-cron";
 
 import { getExceptionMessage } from "../lib/error";
+import { IAnalyticsClient } from "@/lib/analytics";
 
 const S3_BUCKET =
   "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases";
@@ -19,7 +20,11 @@ export class F2aAutoUpdater {
   /**
    * Class constructor.
    */
-  constructor(private _logger: Logger, private _onQuit: () => Promise<void>) {
+  constructor(
+    private _logger: Logger,
+    private _onQuit: () => Promise<void>,
+    private _analytics: IAnalyticsClient
+  ) {
     // only enable auto-updates in packaged apps and not for windows
     this._canAutoUpdate = app.isPackaged && process.platform === "darwin";
   }
@@ -81,10 +86,16 @@ export class F2aAutoUpdater {
       actions: [{ text: "Restart Now", type: "button" }],
     });
     this._notification.show();
+    this._analytics.trackEvent("show_update_notification", {
+      release_name: releaseName,
+    });
 
     const applyUpdate = async () => {
       try {
         this._logger.info("Restarting to apply update ...");
+        this._analytics.trackEvent("apply_update", {
+          release_name: releaseName,
+        });
         await this._onQuit();
         autoUpdater.quitAndInstall();
       } catch (error) {
