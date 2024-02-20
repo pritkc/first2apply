@@ -149,6 +149,9 @@ export function parseJobPage({
     case "Flexjobs":
       foundJobs = parseFlexjobsJobs({ siteId: site.id, html });
       break;
+    case "Bestjobs":
+      foundJobs = parseBestjobsJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -716,6 +719,85 @@ export function parseFlexjobsJobs({
       externalUrl,
       title,
       companyName,
+      location,
+      salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a bestjobs job page.
+ */
+
+export function parseBestjobsJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector(".card-list");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".job-card")
+  ) as Element[];
+  console.log(`[bestjobs] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalUrl = el
+      .querySelector(".card-body > div:first-child > a")
+      ?.getAttribute("href")
+      ?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el.getAttribute("id")?.replace("card-", "")?.trim();
+    if (!externalId) return null;
+
+    const title = el.getAttribute("data-title")?.trim();
+    if (!title) return null;
+
+    const companyName = el.getAttribute("data-employer-name")?.trim();
+    if (!companyName) return null;
+
+    const companyLogo =
+      el.querySelector(".company-logo")?.getAttribute("src") || undefined;
+
+    const jobFooter = el.querySelector(".card-footer > div:first-child");
+
+    let location = jobFooter
+      .querySelector("div:first-child > div:nth-child(2) > span")
+      ?.getAttribute("data-original-title")
+      ?.trim();
+    if (location?.includes(",")) {
+      const locationParts = location.split(",");
+      location = locationParts.slice(0, 3).join(",");
+      if (locationParts.length > 3) {
+        location += ` + ${locationParts.length - 3} more`;
+      }
+    }
+
+    let salary = jobFooter
+      .querySelector("div:nth-child(2) > div:nth-child(2)")
+      ?.textContent?.trim();
+
+    if (salary) {
+      salary = salary.replace(/\s+/g, "") + "/mo";
+    }
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
       location,
       salary,
     };
