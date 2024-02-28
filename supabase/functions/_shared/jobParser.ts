@@ -152,6 +152,9 @@ export function parseJobPage({
     case "Bestjobs":
       foundJobs = parseBestjobsJobs({ siteId: site.id, html });
       break;
+    case "Echojobs":
+      foundJobs = parseEchojobsJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -790,6 +793,86 @@ export function parseBestjobsJobs({
     if (salary) {
       salary = salary.replace(/\s+/g, "") + "/mo";
     }
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
+      salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a echojobs job page.
+ */
+
+export function parseEchojobsJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("tbody");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(jobsList.querySelectorAll("tr")) as Element[];
+  console.log(`[bestjobs] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("td > div");
+    if (!jobInfo) return null;
+
+    const titleAndUrlElement = jobInfo.querySelector(
+      "div:nth-child(2) > h2 > a"
+    );
+
+    const externalUrl =
+      "https://echojobs.io" + titleAndUrlElement?.getAttribute("href")?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    if (!externalId) return null;
+
+    const title = titleAndUrlElement?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = jobInfo
+      .querySelector("div:nth-child(2) > div:first-child > a")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo =
+      jobInfo
+        .querySelector("div:first-child > div > a > img")
+        ?.getAttribute("src") || undefined;
+
+    const locations = Array.from(
+      jobInfo.querySelectorAll(
+        "div:nth-child(2) > div:nth-child(3) > div:first-child > span"
+      )
+    ) as Element[];
+
+    const location = locations.map((loc) => loc.textContent?.trim()).join(", ");
+
+    let salary = jobInfo
+      .querySelector("div:nth-child(2) > div:nth-child(3) > span")
+      ?.textContent?.trim()
+      ?.replace(/USD\s*/, "")
+      ?.replace(/\s+/g, " ")
+      ?.replace(/\u00A0/g, " ")
+      ?.trim();
 
     return {
       siteId,
