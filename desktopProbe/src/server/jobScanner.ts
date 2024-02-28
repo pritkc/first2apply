@@ -110,7 +110,7 @@ export class JobScanner {
    */
   async scanJobs(jobs: Job[]) {
     try {
-      console.log(`scanning ${jobs.length} jobs descriptions...`);
+      this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
 
       await promiseAllSequence(jobs, async (job) => {
         const html = await this._htmlDownloader
@@ -120,14 +120,14 @@ export class JobScanner {
             console.error(errorMessage);
             return `<html><body class="error">${errorMessage}<body><html>`;
           });
-        console.log(`downloaded html for ${job.title}`);
+        this._logger.info(`downloaded html for ${job.title}`);
 
         await this._supabaseApi.scanJobDescription({ jobId: job.id, html });
       });
 
-      console.log("finished scanning job descriptions");
+      this._logger.info("finished scanning job descriptions");
     } catch (error) {
-      console.error(getExceptionMessage(error));
+      this._logger.error(getExceptionMessage(error));
     }
   }
 
