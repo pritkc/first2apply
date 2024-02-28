@@ -192,6 +192,9 @@ async function bootstrap() {
       app.setAppUserModelId(ENV.appBundleId);
     }
 
+    // track the app start event
+    analytics.trackEvent("app_start");
+
     // start auto-updater
     autoUpdater.start();
 
@@ -222,23 +225,10 @@ async function bootstrap() {
     // manual logout for testing
     // fs.unlinkSync(sessionPath);
 
-    // load the session from disk if it exists
-    if (fs.existsSync(sessionPath)) {
-      const encryptedSession = fs.readFileSync(sessionPath, "utf-8");
-      const plaintextSession = safeStorage.decryptString(
-        Buffer.from(encryptedSession, "base64")
-      );
-      const session = JSON.parse(plaintextSession);
-      logger.info(`finished loading session from disk`);
-      const { error } = await supabase.auth.setSession(session);
-      if (error) throw error;
-    } else {
-      logger.info(`no session found on disk`);
-    }
-
     // save the session to disk when it changes
     supabase.auth.onAuthStateChange(async (event, session) => {
       try {
+        logger.info(`auth state change: ${event}`);
         logger.setBindings({ userId: session?.user?.id });
 
         if (session?.user?.id) {
@@ -275,8 +265,19 @@ async function bootstrap() {
       }
     });
 
-    // track the app start event
-    analytics.trackEvent("app_start");
+    // load the session from disk if it exists
+    if (fs.existsSync(sessionPath)) {
+      const encryptedSession = fs.readFileSync(sessionPath, "utf-8");
+      const plaintextSession = safeStorage.decryptString(
+        Buffer.from(encryptedSession, "base64")
+      );
+      const session = JSON.parse(plaintextSession);
+      logger.info(`finished loading session from disk`);
+      const { error } = await supabase.auth.setSession(session);
+      if (error) throw error;
+    } else {
+      logger.info(`no session found on disk`);
+    }
   } catch (error) {
     logger.error(getExceptionMessage(error));
   }
