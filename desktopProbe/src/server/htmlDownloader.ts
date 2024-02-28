@@ -20,7 +20,7 @@ export class HtmlDownloader {
    */
   init() {
     this._scraperWindow = new BrowserWindow({
-      show: true,
+      show: false,
       // set the window size
       width: 1600,
       height: 1200,
@@ -53,7 +53,7 @@ export class HtmlDownloader {
       // check if page was redirected to a login page
       const finalUrl = this._scraperWindow.webContents.getURL();
       if (KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))) {
-        this._logger.error(`authwall detected: ${finalUrl}`);
+        this._logger.warn(`authwall detected: ${finalUrl}`);
         throw new Error("authwall");
       }
     });
