@@ -430,7 +430,7 @@ export function parseGlassDoorJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector(".JobsList_jobsList__Ey2Vo");
+  const jobsList = document.querySelector(".JobsList_jobsList__lqjTr");
   if (!jobsList) {
     return [];
   }
@@ -455,7 +455,7 @@ export function parseGlassDoorJobs({
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".jobCard .EmployerProfile_employerName__8w0tV")
+      .querySelector(".jobCard .EmployerProfile_employerName__qujuA")
       ?.textContent?.trim();
     console.log(companyName);
     if (!companyName) return null;
