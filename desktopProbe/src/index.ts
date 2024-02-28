@@ -35,6 +35,7 @@ if (require("electron-squirrel-startup")) {
 }
 
 const APP_PROTOCOL = "first2apply";
+let appIsRunning = false;
 
 // register the custom protocol
 if (process.defaultApp) {
@@ -73,28 +74,7 @@ const createMainWindow = (): void => {
 
   mainWindow.on("close", (event) => {
     event.preventDefault();
-    mainWindow?.hide();
-
-    // hide the dock icon on macOS and hide the taskbar icon on Windows
-    if (process.platform === "darwin") {
-      app.dock.hide();
-    } else if (process.platform === "win32") {
-      mainWindow?.setSkipTaskbar(true);
-    }
-
-    // dirty hack to fix navigating to the right tab in home page
-    // when closing we navigate to help page
-    mainWindow?.webContents.send("navigate", { path: "/help" });
-
-    // send notification to inform the user that the app is still running
-    if (!trayIconNotificationShown) {
-      trayIconNotificationShown = true;
-      const notification = new Notification({
-        title: "See you soon!",
-        body: "First 2 Apply is still checking for new jobs in the background. Click the paper airplane icon in your system tray to open the app.",
-      });
-      notification.show();
-    }
+    onHideToSystemTray();
   });
 };
 
@@ -110,6 +90,20 @@ app.on("ready", () => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   app.quit();
+});
+
+// do not close all windows when the app is quit on macOS, instead hide the main window
+app.on("before-quit", (event) => {
+  if (appIsRunning) {
+    event.preventDefault();
+    onHideToSystemTray();
+  }
+});
+
+app.on("activate", () => {
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  onActivate();
 });
 
 function onActivate() {
@@ -130,11 +124,30 @@ function onActivate() {
 
   mainWindow?.focus();
 }
-app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  onActivate();
-});
+function onHideToSystemTray() {
+  mainWindow?.hide();
+
+  // hide the dock icon on macOS and hide the taskbar icon on Windows
+  if (process.platform === "darwin") {
+    app.dock.hide();
+  } else if (process.platform === "win32") {
+    mainWindow?.setSkipTaskbar(true);
+  }
+
+  // dirty hack to fix navigating to the right tab in home page
+  // when closing we navigate to help page
+  mainWindow?.webContents.send("navigate", { path: "/help" });
+
+  // send notification to inform the user that the app is still running
+  if (!trayIconNotificationShown) {
+    trayIconNotificationShown = true;
+    const notification = new Notification({
+      title: "See you soon!",
+      body: "First 2 Apply is still checking for new jobs in the background. Click the paper airplane icon in your system tray to open the app.",
+    });
+    notification.show();
+  }
+}
 
 // globals
 const analytics = new AmplitudeAnalyticsClient();
@@ -295,6 +308,8 @@ async function bootstrap() {
   app.on("second-instance", (event, commandLine) => {
     handleDeepLink(commandLine[commandLine.length - 1]);
   });
+
+  appIsRunning = true;
 }
 
 /**
@@ -303,6 +318,7 @@ async function bootstrap() {
 async function quit() {
   try {
     logger.info(`quitting...`);
+    appIsRunning = false;
 
     jobScanner?.close();
     logger.info(`closed job scanner`);
@@ -325,7 +341,7 @@ async function quit() {
     analytics.trackEvent("app_quit");
   } catch (error) {
     logger.error(getExceptionMessage(error));
-    app.quit(); // force quit
+    process.exit(-1); // force quit
   } finally {
     await flushLogger().catch((error) => {
       error; // noop
