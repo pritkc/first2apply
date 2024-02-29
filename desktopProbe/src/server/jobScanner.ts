@@ -92,7 +92,7 @@ export class JobScanner {
       this._logger.info(`downloaded html for ${links.length} links`);
 
       // scan job descriptions
-      // await this.scanJobs(newJobs);
+      await this.scanJobs(newJobs);
 
       // fire a notification if there are new jobs
       this.showNewJobsNotification({ newJobs });
@@ -103,7 +103,7 @@ export class JobScanner {
         new_jobs_count: newJobs.length,
       });
     } catch (error) {
-      console.error(getExceptionMessage(error));
+      this._logger.error(getExceptionMessage(error));
     }
   }
 
@@ -111,26 +111,29 @@ export class JobScanner {
    * Scan a list of new jobs to extract the description.
    */
   async scanJobs(jobs: Job[]) {
-    try {
-      this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
+    this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
 
-      await promiseAllSequence(jobs, async (job) => {
-        const html = await this._htmlDownloader
-          .loadUrl(job.externalUrl)
-          .catch((error) => {
-            const errorMessage = getExceptionMessage(error);
-            console.error(errorMessage);
-            return `<html><body class="error">${errorMessage}<body><html>`;
-          });
-        this._logger.info(`downloaded html for ${job.title}`);
+    const updatedJobs = await promiseAllSequence(jobs, async (job) => {
+      const html = await this._htmlDownloader
+        .loadUrl(job.externalUrl, 1)
+        .catch((error) => {
+          const errorMessage = getExceptionMessage(error);
+          console.error(errorMessage);
+          return `<html><body class="error">${errorMessage}<body><html>`;
+        });
+      this._logger.info(`downloaded html for ${job.title}`);
 
-        await this._supabaseApi.scanJobDescription({ jobId: job.id, html });
+      const updatedJob = await this._supabaseApi.scanJobDescription({
+        jobId: job.id,
+        html,
       });
 
-      this._logger.info("finished scanning job descriptions");
-    } catch (error) {
-      this._logger.error(getExceptionMessage(error));
-    }
+      return updatedJob;
+    });
+
+    this._logger.info("finished scanning job descriptions");
+
+    return updatedJobs;
   }
 
   /**

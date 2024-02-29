@@ -103,4 +103,8 @@ export function initRendererIpcApi({
   ipcMain.handle("open-external-url", async (event, { url }) =>
     _apiCall(async () => shell.openExternal(url))
   );
+
+  ipcMain.handle("scan-job-description", async (event, { job }) =>
+    _apiCall(async () => jobScanner.scanJobs([job]))
+  );
 }

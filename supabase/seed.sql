@@ -7,6 +7,7 @@ public.sites (
   "queryParamsToRemove" text[] null,
   logo_url text not null,
   blacklisted_paths text[] not null default '{/}'::text[],
+  provider text not null,
   constraint sites_pkey primary key (id)
 ) tablespace pg_default;
 
@@ -40,6 +41,7 @@ public.jobs (
   updated_at timestamp with time zone not null default now(),
   salary text null,
   tags text[] null,
+  description text null,
   "jobType" text null,
   status public."Job Status" not null default 'new'::"Job Status",
   constraint jobs_pkey primary key (id),

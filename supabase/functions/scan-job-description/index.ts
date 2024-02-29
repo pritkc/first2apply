@@ -1,8 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
-import { parseJobPage } from "../_shared/jobParser.ts";
+
 import { DbSchema } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
+import { parseJobDescription } from "../_shared/jobDescriptionParser.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,61 +21,51 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const body = await req.json();
-    const htmls: Array<{ jobId: number; html: string }> = body;
-    if (htmls.length === 0) {
-      return new Response(JSON.stringify({ newJobs: [] }), {
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      });
+    const body: { jobId: number; html: string } = await req.json();
+    const { jobId, html } = body;
+
+    // find the job and its site
+    const { data: job, error: findJobErr } = await supabaseClient
+      .from("jobs")
+      .select("*")
+      .eq("id", jobId)
+      .single();
+    if (findJobErr) {
+      throw findJobErr;
+    }
+    if (!job) {
+      throw new Error(`Job not found: ${jobId}`);
+    }
+    const { data: site, error: findSiteErr } = await supabaseClient
+      .from("sites")
+      .select("*")
+      .eq("id", job.siteId)
+      .single();
+    if (findSiteErr) {
+      throw findSiteErr;
     }
 
-    // fetch links from db
-    const linkIds = htmls.map((html) => html.linkId);
-    const { data: links, error } = await supabaseClient
-      .from("links")
-      .select("*")
-      .in("id", linkIds);
-    if (error) throw new Error(error.message);
+    // parse the job description
+    console.log(
+      `[${site.provider}] parsing job description for ${job.title} ...`
+    );
+    const jd = parseJobDescription({ site, job, html });
 
-    // list all job sites from db
-    const { data, error: selectError } = await supabaseClient
-      .from("sites")
-      .select("*");
-    if (selectError) throw new Error(selectError.message);
-    const allJobSites = data ?? [];
-
-    // parse htmls and match them with links
-    const parsedJobs = await Promise.all(
-      htmls.map(async (html) => {
-        const link = links?.find((link) => link.id === html.linkId);
-        // ignore links that are not in the db
-        if (!link) {
-          console.error(`link not found: ${html.linkId}`);
-          return [];
-        }
-        const jobsList = await parseJobPage({
-          allJobSites,
-          url: link.url,
-          html: html.content,
-        });
-
-        return jobsList;
-      })
-    ).then((r) => r.flat());
-
-    const { data: upsertedJobs, error: insertError } = await supabaseClient
+    // update the job with the description
+    const { data: updatedJob, error: updateJobErr } = await supabaseClient
       .from("jobs")
-      .upsert(
-        parsedJobs.map((job) => ({ ...job, status: "new" as const })),
-        { onConflict: "externalId", ignoreDuplicates: true }
-      )
-      .select("*");
-    if (insertError) throw new Error(insertError.message);
+      .update({ description: jd.content })
+      .eq("id", jobId)
+      .single();
+    if (updateJobErr) {
+      throw updateJobErr;
+    }
 
-    const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
-    console.log(`found ${newJobs.length} new jobs`);
+    console.log(
+      `[${site.provider}] finished parsing job description for ${job.title}`
+    );
 
-    return new Response(JSON.stringify({ newJobs }), {
+    return new Response(JSON.stringify({ job: updatedJob }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {
