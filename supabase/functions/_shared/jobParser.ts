@@ -155,6 +155,9 @@ export function parseJobPage({
     case "Echojobs":
       foundJobs = parseEchojobsJobs({ siteId: site.id, html });
       break;
+    case "Remotive":
+      foundJobs = parseRemotiveJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -828,7 +831,7 @@ export function parseEchojobsJobs({
   if (!jobsList) return [];
 
   const jobElements = Array.from(jobsList.querySelectorAll("tr")) as Element[];
-  console.log(`[bestjobs] found ${jobElements.length} elements`);
+  console.log(`[echojobs] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector("td > div");
@@ -883,6 +886,92 @@ export function parseEchojobsJobs({
       companyLogo,
       location,
       salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a remotive job page.
+ */
+export function parseRemotiveJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  let jobsList = document.querySelector("#initial_job_list > ul");
+  if (!jobsList) {
+    jobsList = document.querySelector("#hits > ul");
+    if (!jobsList) return [];
+  }
+
+  let jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
+  if (jobElements.length === 0) {
+    jobElements = Array.from(
+      jobsList.querySelectorAll("div[x-data]")
+    ) as Element[];
+  }
+  console.log(`[remotive] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobTitle = el?.querySelector(".job-tile-title a");
+    if (!jobTitle) return null;
+
+    const externalUrl =
+      "https://remotive.com/" + jobTitle.getAttribute("href")?.trim();
+    console.log(externalUrl);
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    console.log(externalId);
+    if (!externalId) return null;
+
+    const title = jobTitle.querySelector("span")?.textContent?.trim();
+    console.log(title);
+    if (!title) return null;
+
+    const companyName = jobTitle
+      .querySelector("span:nth-child(3)")
+      ?.textContent?.trim();
+    console.log(companyName);
+    if (!companyName) return null;
+
+    const companyLogo =
+      el
+        .querySelector(".company-page-logo-container")
+        ?.querySelector("img")
+        ?.getAttribute("src") || undefined;
+
+    const locations = Array.from(
+      el.querySelectorAll(".job-tile-location")
+    ) as Element[];
+
+    const location = [
+      ...new Set(
+        locations.map((loc) =>
+          loc.textContent.trim().replace(/[^a-zA-Z\s,]/g, "")
+        )
+      ),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    console.log(location);
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
     };
   });
 
