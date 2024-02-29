@@ -83,14 +83,16 @@ export class JobScanner {
             return `<html><body class="error">${errorMessage}<body><html>`;
           });
 
-        const { newJobs } = await this._supabaseApi.scanHtmls([html]);
+        const { newJobs } = await this._supabaseApi.scanHtmls([
+          { linkId: link.id, content: html },
+        ]);
 
         return newJobs;
       }).then((r) => r.flat());
       this._logger.info(`downloaded html for ${links.length} links`);
 
       // scan job descriptions
-      await this.scanJobs(newJobs);
+      // await this.scanJobs(newJobs);
 
       // fire a notification if there are new jobs
       this.showNewJobsNotification({ newJobs });
