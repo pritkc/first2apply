@@ -7,12 +7,6 @@ const ForkTsCheckerWebpackPlugin: typeof IForkTsCheckerWebpackPlugin = require("
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { PinoWebpackPlugin } = require("pino-webpack-plugin");
-
-const pinoTransports =
-  process.env.NODE_ENV === "development"
-    ? ["pino-pretty", "pino-logdna"]
-    : ["pino-logdna"];
 
 export const plugins = [
   new ForkTsCheckerWebpackPlugin({
@@ -28,5 +22,4 @@ export const plugins = [
   new CopyWebpackPlugin({
     patterns: [{ from: path.join(__dirname, "images"), to: "images" }],
   }),
-  new PinoWebpackPlugin({ transports: pinoTransports }),
 ];
