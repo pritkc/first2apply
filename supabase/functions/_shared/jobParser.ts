@@ -158,6 +158,9 @@ export function parseJobPage({
     case "Remotive":
       foundJobs = parseRemotiveJobs({ siteId: site.id, html });
       break;
+    case "Remoteio":
+      foundJobs = parseRemoteioJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -972,6 +975,78 @@ export function parseRemotiveJobs({
       companyName,
       companyLogo,
       location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a remoteio job page.
+ */
+export function parseRemoteioJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("main");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".shadow-singlePost")
+  ) as Element[];
+  console.log(`[remoteio] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("div:nth-child(2) > a");
+
+    const externalUrl = `https://www.remote.io${jobInfo.getAttribute(
+      "href"
+    )}`.trim();
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    if (!externalId) return null;
+
+    const title = jobInfo.textContent?.trim();
+    if (!title) return null;
+
+    const company = el.querySelector("div:first-child img");
+    if (company === null) return null;
+
+    const companyName = company.getAttribute("alt")?.trim();
+    if (!companyName) return null;
+
+    const companyLogo = company.getAttribute("src")?.trim();
+
+    let location = el
+      .querySelector("div:nth-child(2) > div")
+      ?.textContent.trim();
+
+    const tagsList = Array.from(
+      el.querySelectorAll("div:nth-child(4) > span")
+    ) as Element[];
+
+    const tags = tagsList.map((tag) =>
+      tag.querySelector("a").textContent.trim()
+    );
+    console.log(tags);
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
+      tags,
     };
   });
 
