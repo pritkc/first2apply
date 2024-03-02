@@ -161,6 +161,9 @@ export function parseJobPage({
     case "Remoteio":
       foundJobs = parseRemoteioJobs({ siteId: site.id, html });
       break;
+    case "Builtin":
+      foundJobs = parseBuiltinJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -974,6 +977,7 @@ export function parseRemotiveJobs({
       title,
       companyName,
       companyLogo,
+      jobType: "remote",
       location,
     };
   });
@@ -1005,10 +1009,11 @@ export function parseRemoteioJobs({
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector("div:nth-child(2) > a");
+    if (!jobInfo) return null;
 
     const externalUrl = `https://www.remote.io${jobInfo.getAttribute(
       "href"
-    )}`.trim();
+    )}`?.trim();
     if (!externalUrl) return null;
 
     const externalId = externalUrl.split("?")[0].split("/").pop();
@@ -1025,9 +1030,9 @@ export function parseRemoteioJobs({
 
     const companyLogo = company.getAttribute("src")?.trim();
 
-    let location = el
+    const location = el
       .querySelector("div:nth-child(2) > div")
-      ?.textContent.trim();
+      ?.textContent?.trim();
 
     const tagsList = Array.from(
       el.querySelectorAll("div:nth-child(4) > span")
@@ -1045,8 +1050,88 @@ export function parseRemoteioJobs({
       title,
       companyName,
       companyLogo,
+      jobType: "remote",
       location,
       tags,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a builtin job page.
+ */
+export function parseBuiltinJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#jobs-list");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll('[data-id="job-card"]')
+  ) as Element[];
+  console.log(`[builtin] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("#job-card-alias");
+    if (!jobInfo) return null;
+
+    const externalUrl = `https://builtin.com${jobInfo.getAttribute(
+      "href"
+    )}`?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el.getAttribute("id")?.trim();
+    if (!externalId) return null;
+
+    const title = jobInfo.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector('[data-id="company-title"]')
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo = el
+      .querySelector('img[data-id="company-img"]')
+      .getAttribute("src")
+      ?.trim();
+
+    const jobLocation = el.querySelector(
+      "div:first-child > div:nth-child(2) > div:first-child > div:first-child > div:nth-child(2)"
+    );
+
+    const jobTypeList = Array.from(
+      el.querySelectorAll("div:nth-child(3) > div")
+    ) as Element[];
+
+    const jobType = jobTypeList
+      .map((div) => div.textContent.trim().toLowerCase())
+      .filter((type) => type === "remote" || type === "hybrid")
+      .join(", ");
+
+    const location = jobLocation
+      .querySelector("div:nth-child(2)")
+      ?.textContent?.trim();
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType,
+      location,
     };
   });
 
