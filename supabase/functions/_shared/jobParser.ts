@@ -164,6 +164,9 @@ export function parseJobPage({
     case "Builtin":
       foundJobs = parseBuiltinJobs({ siteId: site.id, html });
       break;
+    case "Naukri":
+      foundJobs = parseNaukriJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -1041,7 +1044,6 @@ export function parseRemoteioJobs({
     const tags = tagsList.map((tag) =>
       tag.querySelector("a").textContent.trim()
     );
-    console.log(tags);
 
     return {
       siteId,
@@ -1132,6 +1134,69 @@ export function parseBuiltinJobs({
       companyLogo,
       jobType,
       location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a naukri job page.
+ */
+export function parseNaukriJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#listContainer");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".srp-jobtuple-wrapper")
+  ) as Element[];
+  console.log(`[naukri] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector(".title");
+    if (!jobInfo) return null;
+
+    const externalUrl = jobInfo.getAttribute("href")?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el.getAttribute("data-job-id")?.trim();
+    if (!externalId) return null;
+
+    const title = jobInfo.getAttribute("title")?.trim();
+    if (!title) return null;
+
+    const companyName = el.querySelector(".comp-name")?.textContent?.trim();
+    if (!companyName) return null;
+
+    let location = el.querySelector(".loc")?.textContent?.trim() || "";
+
+    const additionalLocations = location.split(", ").length - 3;
+    location =
+      location.split(", ").slice(0, 3).join(", ") +
+      (additionalLocations > 0 ? ` + ${additionalLocations} more` : "");
+
+    const tagsList = Array.from(el.querySelectorAll(".tag-li")) as Element[];
+
+    const tags = tagsList.map((tag) => tag.textContent.trim());
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
+      tags,
     };
   });
 
