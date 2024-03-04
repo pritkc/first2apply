@@ -27,6 +27,7 @@ import { HelpPage } from "./pages/help";
 import { Toaster } from "./components/ui/toaster";
 import { ForgotPasswordPage } from "./pages/forgotPassword";
 import { ResetPasswordPage } from "./pages/resetPassword";
+import { ReviewPage } from "./pages/review";
 
 // Auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
@@ -53,6 +54,11 @@ const router = createMemoryRouter(
         path="/help"
         element={<AuthGuardedComponent component={HelpPage} />}
       />
+      <Route
+        path="/review"
+        element={<AuthGuardedComponent component={ReviewPage} />}
+      />
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
