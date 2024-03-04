@@ -323,7 +323,7 @@ async function quit() {
     jobScanner?.close();
     logger.info(`closed job scanner`);
 
-    htmlDownloader.close();
+    await htmlDownloader.close();
     logger.info(`closed html downloader`);
 
     trayMenu?.close();

@@ -11,6 +11,8 @@ import {
   Link,
 } from "../../../supabase/functions/_shared/types";
 import * as luxon from "luxon";
+import { getExceptionMessage } from "@/lib/error";
+import { promiseAllSequence } from "./helpers";
 
 /**
  * Class used to interact with our Supabase API.
@@ -85,16 +87,21 @@ export class F2aSupabaseApi {
     title: string;
     url: string;
     html: string;
-  }): Promise<{ link: Link }> {
-    return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke("create-link", {
-        body: {
-          title,
-          url,
-          html,
-        },
-      })
+  }) {
+    const { link, newJobs } = await this._supabaseApiCall(() =>
+      this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>(
+        "create-link",
+        {
+          body: {
+            title,
+            url,
+            html,
+          },
+        }
+      )
     );
+
+    return { link, newJobs };
   }
 
   /**
@@ -120,9 +127,23 @@ export class F2aSupabaseApi {
    */
   scanHtmls(htmls: { linkId: number; content: string }[]) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke("scan-urls", {
+      this._supabase.functions.invoke<{ newJobs: Job[] }>("scan-urls", {
         body: {
           htmls,
+        },
+      })
+    );
+  }
+
+  /**
+   * Scan HTML for a job description.
+   */
+  scanJobDescription({ jobId, html }: { jobId: number; html: string }) {
+    return this._supabaseApiCall(() =>
+      this._supabase.functions.invoke<Job>("scan-job-description", {
+        body: {
+          jobId,
+          html,
         },
       })
     );

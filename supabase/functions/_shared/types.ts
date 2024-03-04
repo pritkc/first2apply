@@ -1,5 +1,14 @@
+export enum SiteProvider {
+  linkedin = "linkedin",
+  indeed = "indeed",
+  glassdoor = "glassdoor",
+  weworkremotely = "weworkremotely",
+  remoteok = "remoteok",
+}
+
 export type JobSite = {
   id: number;
+  provider: SiteProvider;
   name: string;
   urls: string[];
   queryParamsToRemove?: string[];
@@ -26,14 +35,18 @@ export type Job = {
   externalUrl: string;
   siteId: number;
 
+  // main info
   title: string;
   companyName: string;
   companyLogo?: string;
 
+  // metadata
   jobType?: JobType;
   location?: string;
   salary?: string;
   tags?: string[];
+
+  description?: string;
 
   status: JobStatus;
 
@@ -73,7 +86,7 @@ export type DbSchema = {
           | "jobType"
           | "status"
         >;
-        Update: Pick<Job, "status">;
+        Update: Pick<Job, "status"> | Pick<Job, "description">;
       };
     };
     Views: {};

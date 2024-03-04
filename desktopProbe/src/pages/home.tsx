@@ -9,6 +9,7 @@ import {
   listJobs,
   updateJobStatus,
   openExternalUrl,
+  scanJob,
 } from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
@@ -20,6 +21,7 @@ import { JobsList } from "@/components/jobsList";
 import { CronSchedule } from "@/components/cronSchedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import { JobDetails } from "@/components/jobDetails";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -60,6 +62,8 @@ export function Home() {
     applied: 0,
     archived: 0,
   });
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isScanningSelectedJob, setIsScanningSelectedJob] = useState(false);
 
   // Update jobs when location changes
   useEffect(() => {
@@ -73,12 +77,13 @@ export function Home() {
           isLoading: false,
           hasMore: result.jobs.length === JOB_BATCH_SIZE,
         });
+        setSelectedJob(result.jobs[0]);
       } catch (error) {
         handleError({ error, title: "Failed to load jobs" });
       }
     };
     asyncLoad();
-  }, [status]);
+  }, [status, location.search]); // using location.search to trigger the effect when the query parameter changes
 
   // effect used to load a new batch of jobs after updating the status of a job
   // and there are still jobs to load
@@ -189,6 +194,35 @@ export function Home() {
     }
   };
 
+  /**
+   * Select a job and open the job details panel.
+   * If the jd is empty, scan the job to get the job description.
+   */
+  const scanJobAndSelect = async (job: Job) => {
+    setSelectedJob(job);
+
+    if (!job.description) {
+      try {
+        setIsScanningSelectedJob(true);
+
+        const updatedJob = await scanJob(job);
+        setSelectedJob(updatedJob);
+
+        // Update the job in the list
+        setListing((listing) => {
+          const jobs = listing.jobs.map((j) =>
+            j.id === updatedJob.id ? updatedJob : j
+          );
+          return { ...listing, jobs };
+        });
+      } catch (error) {
+        handleError({ error, title: "Failed to scan job" });
+      } finally {
+        setIsScanningSelectedJob(false);
+      }
+    }
+  };
+
   if (isLoadingLinks || isLoadingSettings) {
     return (
       <DefaultLayout className="px-6 flex flex-col py-6 md:p-10">
@@ -208,8 +242,8 @@ export function Home() {
     <DefaultLayout
       className={`px-6 flex flex-col ${
         links.length === 0
-          ? "justify-evenly h-screen pb-14 max-w-[800px] w-full px-6 md:px-10 lg:px-20"
-          : "py-6 md:p-10"
+          ? "justify-evenly h-screen pb-14 max-w-[800px] w-full md:px-10 lg:px-20"
+          : "pt-6 md:p-10 md:pb-0"
       }`}
     >
       {links.length === 0 ? (
@@ -235,10 +269,10 @@ export function Home() {
         </>
       ) : (
         <div className="space-y-10">
-          <CronSchedule
+          {/* <CronSchedule
             cronRule={settings.cronRule}
             onCronRuleChange={onCronRuleChange}
-          />
+          /> */}
 
           <Tabs
             value={status}
@@ -263,15 +297,34 @@ export function Home() {
                   {listing.isLoading || statusItem !== status ? (
                     <JobsListSkeleton />
                   ) : (
-                    <JobsList
-                      jobs={listing.jobs}
-                      hasMore={listing.hasMore}
-                      onApply={(job) => {
-                        openExternalUrl(job.externalUrl);
-                      }}
-                      onUpdateJobStatus={onUpdateJobStatus}
-                      onLoadMore={onLoadMore}
-                    />
+                    <section className="flex">
+                      {/* jobs list */}
+                      <div
+                        id="jobsList"
+                        className="w-1/2 lg:w-2/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll"
+                      >
+                        <JobsList
+                          jobs={listing.jobs}
+                          hasMore={listing.hasMore}
+                          parentContainerId="jobsList"
+                          onApply={(job) => {
+                            openExternalUrl(job.externalUrl);
+                            // scanJob(job);
+                          }}
+                          onUpdateJobStatus={onUpdateJobStatus}
+                          onLoadMore={onLoadMore}
+                          onSelect={(job) => scanJobAndSelect(job)}
+                        />
+                      </div>
+
+                      {/* JD side panel */}
+                      <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
+                        {selectedJob && !isScanningSelectedJob && (
+                          <JobDetails job={selectedJob}></JobDetails>
+                        )}
+                        {isScanningSelectedJob && <div>Scanning job...</div>}
+                      </div>
+                    </section>
                   )}
                 </TabsContent>
               );
