@@ -152,6 +152,21 @@ export function parseJobPage({
     case "Bestjobs":
       foundJobs = parseBestjobsJobs({ siteId: site.id, html });
       break;
+    case "Echojobs":
+      foundJobs = parseEchojobsJobs({ siteId: site.id, html });
+      break;
+    case "Remotive":
+      foundJobs = parseRemotiveJobs({ siteId: site.id, html });
+      break;
+    case "Remoteio":
+      foundJobs = parseRemoteioJobs({ siteId: site.id, html });
+      break;
+    case "Builtin":
+      foundJobs = parseBuiltinJobs({ siteId: site.id, html });
+      break;
+    case "Naukri":
+      foundJobs = parseNaukriJobs({ siteId: site.id, html });
+      break;
   }
 
   if (foundJobs.length === 0) {
@@ -430,7 +445,7 @@ export function parseGlassDoorJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector(".JobsList_jobsList__Ey2Vo");
+  const jobsList = document.querySelector(".JobsList_jobsList__lqjTr");
   if (!jobsList) {
     return [];
   }
@@ -455,7 +470,7 @@ export function parseGlassDoorJobs({
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".jobCard .EmployerProfile_employerName__8w0tV")
+      .querySelector(".jobCard .EmployerProfile_employerName__qujuA")
       ?.textContent?.trim();
     console.log(companyName);
     if (!companyName) return null;
@@ -800,6 +815,388 @@ export function parseBestjobsJobs({
       companyLogo,
       location,
       salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a echojobs job page.
+ */
+
+export function parseEchojobsJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("tbody");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(jobsList.querySelectorAll("tr")) as Element[];
+  console.log(`[echojobs] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("td > div");
+    if (!jobInfo) return null;
+
+    const titleAndUrlElement = jobInfo.querySelector(
+      "div:nth-child(2) > h2 > a"
+    );
+
+    const externalUrl =
+      "https://echojobs.io" + titleAndUrlElement?.getAttribute("href")?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    if (!externalId) return null;
+
+    const title = titleAndUrlElement?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = jobInfo
+      .querySelector("div:nth-child(2) > div:first-child > a")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo =
+      jobInfo
+        .querySelector("div:first-child > div > a > img")
+        ?.getAttribute("src") || undefined;
+
+    const locations = Array.from(
+      jobInfo.querySelectorAll(
+        "div:nth-child(2) > div:nth-child(3) > div:first-child > span"
+      )
+    ) as Element[];
+
+    const location = locations.map((loc) => loc.textContent?.trim()).join(", ");
+
+    let salary = jobInfo
+      .querySelector("div:nth-child(2) > div:nth-child(3) > span")
+      ?.textContent?.trim()
+      ?.replace(/USD\s*/, "")
+      ?.replace(/\s+/g, " ")
+      ?.replace(/\u00A0/g, " ")
+      ?.trim();
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
+      salary,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a remotive job page.
+ */
+export function parseRemotiveJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  let jobsList = document.querySelector("#initial_job_list > ul");
+  if (!jobsList) {
+    jobsList = document.querySelector("#hits > ul");
+    if (!jobsList) return [];
+  }
+
+  let jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
+  if (jobElements.length === 0) {
+    jobElements = Array.from(
+      jobsList.querySelectorAll("div[x-data]")
+    ) as Element[];
+  }
+  console.log(`[remotive] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobTitle = el?.querySelector(".job-tile-title a");
+    if (!jobTitle) return null;
+
+    const externalUrl =
+      "https://remotive.com/" + jobTitle.getAttribute("href")?.trim();
+    console.log(externalUrl);
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    console.log(externalId);
+    if (!externalId) return null;
+
+    const title = jobTitle.querySelector("span")?.textContent?.trim();
+    console.log(title);
+    if (!title) return null;
+
+    const companyName = jobTitle
+      .querySelector("span:nth-child(3)")
+      ?.textContent?.trim();
+    console.log(companyName);
+    if (!companyName) return null;
+
+    const companyLogo =
+      el
+        .querySelector(".company-page-logo-container")
+        ?.querySelector("img")
+        ?.getAttribute("src") || undefined;
+
+    const locations = Array.from(
+      el.querySelectorAll(".job-tile-location")
+    ) as Element[];
+
+    const location = [
+      ...new Set(
+        locations.map((loc) =>
+          loc.textContent.trim().replace(/[^a-zA-Z\s,]/g, "")
+        )
+      ),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    console.log(location);
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType: "remote",
+      location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a remoteio job page.
+ */
+export function parseRemoteioJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("main");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".shadow-singlePost")
+  ) as Element[];
+  console.log(`[remoteio] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("div:nth-child(2) > a");
+    if (!jobInfo) return null;
+
+    const externalUrl = `https://www.remote.io${jobInfo.getAttribute(
+      "href"
+    )}`?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = externalUrl.split("?")[0].split("/").pop();
+    if (!externalId) return null;
+
+    const title = jobInfo.textContent?.trim();
+    if (!title) return null;
+
+    const company = el.querySelector("div:first-child img");
+    if (company === null) return null;
+
+    const companyName = company.getAttribute("alt")?.trim();
+    if (!companyName) return null;
+
+    const companyLogo = company.getAttribute("src")?.trim();
+
+    const location = el
+      .querySelector("div:nth-child(2) > div")
+      ?.textContent?.trim();
+
+    const tagsList = Array.from(
+      el.querySelectorAll("div:nth-child(4) > span")
+    ) as Element[];
+
+    const tags = tagsList.map((tag) =>
+      tag.querySelector("a").textContent.trim()
+    );
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType: "remote",
+      location,
+      tags,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a builtin job page.
+ */
+export function parseBuiltinJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#jobs-list");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll('[data-id="job-card"]')
+  ) as Element[];
+  console.log(`[builtin] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector("#job-card-alias");
+    if (!jobInfo) return null;
+
+    const externalUrl = `https://builtin.com${jobInfo.getAttribute(
+      "href"
+    )}`?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el.getAttribute("id")?.trim();
+    if (!externalId) return null;
+
+    const title = jobInfo.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector('[data-id="company-title"]')
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo = el
+      .querySelector('img[data-id="company-img"]')
+      .getAttribute("src")
+      ?.trim();
+
+    const jobLocation = el.querySelector(
+      "div:first-child > div:nth-child(2) > div:first-child > div:first-child > div:nth-child(2)"
+    );
+
+    const jobTypeList = Array.from(
+      el.querySelectorAll("div:nth-child(3) > div")
+    ) as Element[];
+
+    const jobType = jobTypeList
+      .map((div) => div.textContent.trim().toLowerCase())
+      .filter((type) => type === "remote" || type === "hybrid")
+      .join(", ");
+
+    const location = jobLocation
+      .querySelector("div:nth-child(2)")
+      ?.textContent?.trim();
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      jobType,
+      location,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a naukri job page.
+ */
+export function parseNaukriJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("#listContainer");
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".srp-jobtuple-wrapper")
+  ) as Element[];
+  console.log(`[naukri] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const jobInfo = el.querySelector(".title");
+    if (!jobInfo) return null;
+
+    const externalUrl = jobInfo.getAttribute("href")?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = el.getAttribute("data-job-id")?.trim();
+    if (!externalId) return null;
+
+    const title = jobInfo.getAttribute("title")?.trim();
+    if (!title) return null;
+
+    const companyName = el.querySelector(".comp-name")?.textContent?.trim();
+    if (!companyName) return null;
+
+    let location = el.querySelector(".loc")?.textContent?.trim() || "";
+
+    const additionalLocations = location.split(", ").length - 3;
+    location =
+      location.split(", ").slice(0, 3).join(", ") +
+      (additionalLocations > 0 ? ` + ${additionalLocations} more` : "");
+
+    const tagsList = Array.from(el.querySelectorAll(".tag-li")) as Element[];
+
+    const tags = tagsList.map((tag) => tag.textContent.trim());
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
+      tags,
     };
   });
 

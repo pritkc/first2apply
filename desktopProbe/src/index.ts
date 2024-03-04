@@ -35,6 +35,7 @@ if (require("electron-squirrel-startup")) {
 }
 
 const APP_PROTOCOL = "first2apply";
+let appIsRunning = false;
 
 // register the custom protocol
 if (process.defaultApp) {
@@ -73,28 +74,7 @@ const createMainWindow = (): void => {
 
   mainWindow.on("close", (event) => {
     event.preventDefault();
-    mainWindow?.hide();
-
-    // hide the dock icon on macOS and hide the taskbar icon on Windows
-    if (process.platform === "darwin") {
-      app.dock.hide();
-    } else if (process.platform === "win32") {
-      mainWindow?.setSkipTaskbar(true);
-    }
-
-    // dirty hack to fix navigating to the right tab in home page
-    // when closing we navigate to help page
-    mainWindow?.webContents.send("navigate", { path: "/help" });
-
-    // send notification to inform the user that the app is still running
-    if (!trayIconNotificationShown) {
-      trayIconNotificationShown = true;
-      const notification = new Notification({
-        title: "See you soon!",
-        body: "First 2 Apply is still checking for new jobs in the background. Click the paper airplane icon in your system tray to open the app.",
-      });
-      notification.show();
-    }
+    onHideToSystemTray();
   });
 };
 
@@ -110,6 +90,20 @@ app.on("ready", () => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   app.quit();
+});
+
+// do not close all windows when the app is quit on macOS, instead hide the main window
+app.on("before-quit", (event) => {
+  if (appIsRunning) {
+    event.preventDefault();
+    onHideToSystemTray();
+  }
+});
+
+app.on("activate", () => {
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  onActivate();
 });
 
 function onActivate() {
@@ -130,11 +124,30 @@ function onActivate() {
 
   mainWindow?.focus();
 }
-app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  onActivate();
-});
+function onHideToSystemTray() {
+  mainWindow?.hide();
+
+  // hide the dock icon on macOS and hide the taskbar icon on Windows
+  if (process.platform === "darwin") {
+    app.dock.hide();
+  } else if (process.platform === "win32") {
+    mainWindow?.setSkipTaskbar(true);
+  }
+
+  // dirty hack to fix navigating to the right tab in home page
+  // when closing we navigate to help page
+  mainWindow?.webContents.send("navigate", { path: "/help" });
+
+  // send notification to inform the user that the app is still running
+  if (!trayIconNotificationShown) {
+    trayIconNotificationShown = true;
+    const notification = new Notification({
+      title: "See you soon!",
+      body: "First 2 Apply is still checking for new jobs in the background. Click the paper airplane icon in your system tray to open the app.",
+    });
+    notification.show();
+  }
+}
 
 // globals
 const analytics = new AmplitudeAnalyticsClient();
@@ -192,6 +205,9 @@ async function bootstrap() {
       app.setAppUserModelId(ENV.appBundleId);
     }
 
+    // track the app start event
+    analytics.trackEvent("app_start");
+
     // start auto-updater
     autoUpdater.start();
 
@@ -222,23 +238,10 @@ async function bootstrap() {
     // manual logout for testing
     // fs.unlinkSync(sessionPath);
 
-    // load the session from disk if it exists
-    if (fs.existsSync(sessionPath)) {
-      const encryptedSession = fs.readFileSync(sessionPath, "utf-8");
-      const plaintextSession = safeStorage.decryptString(
-        Buffer.from(encryptedSession, "base64")
-      );
-      const session = JSON.parse(plaintextSession);
-      logger.info(`finished loading session from disk`);
-      const { error } = await supabase.auth.setSession(session);
-      if (error) throw error;
-    } else {
-      logger.info(`no session found on disk`);
-    }
-
     // save the session to disk when it changes
     supabase.auth.onAuthStateChange(async (event, session) => {
       try {
+        logger.info(`auth state change: ${event}`);
         logger.setBindings({ userId: session?.user?.id });
 
         if (session?.user?.id) {
@@ -275,8 +278,19 @@ async function bootstrap() {
       }
     });
 
-    // track the app start event
-    analytics.trackEvent("app_start");
+    // load the session from disk if it exists
+    if (fs.existsSync(sessionPath)) {
+      const encryptedSession = fs.readFileSync(sessionPath, "utf-8");
+      const plaintextSession = safeStorage.decryptString(
+        Buffer.from(encryptedSession, "base64")
+      );
+      const session = JSON.parse(plaintextSession);
+      logger.info(`finished loading session from disk`);
+      const { error } = await supabase.auth.setSession(session);
+      if (error) throw error;
+    } else {
+      logger.info(`no session found on disk`);
+    }
   } catch (error) {
     logger.error(getExceptionMessage(error));
   }
@@ -294,6 +308,8 @@ async function bootstrap() {
   app.on("second-instance", (event, commandLine) => {
     handleDeepLink(commandLine[commandLine.length - 1]);
   });
+
+  appIsRunning = true;
 }
 
 /**
@@ -302,11 +318,12 @@ async function bootstrap() {
 async function quit() {
   try {
     logger.info(`quitting...`);
+    appIsRunning = false;
 
     jobScanner?.close();
     logger.info(`closed job scanner`);
 
-    htmlDownloader.close();
+    await htmlDownloader.close();
     logger.info(`closed html downloader`);
 
     trayMenu?.close();
@@ -324,7 +341,7 @@ async function quit() {
     analytics.trackEvent("app_quit");
   } catch (error) {
     logger.error(getExceptionMessage(error));
-    app.quit(); // force quit
+    process.exit(-1); // force quit
   } finally {
     await flushLogger().catch((error) => {
       error; // noop
