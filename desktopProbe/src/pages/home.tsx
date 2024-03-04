@@ -77,7 +77,13 @@ export function Home() {
           isLoading: false,
           hasMore: result.jobs.length === JOB_BATCH_SIZE,
         });
-        setSelectedJob(result.jobs[0]);
+
+        const firstJob = result.jobs[0];
+        if (firstJob) {
+          scanJobAndSelect(firstJob);
+        } else {
+          setSelectedJob(null);
+        }
       } catch (error) {
         handleError({ error, title: "Failed to load jobs" });
       }

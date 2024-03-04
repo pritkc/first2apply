@@ -115,7 +115,7 @@ export class JobScanner {
   /**
    * Scan a list of new jobs to extract the description.
    */
-  async scanJobs(jobs: Job[]) {
+  async scanJobs(jobs: Job[]): Promise<Job[]> {
     this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
 
     const jobChunks = chunk(jobs, 10);
@@ -126,21 +126,26 @@ export class JobScanner {
 
         return Promise.all(
           chunkOfJobs.map(async (job) => {
-            const html = await this._htmlDownloader
-              .loadUrl(job.externalUrl, 1)
-              .catch((error) => {
-                const errorMessage = getExceptionMessage(error);
-                this._logger.error(errorMessage);
-                return `<html><body class="error">${errorMessage}<body><html>`;
-              });
-            this._logger.info(`downloaded html for ${job.title}`);
+            try {
+              const html = await this._htmlDownloader.loadUrl(
+                job.externalUrl,
+                1
+              );
+              this._logger.info(`downloaded html for ${job.title}`);
 
-            const updatedJob = await this._supabaseApi.scanJobDescription({
-              jobId: job.id,
-              html,
-            });
+              const { job: updatedJob } =
+                await this._supabaseApi.scanJobDescription({
+                  jobId: job.id,
+                  html,
+                });
 
-            return updatedJob;
+              return updatedJob;
+            } catch (error) {
+              // intetionally return initial job if there is an error
+              // in order to continue scanning the rest of the jobs
+              this._logger.error(getExceptionMessage(error));
+              return job;
+            }
           })
         );
       }
