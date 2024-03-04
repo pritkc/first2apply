@@ -37,10 +37,10 @@ export function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="z-50 h-screen flex flex-col items-center xl:items-start border-r border-muted-foreground/20 w-16 xl:w-56 xl:pl-10 pt-6 md:p-10 fixed gap-6">
+    <nav className="z-50 h-screen flex flex-col items-center 2xl:items-start border-r border-muted-foreground/20 w-16 2xl:w-56 2xl:pl-10 pt-6 md:p-10 fixed gap-6">
       <Link to="/" className="flex gap-3 mb-16 md:mb-20">
         <Icons.logo className="w-7 h-7"></Icons.logo>
-        <span className="hidden xl:inline-block text-lg">First 2 Apply</span>
+        <span className="hidden 2xl:inline-block text-lg">First 2 Apply</span>
       </Link>
       {navItems.map((item) => (
         <TooltipProvider delayDuration={500} key={item.name}>
@@ -54,13 +54,13 @@ export function Navbar() {
                 }`}
               >
                 {item.icon}
-                <span className="hidden xl:inline-block text-lg">
+                <span className="hidden 2xl:inline-block text-lg">
                   {item.name}
                 </span>
               </Link>
             </TooltipTrigger>
 
-            <TooltipContent side="right" className="xl:hidden text-base">
+            <TooltipContent side="right" className="2xl:hidden text-base">
               {item.name}
             </TooltipContent>
           </Tooltip>
