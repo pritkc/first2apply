@@ -110,4 +110,10 @@ export function initRendererIpcApi({
       return { job: updatedJob };
     })
   );
+
+  ipcMain.handle(
+    "create-review",
+    async (event, { title, description, rating }) =>
+      _apiCall(() => supabaseApi.createReview({ title, description, rating }))
+  );
 }
