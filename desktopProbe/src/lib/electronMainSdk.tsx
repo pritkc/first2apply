@@ -214,6 +214,17 @@ export async function openExternalUrl(url: string): Promise<void> {
 }
 
 /**
+ * Scan a job to fetch the details.
+ */
+export async function scanJob(job: Job): Promise<Job> {
+  const { job: updatedJob } = await _mainProcessApiCall<{ job: Job }>(
+    "scan-job-description",
+    { job }
+  );
+  return updatedJob;
+}
+
+/**
  * Create a user review.
  */
 export async function createReview({
