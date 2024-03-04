@@ -63,6 +63,7 @@ export function Home() {
     archived: 0,
   });
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isScanningSelectedJob, setIsScanningSelectedJob] = useState(false);
 
   // Update jobs when location changes
   useEffect(() => {
@@ -82,7 +83,7 @@ export function Home() {
       }
     };
     asyncLoad();
-  }, [status]);
+  }, [status, location.search]); // using location.search to trigger the effect when the query parameter changes
 
   // effect used to load a new batch of jobs after updating the status of a job
   // and there are still jobs to load
@@ -193,6 +194,35 @@ export function Home() {
     }
   };
 
+  /**
+   * Select a job and open the job details panel.
+   * If the jd is empty, scan the job to get the job description.
+   */
+  const scanJobAndSelect = async (job: Job) => {
+    setSelectedJob(job);
+
+    if (!job.description) {
+      try {
+        setIsScanningSelectedJob(true);
+
+        const updatedJob = await scanJob(job);
+        setSelectedJob(updatedJob);
+
+        // Update the job in the list
+        setListing((listing) => {
+          const jobs = listing.jobs.map((j) =>
+            j.id === updatedJob.id ? updatedJob : j
+          );
+          return { ...listing, jobs };
+        });
+      } catch (error) {
+        handleError({ error, title: "Failed to scan job" });
+      } finally {
+        setIsScanningSelectedJob(false);
+      }
+    }
+  };
+
   if (isLoadingLinks || isLoadingSettings) {
     return (
       <DefaultLayout className="px-6 flex flex-col py-6 md:p-10">
@@ -283,15 +313,16 @@ export function Home() {
                           }}
                           onUpdateJobStatus={onUpdateJobStatus}
                           onLoadMore={onLoadMore}
-                          onSelect={(job) => setSelectedJob(job)}
+                          onSelect={(job) => scanJobAndSelect(job)}
                         />
                       </div>
 
                       {/* JD side panel */}
                       <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
-                        {selectedJob && (
+                        {selectedJob && !isScanningSelectedJob && (
                           <JobDetails job={selectedJob}></JobDetails>
                         )}
+                        {isScanningSelectedJob && <div>Scanning job...</div>}
                       </div>
                     </section>
                   )}
