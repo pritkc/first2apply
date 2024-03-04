@@ -7,7 +7,7 @@ import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
 import { Job } from "../../../supabase/functions/_shared/types";
-import { promiseAllSequence } from "./helpers";
+import { chunk, promiseAllSequence } from "./helpers";
 import { HtmlDownloader } from "./htmlDownloader";
 import { IAnalyticsClient } from "@/lib/analytics";
 
@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
  * Class used to manage a cron job that periodically scans links.
  */
 export class JobScanner {
+  private _isRunning = true;
   private _settings: JobScannerSettings = {
     preventSleep: false,
     useSound: false,
@@ -75,11 +76,13 @@ export class JobScanner {
       });
 
       const newJobs = await promiseAllSequence(links, async (link) => {
+        if (!this._isRunning) return null; // stop if the scanner is closed
+
         const html = await this._htmlDownloader
           .loadUrl(link.url)
           .catch((error) => {
             const errorMessage = getExceptionMessage(error);
-            console.error(errorMessage);
+            this._logger.error(errorMessage);
             return `<html><body class="error">${errorMessage}<body><html>`;
           });
 
@@ -88,13 +91,15 @@ export class JobScanner {
         ]);
 
         return newJobs;
-      }).then((r) => r.flat());
+      }).then((r) => r.flat().filter((j) => j !== null));
       this._logger.info(`downloaded html for ${links.length} links`);
 
       // scan job descriptions
+      if (!this._isRunning) return;
       await this.scanJobs(newJobs);
 
       // fire a notification if there are new jobs
+      if (!this._isRunning) return;
       this.showNewJobsNotification({ newJobs });
 
       this._logger.info("scan complete");
@@ -113,23 +118,33 @@ export class JobScanner {
   async scanJobs(jobs: Job[]) {
     this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
 
-    const updatedJobs = await promiseAllSequence(jobs, async (job) => {
-      const html = await this._htmlDownloader
-        .loadUrl(job.externalUrl, 1)
-        .catch((error) => {
-          const errorMessage = getExceptionMessage(error);
-          console.error(errorMessage);
-          return `<html><body class="error">${errorMessage}<body><html>`;
-        });
-      this._logger.info(`downloaded html for ${job.title}`);
+    const jobChunks = chunk(jobs, 10);
+    const updatedJobs = await promiseAllSequence(
+      jobChunks,
+      async (chunkOfJobs) => {
+        if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
 
-      const updatedJob = await this._supabaseApi.scanJobDescription({
-        jobId: job.id,
-        html,
-      });
+        return Promise.all(
+          chunkOfJobs.map(async (job) => {
+            const html = await this._htmlDownloader
+              .loadUrl(job.externalUrl, 1)
+              .catch((error) => {
+                const errorMessage = getExceptionMessage(error);
+                this._logger.error(errorMessage);
+                return `<html><body class="error">${errorMessage}<body><html>`;
+              });
+            this._logger.info(`downloaded html for ${job.title}`);
 
-      return updatedJob;
-    });
+            const updatedJob = await this._supabaseApi.scanJobDescription({
+              jobId: job.id,
+              html,
+            });
+
+            return updatedJob;
+          })
+        );
+      }
+    ).then((r) => r.flat());
 
     this._logger.info("finished scanning job descriptions");
 
@@ -209,6 +224,8 @@ export class JobScanner {
       this._logger.info(`stopping prevent sleep`);
       powerSaveBlocker.stop(this._prowerSaveBlockerId);
     }
+
+    this._isRunning = false;
   }
 
   /**

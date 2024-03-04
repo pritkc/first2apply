@@ -19,59 +19,40 @@ import InfiniteScroll from "react-infinite-scroll-component";
 export function JobsList({
   jobs,
   hasMore,
+  parentContainerId,
   onApply,
   onLoadMore,
   onUpdateJobStatus,
+  onSelect,
 }: {
   jobs: Job[];
   hasMore: boolean;
+  parentContainerId: string;
   onApply: (job: Job) => void;
   onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
   onLoadMore: () => void;
+  onSelect: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
-  const [showScrollToTop, setShowScrollToTop] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollToTop(window.scrollY > 500);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return jobs.length > 0 ? (
-    <ul className="space-y-6">
-      {showScrollToTop && (
-        <Button
-          variant="outline"
-          style={
-            window.innerWidth > 1560
-              ? { right: "calc((100% - 1470px) / 2)" }
-              : { right: "40px" }
-          }
-          className="fixed bottom-10 z-[100] rounded-full h-16 w-16 shadow-sm shadow-foreground/10"
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          <ArrowUpIcon className="h-6 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
-        </Button>
-      )}
-
-      <InfiniteScroll
-        dataLength={jobs.length}
-        next={onLoadMore}
-        hasMore={hasMore}
-        loader={<Icons.spinner2 />}
-        className="space-y-6"
-        scrollThreshold={0.8}
-      >
+    <InfiniteScroll
+      dataLength={jobs.length}
+      next={onLoadMore}
+      hasMore={hasMore}
+      loader={<Icons.spinner2 />}
+      className="space-y-6"
+      scrollThreshold={0.8}
+      scrollableTarget={parentContainerId}
+    >
+      <ul className="space-y-6">
         {jobs.map((job) => {
           return (
-            <li key={job.id} className="space-y-6">
+            <li
+              key={job.id}
+              className="space-y-6"
+              onClick={() => onSelect(job)}
+            >
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={siteLogos[job.siteId]} />
@@ -160,8 +141,8 @@ export function JobsList({
             </li>
           );
         })}
-      </InfiniteScroll>
-    </ul>
+      </ul>
+    </InfiniteScroll>
   ) : (
     <p className="text-center mt-10 max-w-md mx-auto">
       No new job listings right now, but don't worry! We're on the lookout and
