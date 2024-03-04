@@ -6,7 +6,10 @@ type JobDescription = {
   content?: string;
 };
 
-const turndownService = new turndown();
+const turndownService = new turndown({
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+});
 
 /**
  * Parse the job description from the HTML.
@@ -35,7 +38,6 @@ export function parseLinkedinJobDescription({
 }: {
   html: string;
 }): JobDescription {
-  console.log("parsing linkedin job description");
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
@@ -43,10 +45,15 @@ export function parseLinkedinJobDescription({
     ".description__text .show-more-less-html__markup"
   );
 
-  console.log("finished parsing linkedin job description");
-  const description = descriptionContainer
-    ? turndownService.turndown(descriptionContainer.innerHTML)
-    : undefined;
+  let description: string | undefined;
+  if (descriptionContainer) {
+    const html = descriptionContainer.innerHTML;
+    const sanitizedHtml = html
+      .replaceAll(/<br><br><\/strong>/g, "</strong><br><br>")
+      .replaceAll(/<br><\/strong>/g, "</strong><br>")
+      .replaceAll(/(<br>)+<\/li>/g, "</li>");
+    description = turndownService.turndown(sanitizedHtml);
+  }
 
   return {
     content: description,
