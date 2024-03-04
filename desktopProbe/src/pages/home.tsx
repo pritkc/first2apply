@@ -268,69 +268,62 @@ export function Home() {
           />
         </>
       ) : (
-        <div className="space-y-10">
-          {/* <CronSchedule
-            cronRule={settings.cronRule}
-            onCronRuleChange={onCronRuleChange}
-          /> */}
+        <Tabs
+          value={status}
+          className="w-full flex flex-col gap-5"
+          onValueChange={(value) => onTabChange(value)}
+        >
+          <TabsList className="h-fit p-2">
+            <TabsTrigger value="new" className="px-6 py-4 flex-1">
+              New Jobs {`(${listing.new})`}
+            </TabsTrigger>
+            <TabsTrigger value="applied" className="px-6 py-4 flex-1">
+              Applied {`(${listing.applied})`}
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="px-6 py-4 flex-1">
+              Archived {`(${listing.archived})`}
+            </TabsTrigger>
+          </TabsList>
 
-          <Tabs
-            value={status}
-            className="w-full flex flex-col gap-5"
-            onValueChange={(value) => onTabChange(value)}
-          >
-            <TabsList className="h-fit p-2">
-              <TabsTrigger value="new" className="px-6 py-4 flex-1">
-                New Jobs {`(${listing.new})`}
-              </TabsTrigger>
-              <TabsTrigger value="applied" className="px-6 py-4 flex-1">
-                Applied {`(${listing.applied})`}
-              </TabsTrigger>
-              <TabsTrigger value="archived" className="px-6 py-4 flex-1">
-                Archived {`(${listing.archived})`}
-              </TabsTrigger>
-            </TabsList>
+          {ALL_JOB_STATUSES.map((statusItem) => {
+            return (
+              <TabsContent key={statusItem} value={statusItem}>
+                {listing.isLoading || statusItem !== status ? (
+                  <JobsListSkeleton />
+                ) : (
+                  <section className="flex">
+                    {/* jobs list */}
+                    <div
+                      id="jobsList"
+                      className="w-1/2 lg:w-2/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll"
+                    >
+                      <JobsList
+                        jobs={listing.jobs}
+                        hasMore={listing.hasMore}
+                        parentContainerId="jobsList"
+                        onApply={(job) => {
+                          openExternalUrl(job.externalUrl);
+                          // scanJob(job);
+                        }}
+                        onUpdateJobStatus={onUpdateJobStatus}
+                        onLoadMore={onLoadMore}
+                        onSelect={(job) => scanJobAndSelect(job)}
+                      />
+                    </div>
 
-            {ALL_JOB_STATUSES.map((statusItem) => {
-              return (
-                <TabsContent key={statusItem} value={statusItem}>
-                  {listing.isLoading || statusItem !== status ? (
-                    <JobsListSkeleton />
-                  ) : (
-                    <section className="flex">
-                      {/* jobs list */}
-                      <div
-                        id="jobsList"
-                        className="w-1/2 lg:w-2/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll"
-                      >
-                        <JobsList
-                          jobs={listing.jobs}
-                          hasMore={listing.hasMore}
-                          parentContainerId="jobsList"
-                          onApply={(job) => {
-                            openExternalUrl(job.externalUrl);
-                            // scanJob(job);
-                          }}
-                          onUpdateJobStatus={onUpdateJobStatus}
-                          onLoadMore={onLoadMore}
-                          onSelect={(job) => scanJobAndSelect(job)}
-                        />
-                      </div>
-
-                      {/* JD side panel */}
-                      <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
-                        {selectedJob && !isScanningSelectedJob && (
-                          <JobDetails job={selectedJob}></JobDetails>
-                        )}
-                        {isScanningSelectedJob && <div>Scanning job...</div>}
-                      </div>
-                    </section>
-                  )}
-                </TabsContent>
-              );
-            })}
-          </Tabs>
-        </div>
+                    {/* JD side panel */}
+                    <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
+                      {selectedJob && !isScanningSelectedJob && (
+                        <JobDetails job={selectedJob}></JobDetails>
+                      )}
+                      {isScanningSelectedJob && <div>Scanning job...</div>}
+                    </div>
+                  </section>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       )}
     </DefaultLayout>
   );

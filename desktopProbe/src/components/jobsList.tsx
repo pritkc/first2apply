@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useSites } from "@/hooks/sites";
 
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
