@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Icons } from "@/components/icons";
 import {
+  ChatBubbleIcon,
+  GearIcon,
   HomeIcon,
   MagnifyingGlassIcon,
-  GearIcon,
+  MoonIcon,
   QuestionMarkCircledIcon,
   SunIcon,
-  MoonIcon,
 } from "@radix-ui/react-icons";
 import {
   Tooltip,
@@ -27,6 +28,11 @@ const navItems = [
     name: "Settings",
     path: "/settings",
     icon: <GearIcon className="w-7 h-7" />,
+  },
+  {
+    name: "Review",
+    path: "/review",
+    icon: <ChatBubbleIcon className="w-7 h-7" />,
   },
   {
     name: "Help",

@@ -63,6 +63,15 @@ export type Job = {
   updated_at: Date;
 };
 
+export type Review = {
+  id: number;
+  user_id: string;
+  title: string;
+  description: string;
+  rating: number;
+  created_at: Date;
+};
+
 /**
  * Supabase database schema.
  */
@@ -96,6 +105,9 @@ export type DbSchema = {
           | "status"
         >;
         Update: Pick<Job, "status"> | Pick<Job, "description">;
+      };
+      reviews: {
+        Row: Review;
       };
     };
     Views: {};

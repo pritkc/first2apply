@@ -24,6 +24,7 @@ import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobSummary } from "@/components/jobSummary";
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { ReviewSuggestionPopup } from "../components/reviewSuggestionPopup";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -287,6 +288,8 @@ export function Home() {
 
   return (
     <DefaultLayout className="px-6 pt-6 md:px-10">
+      <ReviewSuggestionPopup />
+
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger value="new" className="px-6 py-2.5 flex-1">
@@ -401,6 +404,8 @@ function NoLinks() {
     <DefaultLayout
       className={`flex flex-col justify-evenly h-screen pb-14 max-w-[800px] w-full md:px-10 lg:px-20`}
     >
+      <ReviewSuggestionPopup />
+
       <div className="flex flex-col items-center gap-10">
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
           Be the: <span className="text-primary">first 2 apply</span>
