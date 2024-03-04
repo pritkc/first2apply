@@ -105,6 +105,9 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle("scan-job-description", async (event, { job }) =>
-    _apiCall(async () => jobScanner.scanJobs([job]))
+    _apiCall(async () => {
+      const [updatedJob] = await jobScanner.scanJobs([job]);
+      return { job: updatedJob };
+    })
   );
 }

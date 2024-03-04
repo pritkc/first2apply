@@ -55,16 +55,16 @@ Deno.serve(async (req) => {
     let updatedJob = job;
     const hasUpdates = Object.values(jd).some((v) => v !== undefined);
     if (hasUpdates) {
-      const { data: updatedJobWithNewData, error: updateJobErr } =
-        await supabaseClient
-          .from("jobs")
-          .update({ description: jd.content })
-          .eq("id", jobId)
-          .single();
+      const { data, error: updateJobErr } = await supabaseClient
+        .from("jobs")
+        .update({ description: jd.content })
+        .eq("id", jobId)
+        .select("*");
       if (updateJobErr) {
         throw updateJobErr;
       }
 
+      const updatedJobWithNewData = data?.[0];
       updatedJob = updatedJobWithNewData;
     } else {
       console.log(
