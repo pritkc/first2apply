@@ -96,4 +96,10 @@ export function initRendererIpcApi({
   ipcMain.handle("open-external-url", async (event, { url }) =>
     _apiCall(async () => shell.openExternal(url))
   );
+
+  ipcMain.handle(
+    "create-review",
+    async (event, { title, description, rating }) =>
+      _apiCall(() => supabaseApi.createReview({ title, description, rating }))
+  );
 }

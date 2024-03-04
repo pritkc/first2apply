@@ -9,6 +9,7 @@ import {
   Job,
   JobStatus,
   Link,
+  Review,
 } from "../../../supabase/functions/_shared/types";
 import * as luxon from "luxon";
 
@@ -233,5 +234,28 @@ export class F2aSupabaseApi {
     if (error) throw error;
 
     return data;
+  }
+
+  /**
+   * Create a user review.
+   */
+  async createReview({
+    title,
+    description,
+    rating,
+  }: {
+    title: string;
+    description: string;
+    rating: number;
+  }): Promise<{ review: Review }> {
+    return this._supabaseApiCall(() =>
+      this._supabase.functions.invoke("create-review", {
+        body: {
+          title,
+          description,
+          rating,
+        },
+      })
+    );
   }
 }

@@ -20,6 +20,7 @@ import { JobsList } from "@/components/jobsList";
 import { CronSchedule } from "@/components/cronSchedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import { ReviewSuggestionPopup } from "../components/reviewSuggestionPopup";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -212,6 +213,7 @@ export function Home() {
           : "py-6 md:p-10"
       }`}
     >
+      <ReviewSuggestionPopup />
       {links.length === 0 ? (
         <>
           <div className="flex flex-col items-center gap-10">

@@ -5,6 +5,7 @@ import {
   JobSite,
   JobStatus,
   Link,
+  Review,
 } from "../../../supabase/functions/_shared/types";
 
 async function _mainProcessApiCall<T>(
@@ -210,4 +211,27 @@ export async function getProbeSettings(): Promise<JobScannerSettings> {
  */
 export async function openExternalUrl(url: string): Promise<void> {
   await _mainProcessApiCall("open-external-url", { url });
+}
+
+/**
+ * Create a user review.
+ */
+export async function createReview({
+  title,
+  description,
+  rating,
+}: {
+  title: string;
+  description: string;
+  rating: number;
+}): Promise<Review> {
+  const { review } = await _mainProcessApiCall<{ review: Review }>(
+    "create-review",
+    {
+      title,
+      description,
+      rating,
+    }
+  );
+  return review;
 }

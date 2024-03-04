@@ -5,6 +5,7 @@ import {
   MagnifyingGlassIcon,
   GearIcon,
   QuestionMarkCircledIcon,
+  ChatBubbleIcon,
 } from "@radix-ui/react-icons";
 import {
   Tooltip,
@@ -24,6 +25,11 @@ const navItems = [
     name: "Settings",
     path: "/settings",
     icon: <GearIcon className="w-7 h-7" />,
+  },
+  {
+    name: "Review",
+    path: "/review",
+    icon: <ChatBubbleIcon className="w-7 h-7" />,
   },
   {
     name: "Help",
