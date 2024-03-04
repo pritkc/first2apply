@@ -657,7 +657,7 @@ export function parseDiceJobs({
 
     const location = el
       .querySelector(".search-result-location")
-      .textContent.trim();
+      ?.textContent.trim();
 
     return {
       siteId,
@@ -708,7 +708,7 @@ export function parseFlexjobsJobs({
     const companyName = "";
 
     let location = el.querySelector(".job-locations")?.textContent.trim();
-    if (location.includes(",")) {
+    if (location?.includes(",")) {
       const locationParts = location.split(",");
       location = locationParts.slice(0, 3).join(",");
       if (locationParts.length > 3) {
@@ -787,7 +787,7 @@ export function parseBestjobsJobs({
     const jobFooter = el.querySelector(".card-footer > div:first-child");
 
     let location = jobFooter
-      .querySelector("div:first-child > div:nth-child(2) > span")
+      ?.querySelector("div:first-child > div:nth-child(2) > span")
       ?.getAttribute("data-original-title")
       ?.trim();
     if (location?.includes(",")) {
@@ -799,7 +799,7 @@ export function parseBestjobsJobs({
     }
 
     let salary = jobFooter
-      .querySelector("div:nth-child(2) > div:nth-child(2)")
+      ?.querySelector("div:nth-child(2) > div:nth-child(2)")
       ?.textContent?.trim();
 
     if (salary) {
