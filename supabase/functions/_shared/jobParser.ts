@@ -1037,13 +1037,15 @@ export function parseRemoteioJobs({
       .querySelector("div:nth-child(2) > div")
       ?.textContent?.trim();
 
+    let tags: string[] | undefined;
     const tagsList = Array.from(
       el.querySelectorAll("div:nth-child(4) > span")
     ) as Element[];
-
-    const tags = tagsList.map((tag) =>
-      tag.querySelector("a").textContent.trim()
-    );
+    if (tagsList.length > 0) {
+      tags = tagsList
+        .map((tag) => tag.querySelector("a")?.textContent.trim())
+        .filter((t): t is string => !!t);
+    }
 
     return {
       siteId,
@@ -1105,24 +1107,24 @@ export function parseBuiltinJobs({
 
     const companyLogo = el
       .querySelector('img[data-id="company-img"]')
-      .getAttribute("src")
+      ?.getAttribute("src")
       ?.trim();
 
     const jobLocation = el.querySelector(
       "div:first-child > div:nth-child(2) > div:first-child > div:first-child > div:nth-child(2)"
     );
 
-    const jobTypeList = Array.from(
-      el.querySelectorAll("div:nth-child(3) > div")
-    ) as Element[];
+    // const jobTypeList = Array.from(
+    //   el.querySelectorAll("div:nth-child(3) > div")
+    // ) as Element[];
 
-    const jobType = jobTypeList
-      .map((div) => div.textContent.trim().toLowerCase())
-      .filter((type) => type === "remote" || type === "hybrid")
-      .join(", ");
+    // const jobType = jobTypeList
+    //   .map((div) => div.textContent.trim().toLowerCase())
+    //   .filter((type) => type === "remote" || type === "hybrid")
+    //   .join(", ");
 
     const location = jobLocation
-      .querySelector("div:nth-child(2)")
+      ?.querySelector("div:nth-child(2)")
       ?.textContent?.trim();
 
     return {
@@ -1132,7 +1134,7 @@ export function parseBuiltinJobs({
       title,
       companyName,
       companyLogo,
-      jobType,
+      // jobType,
       location,
     };
   });
