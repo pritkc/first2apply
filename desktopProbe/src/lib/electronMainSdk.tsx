@@ -211,3 +211,14 @@ export async function getProbeSettings(): Promise<JobScannerSettings> {
 export async function openExternalUrl(url: string): Promise<void> {
   await _mainProcessApiCall("open-external-url", { url });
 }
+
+/**
+ * Scan a job to fetch the details.
+ */
+export async function scanJob(job: Job): Promise<Job> {
+  const { job: updatedJob } = await _mainProcessApiCall<{ job: Job }>(
+    "scan-job-description",
+    { job }
+  );
+  return updatedJob;
+}
