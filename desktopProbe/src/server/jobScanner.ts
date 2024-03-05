@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { Logger } from "pino";
+
 import { Notification, app, powerSaveBlocker } from "electron";
 import { ScheduledTask, schedule } from "node-cron";
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
@@ -10,6 +10,7 @@ import { Job } from "../../../supabase/functions/_shared/types";
 import { chunk, promiseAllSequence } from "./helpers";
 import { HtmlDownloader } from "./htmlDownloader";
 import { IAnalyticsClient } from "@/lib/analytics";
+import { ILogger } from "./logger";
 
 const userDataPath = app.getPath("userData");
 const settingsPath = path.join(userDataPath, "settings.json");
@@ -34,7 +35,7 @@ export class JobScanner {
   private _notificationsMap: Map<string, Notification> = new Map();
 
   constructor(
-    private _logger: Logger,
+    private _logger: ILogger,
     private _supabaseApi: F2aSupabaseApi,
     private _htmlDownloader: HtmlDownloader,
     private _onNavigate: (_: { path: string }) => void,

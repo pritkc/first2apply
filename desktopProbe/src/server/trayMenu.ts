@@ -1,9 +1,9 @@
 import { Tray, Menu, nativeImage } from "electron";
 import path from "path";
-import { Logger } from "pino";
+import { ILogger } from "./logger";
 
 export class TrayMenu {
-  private _logger: Logger;
+  private _logger: ILogger;
   private _tray: Tray;
   private _iconPathMacOs = "/images/trayIconTemplate.png";
   private _iconPathWin = "/images/trayIcon.ico";
@@ -13,7 +13,7 @@ export class TrayMenu {
     onQuit,
     onNavigate,
   }: {
-    logger: Logger;
+    logger: ILogger;
     onQuit: () => void;
     onNavigate: (_: { path: string }) => void;
   }) {
