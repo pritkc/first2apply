@@ -80,7 +80,7 @@ const createMainWindow = (): void => {
 
   // open all external links in the default browser
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (url.startsWith("http")) {
+    if (url.startsWith("http") && !url.includes("main_window")) {
       event.preventDefault();
       shell.openExternal(url);
     }
