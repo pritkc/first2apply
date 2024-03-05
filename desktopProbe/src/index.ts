@@ -6,6 +6,7 @@ import {
   session,
   dialog,
   Notification,
+  shell,
 } from "electron";
 import path from "path";
 import { ENV } from "./env";
@@ -75,6 +76,14 @@ const createMainWindow = (): void => {
   mainWindow.on("close", (event) => {
     event.preventDefault();
     onHideToSystemTray();
+  });
+
+  // open all external links in the default browser
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (url.startsWith("http")) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
   });
 };
 
