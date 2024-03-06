@@ -85,7 +85,10 @@ export function JobsList({
                           variant="outline"
                           size="sm"
                           className="w-8"
-                          onClick={() => onUpdateJobStatus(job.id, "archived")}
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onUpdateJobStatus(job.id, "archived");
+                          }}
                         >
                           <ArchiveIcon className="h-4 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
                         </Button>

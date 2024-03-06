@@ -63,7 +63,7 @@ export function initRendererIpcApi({
       });
 
       // intentionally not awaited to not have the user wait until JDs are in
-      jobScanner.scanJobs(newJobs).catch((error) => {
+      jobScanner.scanJobs(newJobs.reverse()).catch((error) => {
         console.error(getExceptionMessage(error));
       });
 

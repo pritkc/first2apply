@@ -97,7 +97,7 @@ export class JobScanner {
 
       // scan job descriptions
       if (!this._isRunning) return;
-      await this.scanJobs(newJobs);
+      await this.scanJobs(newJobs.reverse()); // reverse to scan the newest jobs first
 
       // fire a notification if there are new jobs
       if (!this._isRunning) return;
