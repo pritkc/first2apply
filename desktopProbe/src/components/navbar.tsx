@@ -41,7 +41,7 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <nav className="fixed h-screen flex flex-col items-center 2xl:items-start border-r border-muted-foreground/20 w-16 2xl:w-56 2xl:pl-10 pt-6 md:p-10 gap-6">
+    <nav className="z-50 fixed h-screen flex flex-col items-center 2xl:items-start border-r border-muted-foreground/20 w-16 2xl:w-56 2xl:pl-10 pt-6 md:p-10 gap-6">
       <Link to="/" className="flex gap-3 mb-16 md:mb-20">
         <Icons.logo className="w-7 h-7"></Icons.logo>
         <span className="hidden 2xl:inline-block text-lg">First 2 Apply</span>
