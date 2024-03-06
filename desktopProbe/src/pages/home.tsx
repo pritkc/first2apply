@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
@@ -119,7 +120,7 @@ export function Home() {
 
   // Handle tab change
   const onTabChange = (tabValue: string) => {
-    navigate(`?status=${tabValue}`);
+    navigate(`?status=${tabValue}&r=${Math.random()}`);
   };
 
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
@@ -229,7 +230,25 @@ export function Home() {
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger value="new" className="px-6 py-4 flex-1">
-            New Jobs {`(${listing.new})`}
+            <div className="w-full flex items-center">
+              <span className="flex-1">New Jobs {`(${listing.new})`}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className={
+                  status === "new"
+                    ? "opacity-100"
+                    : "opacity-0 pointer-events-none"
+                }
+                onClick={(evt) => {
+                  evt.preventDefault();
+                  evt.stopPropagation();
+                  onTabChange("new");
+                }}
+              >
+                <ReloadIcon className="h-3 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+              </Button>
+            </div>
           </TabsTrigger>
           <TabsTrigger value="applied" className="px-6 py-4 flex-1">
             Applied {`(${listing.applied})`}
