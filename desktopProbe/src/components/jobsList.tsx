@@ -3,7 +3,7 @@ import { useSites } from "@/hooks/sites";
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { ArchiveIcon, ArrowUpIcon, CheckIcon } from "@radix-ui/react-icons";
+import { ArchiveIcon } from "@radix-ui/react-icons";
 import {
   TooltipProvider,
   TooltipTrigger,
@@ -14,20 +14,21 @@ import { Icons } from "@/components/icons";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { cn } from "@/lib/utils";
 
 export function JobsList({
   jobs,
+  selectedJobId,
   hasMore,
   parentContainerId,
-  onApply,
   onLoadMore,
   onUpdateJobStatus,
   onSelect,
 }: {
   jobs: Job[];
+  selectedJobId?: number;
   hasMore: boolean;
   parentContainerId: string;
-  onApply: (job: Job) => void;
   onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
   onLoadMore: () => void;
   onSelect: (job: Job) => void;
@@ -49,7 +50,10 @@ export function JobsList({
           return (
             <li
               key={job.id}
-              className="space-y-6"
+              className={cn(
+                "space-y-6",
+                selectedJobId === job.id && "bg-muted"
+              )}
               onClick={() => onSelect(job)}
             >
               <div className="flex items-center gap-4">
@@ -88,32 +92,7 @@ export function JobsList({
                 )}
 
                 {/* actions */}
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    className="w-full px-4"
-                    onClick={() => onApply(job)}
-                  >
-                    Apply
-                  </Button>
-                  {job.status !== "applied" && (
-                    <TooltipProvider delayDuration={500}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-8"
-                            onClick={() => onUpdateJobStatus(job.id, "applied")}
-                          >
-                            <CheckIcon className="h-5 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
-                          </Button>
-                        </TooltipTrigger>
-
-                        <TooltipContent>Mark as applied</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                <div className="flex items-center mr-4">
                   {job.status !== "archived" && (
                     <TooltipProvider delayDuration={500}>
                       <Tooltip>
