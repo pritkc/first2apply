@@ -1,9 +1,10 @@
 import { app, autoUpdater, Notification } from "electron";
-import { Logger } from "pino";
+
 import { schedule, ScheduledTask } from "node-cron";
 
 import { getExceptionMessage } from "../lib/error";
 import { IAnalyticsClient } from "@/lib/analytics";
+import { ILogger } from "./logger";
 
 const S3_BUCKET =
   "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases";
@@ -21,7 +22,7 @@ export class F2aAutoUpdater {
    * Class constructor.
    */
   constructor(
-    private _logger: Logger,
+    private _logger: ILogger,
     private _onQuit: () => Promise<void>,
     private _analytics: IAnalyticsClient
   ) {
