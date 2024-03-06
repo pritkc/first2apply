@@ -56,7 +56,7 @@ export function SettingsPage() {
 
   return (
     <DefaultLayout className="p-6 md:p-10 space-y-3">
-      <h1 className="text-2xl font-medium tracking-wide pb-3 w-fit">
+      <h1 className="text-2xl font-medium tracking-wide pb-3">
         Settings ({user.email})
       </h1>
 
