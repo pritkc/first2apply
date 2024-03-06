@@ -16,47 +16,40 @@ export function LinksList({
   const { siteLogos } = useSites();
 
   return (
-    <section className="space-y-2">
-      <h2 className="text-2xl tracking-wide">Your searches</h2>
-      <hr className="w-full text-muted-foreground" />
-      <ul className="space-y-6 pt-2">
-        {links.map((link) => {
-          return (
-            <li
-              key={link.id}
-              className="flex items-center gap-4 justify-between"
+    <ul className="space-y-6 pt-2">
+      {links.map((link) => {
+        return (
+          <li key={link.id} className="flex items-center gap-4 justify-between">
+            <Avatar className="w-11 h-11">
+              <AvatarImage src={siteLogos[link.site_id]} />
+              <AvatarFallback>LI</AvatarFallback>
+            </Avatar>
+
+            <a
+              className="flex-1 overflow-hidden"
+              onClick={() => {
+                openExternalUrl(link.url);
+              }}
             >
-              <Avatar className="w-11 h-11">
-                <AvatarImage src={siteLogos[link.site_id]} />
-                <AvatarFallback>LI</AvatarFallback>
-              </Avatar>
+              <p className="text-lg">{link.title}</p>
+              <p className="text-xs text-muted-foreground text-clip whitespace-nowrap font-extralight">
+                {link.url}
+              </p>
+            </a>
 
-              <a
-                className="flex-1 overflow-hidden"
-                onClick={() => {
-                  openExternalUrl(link.url);
-                }}
+            {/* actions */}
+            <div className="flex items-center">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onDeleteLink(link.id)}
               >
-                <p className="text-lg">{link.title}</p>
-                <p className="text-xs text-muted-foreground text-clip whitespace-nowrap font-extralight">
-                  {link.url}
-                </p>
-              </a>
-
-              {/* actions */}
-              <div className="flex items-center">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDeleteLink(link.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+                Delete
+              </Button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

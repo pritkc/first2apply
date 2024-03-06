@@ -13,6 +13,16 @@ export function JobDetails({ job }: { job: Job }) {
       <Markdown remarkPlugins={[remarkGfm]} className="job-description-md">
         {job.description}
       </Markdown>
+
+      {/* {job.tags && (
+        <div className="flex flex-wrap gap-1.5 pl-2 mt-3">
+          {job.tags?.slice(0, 5).map((tag, idx) => (
+            <Badge key={idx} variant="outline">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )} */}
     </div>
   );
 }
