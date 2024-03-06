@@ -10,7 +10,7 @@ const QUERY_SELECTORS = {
     DESCRIPTION: "#jobDescriptionText",
   },
   GLASSDOOR: {
-    DESCRIPTION: ".JobDetails_jobDescriptionWrapper___tqxc",
+    DESCRIPTION: ".JobDetails_jobDescription__uW_fK",
   },
   WEWORKREMOTELY: {
     DESCRIPTION: "#job-listing-show-container",
@@ -73,7 +73,11 @@ export function parseLinkedinJobDescription({
 
   let description: string | undefined;
   if (descriptionContainer) {
-    const sanitizedHtml = sanitizeHtml(descriptionContainer.innerHTML);
+    const sanitizedHtml = descriptionContainer.innerHTML
+      .replaceAll(/<br><br><\/strong>/g, "</strong><br><br>")
+      .replaceAll(/<br><\/strong>/g, "</strong><br>")
+      .replaceAll(/(<br>)+<\/li>/g, "</li>");
+
     description = turndownService.turndown(sanitizedHtml);
   }
 
@@ -100,8 +104,7 @@ export function parseIndeedJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    const sanitizedHtml = sanitizeHtml(descriptionContainer.innerHTML);
-    description = turndownService.turndown(sanitizedHtml);
+    description = turndownService.turndown(descriptionContainer.innerHTML);
   }
 
   return {
@@ -127,13 +130,7 @@ export function parseGlassdoorJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    const sanitizedHtml = sanitizeHtml(descriptionContainer.innerHTML);
-    // New rule to remove the "Show more" part and everything after it
-    // This regex looks for the specific <div> and removes it and any characters that follow
-    const showMoreRegex = /<div class="JobDetails_showMoreWrapper.*$/s;
-    const withoutShowMore = sanitizedHtml.replace(showMoreRegex, "");
-
-    description = turndownService.turndown(withoutShowMore);
+    description = turndownService.turndown(descriptionContainer.innerHTML);
   }
 
   return {
@@ -159,8 +156,7 @@ export function parseWeWorkRemotelyJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    const sanitizedHtml = sanitizeHtml(descriptionContainer.innerHTML);
-    description = turndownService.turndown(sanitizedHtml);
+    description = turndownService.turndown(descriptionContainer.innerHTML);
   }
 
   return {
@@ -186,15 +182,15 @@ export function parseRemoteOkJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    const sanitizedHtml = sanitizeHtml(descriptionContainer.innerHTML);
-    console.log(sanitizedHtml);
-
     // Define a regex that matches from the beginning of the string to the first occurrence of <div class="markdown">
     // and includes the <div class="markdown"> tag itself in the match
     const beforeMarkdownRegex = /^.*?(<div class="markdown">)/s;
 
     // Replace the matched portion with just the <div class="markdown"> tag to remove everything before it
-    const cleanedUp = sanitizedHtml.replace(beforeMarkdownRegex, "$1");
+    const cleanedUp = descriptionContainer.innerHTML.replace(
+      beforeMarkdownRegex,
+      "$1"
+    );
 
     description = turndownService.turndown(cleanedUp);
   }
@@ -202,11 +198,4 @@ export function parseRemoteOkJobDescription({
   return {
     content: description,
   };
-}
-
-function sanitizeHtml(html: string) {
-  return html
-    .replaceAll(/<br><br><\/strong>/g, "</strong><br><br>")
-    .replaceAll(/<br><\/strong>/g, "</strong><br>")
-    .replaceAll(/(<br>)+<\/li>/g, "</li>");
 }
