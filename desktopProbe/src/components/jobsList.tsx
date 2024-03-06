@@ -53,12 +53,12 @@ export function JobsList({
             <li
               key={job.id}
               className={cn(
-                "pt-6 px-2 -mt-[1px]",
+                "pt-6 px-2 xl:px-4 -mt-[1px]",
                 selectedJobId === job.id && "bg-muted"
               )}
               onClick={() => onSelect(job)}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4 mb-6">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={siteLogos[job.siteId]} />
                   <AvatarFallback>LI</AvatarFallback>
@@ -97,17 +97,7 @@ export function JobsList({
                 )}
               </div>
 
-              {/* {job.tags && (
-                <div className="flex flex-wrap gap-1.5 pl-2 mt-3">
-                  {job.tags?.slice(0, 5).map((tag, idx) => (
-                    <Badge key={idx} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )} */}
-
-              <hr className="w-full text-muted-foreground mt-6" />
+              <hr className="w-full border-muted" />
             </li>
           );
         })}
