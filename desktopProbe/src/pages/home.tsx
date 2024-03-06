@@ -12,8 +12,9 @@ import { JobsListSkeleton } from "@/components/skeletons/JobsListSkeleton";
 import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobDetails } from "@/components/jobDetails";
+
+import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -224,7 +225,7 @@ export function Home() {
   }
 
   return (
-    <DefaultLayout className={`px-6 pt-6 md:px-10 md:pt-10`}>
+    <DefaultLayout className="px-6 pt-6 md:px-10">
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger value="new" className="px-6 py-4 flex-1">
@@ -240,7 +241,7 @@ export function Home() {
 
         {ALL_JOB_STATUSES.map((statusItem) => {
           return (
-            <TabsContent key={statusItem} value={statusItem} className="mt-5">
+            <TabsContent key={statusItem} value={statusItem}>
               {listing.isLoading || statusItem !== status ? (
                 <JobsListSkeleton />
               ) : (
@@ -248,7 +249,7 @@ export function Home() {
                   {/* jobs list */}
                   <div
                     id="jobsList"
-                    className="w-1/2 lg:w-2/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll"
+                    className="w-1/2 lg:w-2/5 h-[calc(100vh-100px)] overflow-scroll no-scrollbar"
                   >
                     <JobsList
                       jobs={listing.jobs}
@@ -262,7 +263,7 @@ export function Home() {
                   </div>
 
                   {/* JD side panel */}
-                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
+                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] px-6">
                     {selectedJob && !selectedJob.isLoadingJD && (
                       <JobDetails job={selectedJob}></JobDetails>
                     )}
