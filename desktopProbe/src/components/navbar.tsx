@@ -42,7 +42,7 @@ export function Navbar() {
 
   return (
     <nav className="z-50 fixed h-screen flex flex-col items-center 2xl:items-start border-r border-muted-foreground/20 w-16 2xl:w-56 py-6 md:p-10 justify-between">
-      <div className="flex flex-col gap-6 items-center">
+      <div className="flex flex-col gap-6 items-center 2xl:items-start">
         <Link to="/" className="flex gap-3 mb-16 md:mb-20">
           <Icons.logo className="w-7 h-7"></Icons.logo>
           <span className="hidden 2xl:inline-block text-lg">First 2 Apply</span>
