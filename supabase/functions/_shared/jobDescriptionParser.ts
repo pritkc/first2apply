@@ -182,17 +182,11 @@ export function parseRemoteOkJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    // Define a regex that matches from the beginning of the string to the first occurrence of <div class="markdown">
-    // and includes the <div class="markdown"> tag itself in the match
-    const beforeMarkdownRegex = /^.*?(<div class="markdown">)/s;
-
-    // Replace the matched portion with just the <div class="markdown"> tag to remove everything before it
-    const cleanedUp = descriptionContainer.innerHTML.replace(
-      beforeMarkdownRegex,
-      "$1"
-    );
-
-    description = turndownService.turndown(cleanedUp);
+    const nodeToRemove = document.querySelector(".company_profile");
+    if (nodeToRemove) {
+      nodeToRemove.remove();
+    }
+    description = turndownService.turndown(descriptionContainer.innerHTML);
   }
 
   return {
