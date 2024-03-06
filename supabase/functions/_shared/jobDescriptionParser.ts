@@ -18,6 +18,9 @@ const QUERY_SELECTORS = {
   REMOTEOK: {
     DESCRIPTION: ".description",
   },
+  DICE: {
+    DESCRIPTION: "#jobdescSec",
+  },
 } as const;
 
 type JobDescription = {
@@ -51,6 +54,15 @@ export function parseJobDescription({
       return parseWeWorkRemotelyJobDescription({ html });
     case SiteProvider.remoteok:
       return parseRemoteOkJobDescription({ html });
+    case SiteProvider.dice:
+    case SiteProvider.flexjobs:
+    case SiteProvider.bestjobs:
+    case SiteProvider.echojobs:
+    case SiteProvider.remoteio:
+    case SiteProvider.builtin:
+    case SiteProvider.naukri:
+      throw new Error(`Provider not supported: ${site.provider}`);
+
     default:
       throw new Error(`Provider not supported: ${site.provider}`);
   }
@@ -182,20 +194,47 @@ export function parseRemoteOkJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    // Define a regex that matches from the beginning of the string to the first occurrence of <div class="markdown">
-    // and includes the <div class="markdown"> tag itself in the match
-    const beforeMarkdownRegex = /^.*?(<div class="markdown">)/s;
-
-    // Replace the matched portion with just the <div class="markdown"> tag to remove everything before it
-    const cleanedUp = descriptionContainer.innerHTML.replace(
-      beforeMarkdownRegex,
-      "$1"
-    );
-
-    description = turndownService.turndown(cleanedUp);
+    const nodeToRemove = document.querySelector(".company_profile");
+    if (nodeToRemove) {
+      nodeToRemove.remove();
+    }
+    description = turndownService.turndown(descriptionContainer.innerHTML);
   }
 
   return {
     content: description,
   };
 }
+
+/**
+ * Parse a Dice job description from the HTML.
+ */
+export function parseDiceJobDescription({
+  html,
+}: {
+  html: string;
+}): JobDescription {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const descriptionContainer = document.querySelector(
+    QUERY_SELECTORS.DICE.DESCRIPTION
+  );
+
+  let description: string | undefined;
+
+  if (descriptionContainer) {
+    description = turndownService.turndown(descriptionContainer.innerHTML);
+  }
+
+  return {
+    content: description,
+  };
+}
+
+//   case SiteProvider.flexjobs:
+//   case SiteProvider.bestjobs:
+//   case SiteProvider.echojobs:
+//   case SiteProvider.remoteio:
+//   case SiteProvider.builtin:
+//   case SiteProvider.naukri:
