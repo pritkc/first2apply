@@ -123,13 +123,14 @@ export function parseIndeedJobDescription({
   let description: string | undefined;
 
   if (descriptionContainer) {
-    turndownService.addRule("noBold", {
-      filter: ["b"],
-      replacement: function (content: string) {
-        // Return the content wrapped in <strong> tags instead of Markdown bold syntax
-        return "<strong>" + content + "</strong>";
-      },
-    });
+    // TODO: get rid of the ** markdown in the description
+    // turndownService.addRule("noBold", {
+    //   filter: ["b"],
+    //   replacement: function (content: string) {
+    //     // Return the content wrapped in <strong> tags instead of Markdown bold syntax
+    //     return "<strong>" + content + "</strong>";
+    //   },
+    // });
     // const sanitizedHtml = descriptionContainer.innerHTML
     //   .replace(/<b>/gi, "<strong>")
     //   .replace(/<\/b>/gi, "</strong>");
