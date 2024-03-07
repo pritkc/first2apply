@@ -261,6 +261,7 @@ export function Home() {
         action: (
           <ToastAction
             altText="undo"
+            className="bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
             onClick={() => {
               updateListedJobStatus(job.id, status, false).catch((error) => {
                 handleError({ error, title: "Failed to undo" });
@@ -343,18 +344,20 @@ export function Home() {
                   {/* JD side panel */}
                   <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
                     {selectedJob && (
-                      <JobSummary
-                        job={selectedJob}
-                        onApply={onApply}
-                        onArchive={(j) => {
-                          onUpdateJobStatus(j.id, "archived");
-                        }}
-                      />
+                      <>
+                        <JobSummary
+                          job={selectedJob}
+                          onApply={onApply}
+                          onArchive={(j) => {
+                            onUpdateJobStatus(j.id, "archived");
+                          }}
+                        />
+                        <JobDetails
+                          job={selectedJob}
+                          isScrapingDescription={!!selectedJob.isLoadingJD}
+                        ></JobDetails>
+                      </>
                     )}
-                    {selectedJob && !selectedJob.isLoadingJD && (
-                      <JobDetails job={selectedJob}></JobDetails>
-                    )}
-                    {selectedJob?.isLoadingJD && <div>Scanning job...</div>}
                   </div>
                 </section>
               )}
