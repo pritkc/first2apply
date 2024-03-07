@@ -5,7 +5,12 @@ import { ReloadIcon } from "@radix-ui/react-icons";
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
 
-import { listJobs, updateJobStatus, scanJob } from "@/lib/electronMainSdk";
+import {
+  listJobs,
+  updateJobStatus,
+  scanJob,
+  openExternalUrl,
+} from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JobDetails } from "@/components/jobDetails";
 
 import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import { JobSummary } from "@/components/jobSummary";
+import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -123,44 +131,60 @@ export function Home() {
     navigate(`?status=${tabValue}&r=${Math.random()}`);
   };
 
+  // update the status of a job and remove it from the list if necessary
+  const updateListedJobStatus = async (
+    jobId: number,
+    newStatus: JobStatus,
+    removeFromList: boolean = true
+  ) => {
+    await updateJobStatus({ jobId, status: newStatus });
+
+    setListing((listing) => {
+      const oldJob = listing.jobs.find((job) => job.id === jobId);
+      const jobs = removeFromList
+        ? listing.jobs.filter((job) => job.id !== jobId)
+        : listing.jobs.map((job) => {
+            if (job.id === jobId) {
+              return { ...job, status: newStatus };
+            }
+            return job;
+          });
+
+      const tabToDecrement = oldJob?.status as JobStatus;
+      const tabToIncrement = newStatus;
+
+      const newCount =
+        tabToIncrement === "new"
+          ? listing.new + 1
+          : tabToDecrement === "new"
+          ? listing.new - 1
+          : listing.new;
+      const appliedCount =
+        tabToIncrement === "applied"
+          ? listing.applied + 1
+          : tabToDecrement === "applied"
+          ? listing.applied - 1
+          : listing.applied;
+      const archivedCount =
+        tabToIncrement === "archived"
+          ? listing.archived + 1
+          : tabToDecrement === "archived"
+          ? listing.archived - 1
+          : listing.archived;
+
+      return {
+        ...listing,
+        jobs,
+        new: newCount,
+        applied: appliedCount,
+        archived: archivedCount,
+      };
+    });
+  };
+
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
     try {
-      await updateJobStatus({ jobId, status: newStatus });
-
-      setListing((listing) => {
-        const oldJob = listing.jobs.find((job) => job.id === jobId);
-        const jobs = listing.jobs.filter((job) => job.id !== jobId);
-
-        const tabToDecrement = oldJob?.status as JobStatus;
-        const tabToIncrement = newStatus;
-
-        const newCount =
-          tabToIncrement === "new"
-            ? listing.new + 1
-            : tabToDecrement === "new"
-            ? listing.new - 1
-            : listing.new;
-        const appliedCount =
-          tabToIncrement === "applied"
-            ? listing.applied + 1
-            : tabToDecrement === "applied"
-            ? listing.applied - 1
-            : listing.applied;
-        const archivedCount =
-          tabToIncrement === "archived"
-            ? listing.archived + 1
-            : tabToDecrement === "archived"
-            ? listing.archived - 1
-            : listing.archived;
-
-        return {
-          ...listing,
-          jobs,
-          new: newCount,
-          applied: appliedCount,
-          archived: archivedCount,
-        };
-      });
+      updateListedJobStatus(jobId, newStatus);
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
     }
@@ -214,6 +238,41 @@ export function Home() {
       } catch (error) {
         handleError({ error, title: "Failed to scan job" });
       }
+    }
+  };
+
+  /**
+   * Mark a job as applied and inform the user via toast.
+   */
+  const onApply = async (job: Job) => {
+    try {
+      // open url in default browser
+      openExternalUrl(job.externalUrl);
+
+      // update the job status in the list
+      await updateListedJobStatus(job.id, "applied", false);
+
+      // notify the user with options to undo
+      toast({
+        title: "Job marked as applied",
+        description: `"${job.title}" has been automatically marked as applied. If this was a mistake, you can undo this action.`,
+        variant: "success",
+        duration: Infinity,
+        action: (
+          <ToastAction
+            altText="undo"
+            onClick={() => {
+              updateListedJobStatus(job.id, status, false).catch((error) => {
+                handleError({ error, title: "Failed to undo" });
+              });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to mark job as applied" });
     }
   };
 
@@ -282,7 +341,16 @@ export function Home() {
                   </div>
 
                   {/* JD side panel */}
-                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4">
+                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
+                    {selectedJob && (
+                      <JobSummary
+                        job={selectedJob}
+                        onApply={onApply}
+                        onArchive={(j) => {
+                          onUpdateJobStatus(j.id, "archived");
+                        }}
+                      />
+                    )}
                     {selectedJob && !selectedJob.isLoadingJD && (
                       <JobDetails job={selectedJob}></JobDetails>
                     )}
