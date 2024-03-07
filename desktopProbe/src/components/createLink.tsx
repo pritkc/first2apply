@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -24,6 +23,7 @@ import { Input } from "./ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { useSites } from "@/hooks/sites";
 import { openExternalUrl } from "@/lib/electronMainSdk";
+import { Badge } from "./ui/badge";
 
 // Schema definition for form validation using Zod
 const schema = z.object({
@@ -88,9 +88,11 @@ export function CreateLink() {
           Add Search
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="p-6 max-w-xl">
         <DialogHeader>
-          <DialogTitle>Add new job search</DialogTitle>
+          <DialogTitle className="text-xl font-medium tracking-wide">
+            Add new job search
+          </DialogTitle>
           <DialogDescription>
             Go to one of your favorite websites and search for a job. The more
             specific your filters, the better we can tailor job alerts for you.
@@ -100,7 +102,7 @@ export function CreateLink() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
             {/* Form fields */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {/* Title field */}
               <FormField
                 control={form.control}
@@ -140,7 +142,7 @@ export function CreateLink() {
               />
             </div>
 
-            <div className="flex flex-row justify-between items-center pt-4">
+            <div className="flex flex-row justify-between items-center pt-3">
               {/* Submit button */}
               <Button
                 type="submit"
@@ -160,27 +162,23 @@ export function CreateLink() {
           </form>
         </Form>
 
+        <h2 className="text-base tracking-wide mt-6">Supported job boards:</h2>
         <DialogFooter>
-          <Alert className="mt-4">
-            {/* <InfoCircledIcon className="w-5 h-5" /> */}
-            <AlertTitle>Pick from one of the supported job boards</AlertTitle>
-            <AlertDescription>
-              <ul className="w-full grid grid-cols-3 my-2">
-                {sortedSites.map((site) => (
-                  <li key={site.id}>
-                    <button
-                      className="text-[#738a5c] dark:text-ring"
-                      onClick={() => {
-                        openExternalUrl(site.urls[0]);
-                      }}
-                    >
-                      {site.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
+          <ul className="w-full flex gap-1.5 flex-wrap justify-evenly">
+            {sortedSites.map((site) => (
+              <li key={site.id}>
+                <Badge
+                  variant="secondary"
+                  // className="text-[#738a5c] dark:text-ring text-center"
+                  onClick={() => {
+                    openExternalUrl(site.urls[0]);
+                  }}
+                >
+                  {site.name}
+                </Badge>
+              </li>
+            ))}
+          </ul>
         </DialogFooter>
       </DialogContent>
     </Dialog>
