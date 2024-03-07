@@ -63,7 +63,7 @@ export function JobSummary({
           <div className="flex gap-3 items-center text-muted-foreground">
             <ListBulletIcon className="w-5 h-auto" />
             <p>
-              {"Tags: "}
+              {"Skills: "}
               {job.tags?.slice(0, 5).join(", ")}
             </p>
           </div>
