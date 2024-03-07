@@ -282,7 +282,7 @@ export function Home() {
                   </div>
 
                   {/* JD side panel */}
-                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted px-6">
+                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4">
                     {selectedJob && !selectedJob.isLoadingJD && (
                       <JobDetails job={selectedJob}></JobDetails>
                     )}
