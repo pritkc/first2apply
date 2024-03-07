@@ -71,25 +71,29 @@ export function JobSummary({
       </div>
 
       <div className="flex gap-3 mt-4 lg:mt-6">
-        <Button
-          size="lg"
-          className="w-24 text-sm"
-          onClick={() => {
-            onApply(job);
-          }}
-        >
-          Apply
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="w-24 text-sm"
-          onClick={() => {
-            onArchive(job);
-          }}
-        >
-          Archive
-        </Button>
+        {job.status !== "applied" && (
+          <Button
+            size="lg"
+            className="w-24 text-sm"
+            onClick={() => {
+              onApply(job);
+            }}
+          >
+            Apply
+          </Button>
+        )}
+        {job.status !== "archived" && (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-24 text-sm"
+            onClick={() => {
+              onArchive(job);
+            }}
+          >
+            Archive
+          </Button>
+        )}
       </div>
     </div>
   );
