@@ -60,6 +60,7 @@ const config: ForgeConfig = {
       // @ts-ignore
       publisherDisplayName: "BeastX Industries",
       assets: "./packagers/appx/icons",
+      manifest: "./packagers/appx/AppXManifest.xml",
     }),
     new MakerRpm({}),
     new MakerDeb({}),
