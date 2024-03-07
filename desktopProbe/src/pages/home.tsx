@@ -318,52 +318,59 @@ export function Home() {
           </TabsTrigger>
         </TabsList>
 
-        {ALL_JOB_STATUSES.map((statusItem) => {
-          return (
-            <TabsContent key={statusItem} value={statusItem}>
-              {listing.isLoading || statusItem !== status ? (
-                <JobsListSkeleton />
-              ) : (
-                <section className="flex">
-                  {/* jobs list */}
-                  <div
-                    id="jobsList"
-                    className="w-1/2 lg:w-2/5 h-[calc(100vh-100px)] overflow-scroll no-scrollbar"
-                  >
-                    <JobsList
-                      jobs={listing.jobs}
-                      selectedJobId={selectedJobId}
-                      hasMore={listing.hasMore}
-                      parentContainerId="jobsList"
-                      onUpdateJobStatus={onUpdateJobStatus}
-                      onLoadMore={onLoadMore}
-                      onSelect={(job) => scanJobAndSelect(job)}
-                    />
-                  </div>
+        {listing.jobs.length > 0 ? (
+          ALL_JOB_STATUSES.map((statusItem) => {
+            return (
+              <TabsContent key={statusItem} value={statusItem}>
+                {listing.isLoading || statusItem !== status ? (
+                  <JobsListSkeleton />
+                ) : (
+                  <section className="flex">
+                    {/* jobs list */}
+                    <div
+                      id="jobsList"
+                      className="w-1/2 lg:w-2/5 h-[calc(100vh-100px)] overflow-scroll no-scrollbar"
+                    >
+                      <JobsList
+                        jobs={listing.jobs}
+                        selectedJobId={selectedJobId}
+                        hasMore={listing.hasMore}
+                        parentContainerId="jobsList"
+                        onUpdateJobStatus={onUpdateJobStatus}
+                        onLoadMore={onLoadMore}
+                        onSelect={(job) => scanJobAndSelect(job)}
+                      />
+                    </div>
 
-                  {/* JD side panel */}
-                  <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
-                    {selectedJob && (
-                      <>
-                        <JobSummary
-                          job={selectedJob}
-                          onApply={onApply}
-                          onArchive={(j) => {
-                            onUpdateJobStatus(j.id, "archived");
-                          }}
-                        />
-                        <JobDetails
-                          job={selectedJob}
-                          isScrapingDescription={!!selectedJob.isLoadingJD}
-                        ></JobDetails>
-                      </>
-                    )}
-                  </div>
-                </section>
-              )}
-            </TabsContent>
-          );
-        })}
+                    {/* JD side panel */}
+                    <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
+                      {selectedJob && (
+                        <>
+                          <JobSummary
+                            job={selectedJob}
+                            onApply={onApply}
+                            onArchive={(j) => {
+                              onUpdateJobStatus(j.id, "archived");
+                            }}
+                          />
+                          <JobDetails
+                            job={selectedJob}
+                            isScrapingDescription={!!selectedJob.isLoadingJD}
+                          ></JobDetails>
+                        </>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </TabsContent>
+            );
+          })
+        ) : (
+          <p className="text-center mt-20 max-w-md m-auto">
+            No new job listings right now, but don't worry! We're on the lookout
+            and will update you as soon as we find anything.
+          </p>
+        )}
       </Tabs>
     </DefaultLayout>
   );
