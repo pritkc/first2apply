@@ -175,6 +175,8 @@ function navigate({ path }: { path: string }) {
 
 async function handleDeepLink(url: string) {
   try {
+    if (!url.startsWith(APP_PROTOCOL)) return;
+
     onActivate();
     const path = url.replace(`${APP_PROTOCOL}:/`, "");
 
