@@ -14,7 +14,7 @@ import {
 
 import { DefaultLayout } from "./defaultLayout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { JobsListSkeleton } from "@/components/skeletons/JobsListSkeleton";
+import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
 import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -323,7 +323,7 @@ export function Home() {
             return (
               <TabsContent key={statusItem} value={statusItem}>
                 {listing.isLoading || statusItem !== status ? (
-                  <JobsListSkeleton />
+                  <JobsSkeleton />
                 ) : (
                   <section className="flex">
                     {/* jobs list */}
@@ -381,14 +381,14 @@ export function Home() {
  */
 function Loading() {
   return (
-    <DefaultLayout className="p-6 md:p-10">
-      <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-4 p-2 animate-pulse mb-6">
+    <DefaultLayout className="p-6 pb-0 md:px-10">
+      <div className="h-[68px] bg-[#809966]/5 w-full rounded-lg flex flex-row gap-1 p-2 animate-pulse mb-2">
         <Skeleton className="flex-1" />
         <Skeleton className="flex-1" />
         <Skeleton className="flex-1" />
       </div>
 
-      <JobsListSkeleton />
+      <JobsSkeleton />
     </DefaultLayout>
   );
 }
