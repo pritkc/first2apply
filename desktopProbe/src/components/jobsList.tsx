@@ -38,7 +38,7 @@ export function JobsList({
 }) {
   const { siteLogos } = useSites();
 
-  return jobs.length > 0 ? (
+  return (
     <InfiniteScroll
       dataLength={jobs.length}
       next={onLoadMore}
@@ -106,10 +106,5 @@ export function JobsList({
         })}
       </ul>
     </InfiniteScroll>
-  ) : (
-    <p className="text-center mt-10 max-w-md mx-auto">
-      No new job listings right now, but don't worry! We're on the lookout and
-      will update you as soon as we find anything.
-    </p>
   );
 }
