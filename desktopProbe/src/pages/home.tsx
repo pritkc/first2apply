@@ -229,24 +229,24 @@ export function Home() {
     <DefaultLayout className="px-6 pt-6 md:px-10">
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
-          <TabsTrigger value="new" className="px-6 py-4 flex-1">
-            <div className="w-full flex items-center">
+          <TabsTrigger value="new" className="px-6 py-2.5 flex-1">
+            <div className="w-full flex items-center pl-9">
               <span className="flex-1">New Jobs {`(${listing.new})`}</span>
               <Button
                 variant="outline"
                 size="sm"
-                className={
+                className={`w-8 ${
                   status === "new"
-                    ? "opacity-100"
+                    ? "opacity-100 transition-all duration-300"
                     : "opacity-0 pointer-events-none"
-                }
+                }`}
                 onClick={(evt) => {
                   evt.preventDefault();
                   evt.stopPropagation();
                   onTabChange("new");
                 }}
               >
-                <ReloadIcon className="h-3 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+                <ReloadIcon className="h-4 w-auto shrink-0 text-muted-foreground transition-transform duration-200" />
               </Button>
             </div>
           </TabsTrigger>
