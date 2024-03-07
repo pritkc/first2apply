@@ -168,8 +168,6 @@ export function CreateLink() {
             {sortedSites.map((site) => (
               <li key={site.id}>
                 <Badge
-                  variant="secondary"
-                  // className="text-[#738a5c] dark:text-ring text-center"
                   onClick={() => {
                     openExternalUrl(site.urls[0]);
                   }}
