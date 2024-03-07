@@ -39,7 +39,6 @@ export function CreateLink() {
   const { handleError } = useError();
   const { createLink } = useLinks();
   const { sites } = useSites();
-  const { isLoading, links, removeLink } = useLinks();
   const { toast } = useToast();
 
   // sort sites by name
@@ -85,7 +84,9 @@ export function CreateLink() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>Add Search</Button>
+        <Button variant="default" size="lg" className="text-base px-10">
+          Add Search
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
