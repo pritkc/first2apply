@@ -687,46 +687,46 @@ export function parseFlexjobsJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector("#job-list");
+  const jobsList = document.querySelector(".sc-14nyru2-1.bcguRu");
   if (!jobsList) return [];
 
-  const jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
+  const jobElements = Array.from(
+    jobsList.querySelectorAll("div.sc-jv5lm6-0.kSiIaQ")
+  ) as Element[];
   console.log(`[flexjobs] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
-    const externalUrl = `https://www.flexjobs.com/${el.getAttribute(
-      "data-url"
-    )}`.trim();
-    if (!externalUrl) return null;
-
-    const externalId = el?.getAttribute("data-job")?.trim();
+    const externalId = el?.getAttribute("id")?.trim();
     if (!externalId) return null;
 
-    const title = el.querySelector(".job-title")?.textContent?.trim();
+    const externalUrlEl = el.querySelector("a.sc-jv5lm6-11.jTLbwZ");
+    if (!externalUrlEl) return null;
+    const externalUrl = `https://www.flexjobs.com${externalUrlEl
+      .getAttribute("href")
+      ?.trim()}`;
+
+    const title = externalUrlEl.textContent?.trim();
     if (!title) return null;
 
-    const companyName = "";
+    // flexjobs does not show the company name on the search results page
+    const companyName = "N/A";
 
-    let location = el.querySelector(".job-locations")?.textContent.trim();
-    if (location?.includes(",")) {
-      const locationParts = location.split(",");
-      location = locationParts.slice(0, 3).join(",");
-      if (locationParts.length > 3) {
-        location += ` + ${locationParts.length - 3} more`;
-      }
-    }
-
-    const jobTags = Array.from(el.querySelectorAll(".job-tags .job-tag") ?? []);
-
-    let salary = jobTags
-      .find((tag) => tag.textContent.includes("$"))
+    const location = el
+      .querySelector("li.allowed-location-flag")
       ?.textContent.trim();
 
-    if (salary?.includes("hourly")) {
-      salary = parseSalary({ salary: salary }) + "/hr";
-    } else if (salary?.includes("annually")) {
-      salary = salary.replace(" annually", "").trim();
+    let jobType: JobType = "remote";
+    const jobTypeEl = el.querySelector(`li#remoteoption-0-${externalId}`);
+    if (jobTypeEl) {
+      const jobTypeText = jobTypeEl.textContent?.trim().toLowerCase();
+      if (jobTypeText.includes("hybrid") || jobTypeText.includes("option"))
+        jobType = "hybrid";
+      else if (jobTypeText.includes("no remote")) jobType = "onsite";
     }
+
+    const description = el.querySelector(
+      `p#description-${externalId}`
+    )?.textContent;
 
     return {
       siteId,
@@ -735,7 +735,8 @@ export function parseFlexjobsJobs({
       title,
       companyName,
       location,
-      salary,
+      jobType,
+      description,
     };
   });
 
@@ -878,7 +879,7 @@ export function parseEchojobsJobs({
 
     const location = locations.map((loc) => loc.textContent?.trim()).join(", ");
 
-    let salary = jobInfo
+    const salary = jobInfo
       .querySelector("div:nth-child(2) > div:nth-child(3) > span")
       ?.textContent?.trim()
       ?.replace(/USD\s*/, "")
