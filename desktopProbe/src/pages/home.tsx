@@ -1,31 +1,47 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
 import { useError } from "@/hooks/error";
-import { useSettings } from "@/hooks/settings";
 import { useLinks } from "@/hooks/links";
 
 import {
   listJobs,
   updateJobStatus,
-  openExternalUrl,
   scanJob,
+  openExternalUrl,
 } from "@/lib/electronMainSdk";
 
 import { DefaultLayout } from "./defaultLayout";
-import { CronScheduleSkeleton } from "@/components/skeletons/CronScheduleSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { JobsListSkeleton } from "@/components/skeletons/JobsListSkeleton";
+import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
 import { Button } from "@/components/ui/button";
 import { JobsList } from "@/components/jobsList";
-import { CronSchedule } from "@/components/cronSchedule";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobDetails } from "@/components/jobDetails";
+
+import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import { JobSummary } from "@/components/jobSummary";
+import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { ReviewSuggestionPopup } from "../components/reviewSuggestionPopup";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
+
+type JobListing = {
+  isLoading: boolean;
+  hasMore: boolean;
+  jobs: Array<
+    Job & {
+      isLoadingJD?: boolean;
+    }
+  >;
+  new: number;
+  applied: number;
+  archived: number;
+  nextPageToken?: string;
+};
 
 /**
  * Component that renders the home page.
@@ -37,25 +53,12 @@ export function Home() {
   const location = useLocation();
 
   const { links, isLoading: isLoadingLinks } = useLinks();
-  const {
-    settings,
-    updateSettings,
-    isLoading: isLoadingSettings,
-  } = useSettings();
 
   // Parse the query parameters to determine the active tab
   const status = (new URLSearchParams(location.search).get("status") ||
     "new") as JobStatus;
 
-  const [listing, setListing] = useState<{
-    isLoading: boolean;
-    hasMore: boolean;
-    jobs: Job[];
-    new: number;
-    applied: number;
-    archived: number;
-    nextPageToken?: string;
-  }>({
+  const [listing, setListing] = useState<JobListing>({
     isLoading: true,
     hasMore: true,
     jobs: [],
@@ -63,8 +66,8 @@ export function Home() {
     applied: 0,
     archived: 0,
   });
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [isScanningSelectedJob, setIsScanningSelectedJob] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
 
   // Update jobs when location changes
   useEffect(() => {
@@ -78,7 +81,13 @@ export function Home() {
           isLoading: false,
           hasMore: result.jobs.length === JOB_BATCH_SIZE,
         });
-        setSelectedJob(result.jobs[0]);
+
+        const firstJob = result.jobs[0];
+        if (firstJob) {
+          scanJobAndSelect(firstJob);
+        } else {
+          setSelectedJobId(null);
+        }
       } catch (error) {
         handleError({ error, title: "Failed to load jobs" });
       }
@@ -120,57 +129,63 @@ export function Home() {
 
   // Handle tab change
   const onTabChange = (tabValue: string) => {
-    navigate(`?status=${tabValue}`);
+    navigate(`?status=${tabValue}&r=${Math.random()}`);
   };
 
-  // Update cron rule
-  const onCronRuleChange = async (cronRule: string | undefined) => {
-    try {
-      const newSettings = { ...settings, cronRule };
-      await updateSettings(newSettings);
-    } catch (error) {
-      handleError({ error, title: "Failed to update notification frequency" });
-    }
+  // update the status of a job and remove it from the list if necessary
+  const updateListedJobStatus = async (
+    jobId: number,
+    newStatus: JobStatus,
+    removeFromList: boolean = true
+  ) => {
+    await updateJobStatus({ jobId, status: newStatus });
+
+    setListing((listing) => {
+      const oldJob = listing.jobs.find((job) => job.id === jobId);
+      const jobs = removeFromList
+        ? listing.jobs.filter((job) => job.id !== jobId)
+        : listing.jobs.map((job) => {
+            if (job.id === jobId) {
+              return { ...job, status: newStatus };
+            }
+            return job;
+          });
+
+      const tabToDecrement = oldJob?.status as JobStatus;
+      const tabToIncrement = newStatus;
+
+      const newCount =
+        tabToIncrement === "new"
+          ? listing.new + 1
+          : tabToDecrement === "new"
+          ? listing.new - 1
+          : listing.new;
+      const appliedCount =
+        tabToIncrement === "applied"
+          ? listing.applied + 1
+          : tabToDecrement === "applied"
+          ? listing.applied - 1
+          : listing.applied;
+      const archivedCount =
+        tabToIncrement === "archived"
+          ? listing.archived + 1
+          : tabToDecrement === "archived"
+          ? listing.archived - 1
+          : listing.archived;
+
+      return {
+        ...listing,
+        jobs,
+        new: newCount,
+        applied: appliedCount,
+        archived: archivedCount,
+      };
+    });
   };
 
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
     try {
-      await updateJobStatus({ jobId, status: newStatus });
-
-      setListing((listing) => {
-        const oldJob = listing.jobs.find((job) => job.id === jobId);
-        const jobs = listing.jobs.filter((job) => job.id !== jobId);
-
-        const tabToDecrement = oldJob?.status as JobStatus;
-        const tabToIncrement = newStatus;
-
-        const newCount =
-          tabToIncrement === "new"
-            ? listing.new + 1
-            : tabToDecrement === "new"
-            ? listing.new - 1
-            : listing.new;
-        const appliedCount =
-          tabToIncrement === "applied"
-            ? listing.applied + 1
-            : tabToDecrement === "applied"
-            ? listing.applied - 1
-            : listing.applied;
-        const archivedCount =
-          tabToIncrement === "archived"
-            ? listing.archived + 1
-            : tabToDecrement === "archived"
-            ? listing.archived - 1
-            : listing.archived;
-
-        return {
-          ...listing,
-          jobs,
-          new: newCount,
-          applied: appliedCount,
-          archived: archivedCount,
-        };
-      });
+      updateListedJobStatus(jobId, newStatus);
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
     }
@@ -200,14 +215,19 @@ export function Home() {
    * If the jd is empty, scan the job to get the job description.
    */
   const scanJobAndSelect = async (job: Job) => {
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
 
     if (!job.description) {
       try {
-        setIsScanningSelectedJob(true);
+        // Set the job as loading
+        setListing((listing) => {
+          const jobs = listing.jobs.map((j) =>
+            j.id === job.id ? { ...job, isLoadingJD: true } : j
+          );
+          return { ...listing, jobs };
+        });
 
         const updatedJob = await scanJob(job);
-        setSelectedJob(updatedJob);
 
         // Update the job in the list
         setListing((listing) => {
@@ -218,122 +238,184 @@ export function Home() {
         });
       } catch (error) {
         handleError({ error, title: "Failed to scan job" });
-      } finally {
-        setIsScanningSelectedJob(false);
       }
     }
   };
 
-  if (isLoadingLinks || isLoadingSettings) {
-    return (
-      <DefaultLayout className="px-6 flex flex-col py-6 md:p-10">
-        <CronScheduleSkeleton />
+  /**
+   * Mark a job as applied and inform the user via toast.
+   */
+  const onApply = async (job: Job) => {
+    try {
+      // open url in default browser
+      openExternalUrl(job.externalUrl);
 
-        <div className="h-[68px] bg-card w-full rounded-lg flex flex-row gap-2 p-2 animate-pulse mt-10 mb-6">
-          <Skeleton className="px-6 py-4 flex-1" />
-          <Skeleton className="px-6 py-4 flex-1" />
-        </div>
+      // update the job status in the list
+      await updateListedJobStatus(job.id, "applied", false);
 
-        <JobsListSkeleton />
-      </DefaultLayout>
-    );
+      // notify the user with options to undo
+      toast({
+        title: "Job marked as applied",
+        description: `"${job.title}" has been automatically marked as applied. If this was a mistake, you can undo this action.`,
+        variant: "success",
+        duration: Infinity,
+        action: (
+          <ToastAction
+            altText="undo"
+            className="bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
+            onClick={() => {
+              updateListedJobStatus(job.id, status, false).catch((error) => {
+                handleError({ error, title: "Failed to undo" });
+              });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to mark job as applied" });
+    }
+  };
+
+  if (isLoadingLinks) {
+    return <Loading />;
+  }
+
+  if (links.length === 0) {
+    return <NoLinks />;
   }
 
   return (
+    <DefaultLayout className="px-6 pt-6 md:px-10">
+      <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
+        <TabsList className="w-full h-fit p-2">
+          <TabsTrigger value="new" className="px-6 py-2.5 flex-1">
+            <div className="w-full flex items-center pl-9">
+              <span className="flex-1">New Jobs {`(${listing.new})`}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`w-8 ${
+                  status === "new"
+                    ? "opacity-100 transition-all duration-300"
+                    : "opacity-0 pointer-events-none"
+                }`}
+                onClick={(evt) => {
+                  evt.preventDefault();
+                  evt.stopPropagation();
+                  onTabChange("new");
+                }}
+              >
+                <ReloadIcon className="h-4 w-auto shrink-0 text-muted-foreground transition-transform duration-200" />
+              </Button>
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="applied" className="px-6 py-4 flex-1">
+            Applied {`(${listing.applied})`}
+          </TabsTrigger>
+          <TabsTrigger value="archived" className="px-6 py-4 flex-1">
+            Archived {`(${listing.archived})`}
+          </TabsTrigger>
+        </TabsList>
+
+        {listing.jobs.length > 0 ? (
+          ALL_JOB_STATUSES.map((statusItem) => {
+            return (
+              <TabsContent key={statusItem} value={statusItem}>
+                {listing.isLoading || statusItem !== status ? (
+                  <JobsSkeleton />
+                ) : (
+                  <section className="flex">
+                    {/* jobs list */}
+                    <div
+                      id="jobsList"
+                      className="w-1/2 lg:w-2/5 h-[calc(100vh-100px)] overflow-scroll no-scrollbar"
+                    >
+                      <JobsList
+                        jobs={listing.jobs}
+                        selectedJobId={selectedJobId}
+                        hasMore={listing.hasMore}
+                        parentContainerId="jobsList"
+                        onUpdateJobStatus={onUpdateJobStatus}
+                        onLoadMore={onLoadMore}
+                        onSelect={(job) => scanJobAndSelect(job)}
+                      />
+                    </div>
+
+                    {/* JD side panel */}
+                    <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
+                      {selectedJob && (
+                        <>
+                          <JobSummary
+                            job={selectedJob}
+                            onApply={onApply}
+                            onArchive={(j) => {
+                              onUpdateJobStatus(j.id, "archived");
+                            }}
+                          />
+                          <JobDetails
+                            job={selectedJob}
+                            isScrapingDescription={!!selectedJob.isLoadingJD}
+                          ></JobDetails>
+                        </>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </TabsContent>
+            );
+          })
+        ) : (
+          <p className="text-center mt-20 max-w-md m-auto">
+            No new job listings right now, but don't worry! We're on the lookout
+            and will update you as soon as we find anything.
+          </p>
+        )}
+      </Tabs>
+    </DefaultLayout>
+  );
+}
+
+/**
+ * Component used when links are still loading.
+ */
+function Loading() {
+  return (
+    <DefaultLayout className="p-6 pb-0 md:px-10">
+      <div className="h-[68px] bg-[#809966]/5 w-full rounded-lg flex flex-row gap-1 p-2 animate-pulse mb-2">
+        <Skeleton className="flex-1" />
+        <Skeleton className="flex-1" />
+        <Skeleton className="flex-1" />
+      </div>
+
+      <JobsSkeleton />
+    </DefaultLayout>
+  );
+}
+
+/**
+ * Component used when the user has no links.
+ */
+function NoLinks() {
+  return (
     <DefaultLayout
-      className={`px-6 flex flex-col ${
-        links.length === 0
-          ? "justify-evenly h-screen pb-14 max-w-[800px] w-full md:px-10 lg:px-20"
-          : "pt-6 md:p-10 md:pb-0"
-      }`}
+      className={`flex flex-col justify-evenly h-screen pb-14 max-w-[800px] w-full md:px-10 lg:px-20`}
     >
-      <ReviewSuggestionPopup />
-      {links.length === 0 ? (
-        <>
-          <div className="flex flex-col items-center gap-10">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
-              Be the: <span className="text-primary">first 2 apply</span>
-            </h1>
-            <p className="text-muted-foreground text-center">
-              Save your tailored job searches from top job platforms, and let us
-              do the heavy lifting. We'll monitor your specified job feeds and
-              swiftly notify you of new postings, providing you the edge to be
-              the first in line.
-            </p>
-            <Link to="/links">
-              <Button>Add new search</Button>
-            </Link>
-          </div>
-          <CronSchedule
-            cronRule={settings.cronRule}
-            onCronRuleChange={onCronRuleChange}
-          />
-        </>
-      ) : (
-        <div className="space-y-10">
-          {/* <CronSchedule
-            cronRule={settings.cronRule}
-            onCronRuleChange={onCronRuleChange}
-          /> */}
-
-          <Tabs
-            value={status}
-            className="w-full flex flex-col gap-5"
-            onValueChange={(value) => onTabChange(value)}
-          >
-            <TabsList className="h-fit p-2">
-              <TabsTrigger value="new" className="px-6 py-4 flex-1">
-                New Jobs {`(${listing.new})`}
-              </TabsTrigger>
-              <TabsTrigger value="applied" className="px-6 py-4 flex-1">
-                Applied {`(${listing.applied})`}
-              </TabsTrigger>
-              <TabsTrigger value="archived" className="px-6 py-4 flex-1">
-                Archived {`(${listing.archived})`}
-              </TabsTrigger>
-            </TabsList>
-
-            {ALL_JOB_STATUSES.map((statusItem) => {
-              return (
-                <TabsContent key={statusItem} value={statusItem}>
-                  {listing.isLoading || statusItem !== status ? (
-                    <JobsListSkeleton />
-                  ) : (
-                    <section className="flex">
-                      {/* jobs list */}
-                      <div
-                        id="jobsList"
-                        className="w-1/2 lg:w-2/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll"
-                      >
-                        <JobsList
-                          jobs={listing.jobs}
-                          hasMore={listing.hasMore}
-                          parentContainerId="jobsList"
-                          onApply={(job) => {
-                            openExternalUrl(job.externalUrl);
-                            // scanJob(job);
-                          }}
-                          onUpdateJobStatus={onUpdateJobStatus}
-                          onLoadMore={onLoadMore}
-                          onSelect={(job) => scanJobAndSelect(job)}
-                        />
-                      </div>
-
-                      {/* JD side panel */}
-                      <div className="w-1/2 lg:w-3/5 h-[calc(100vh-120px)] md:h-[calc(100vh-136px)] overflow-scroll border-l-[1px] p-6">
-                        {selectedJob && !isScanningSelectedJob && (
-                          <JobDetails job={selectedJob}></JobDetails>
-                        )}
-                        {isScanningSelectedJob && <div>Scanning job...</div>}
-                      </div>
-                    </section>
-                  )}
-                </TabsContent>
-              );
-            })}
-          </Tabs>
-        </div>
-      )}
+      <div className="flex flex-col items-center gap-10">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
+          Be the: <span className="text-primary">first 2 apply</span>
+        </h1>
+        <p className="text-muted-foreground text-center">
+          Save your tailored job searches from top job platforms, and let us do
+          the heavy lifting. We'll monitor your specified job feeds and swiftly
+          notify you of new postings, providing you the edge to be the first in
+          line.
+        </p>
+        <Link to="/links">
+          <Button>Add new search</Button>
+        </Link>
+      </div>
     </DefaultLayout>
   );
 }

@@ -141,7 +141,7 @@ export class F2aSupabaseApi {
    */
   scanJobDescription({ jobId, html }: { jobId: number; html: string }) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<Job>("scan-job-description", {
+      this._supabase.functions.invoke<{ job: Job }>("scan-job-description", {
         body: {
           jobId,
           html,

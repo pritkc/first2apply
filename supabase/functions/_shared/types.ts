@@ -1,9 +1,17 @@
 export enum SiteProvider {
   linkedin = "linkedin",
-  indeed = "indeed",
   glassdoor = "glassdoor",
-  weworkremotely = "weworkremotely",
+  indeed = "indeed",
   remoteok = "remoteok",
+  weworkremotely = "weworkremotely",
+  dice = "dice",
+  flexjobs = "flexjobs",
+  bestjobs = "bestjobs",
+  echojobs = "echojobs",
+  remotive = "remotive",
+  remoteio = "remoteio",
+  builtin = "builtin",
+  naukri = "naukri",
 }
 
 export type JobSite = {
