@@ -14,9 +14,12 @@ import {
   FormLabel,
 } from "../components/ui/form";
 import { Input } from "../components/ui/input";
+import { Skeleton } from "../components/ui/skeleton";
 import { Textarea } from "../components/ui/textarea";
 import { toast } from "../components/ui/use-toast";
 import { useError } from "../hooks/error";
+import { useSession } from "../hooks/session";
+import { createReview, getUserReview } from "../lib/electronMainSdk";
 import { DefaultLayout } from "./defaultLayout";
 
 const StarIcon = ({ filled = false }) => (
@@ -45,9 +48,31 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function ReviewPage() {
-  const [hoveredValue, setHoveredValue] = useState(0);
+  const { isLoggedIn, user } = useSession();
   const { handleError } = useError();
+
+  const [hoveredValue, setHoveredValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserReview = async () => {
+    try {
+      if (!isLoggedIn) return;
+      console.log("userId", user?.id);
+      const isReview = await getUserReview();
+      console.log("isReview", isReview);
+      setHasReviewed(!!isReview.length);
+      setIsLoading(false);
+    } catch (error) {
+      handleError({ error });
+    }
+  };
+
+  useEffect(() => {
+    fetchUserReview();
+  }, [isLoggedIn]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -74,7 +99,8 @@ export function ReviewPage() {
     setIsSubmitting(true);
 
     try {
-      // await createReview({ .... });
+      await createReview({ title, description, rating });
+      await fetchUserReview();
       form.reset();
       toast({
         title: "Success",
@@ -88,100 +114,108 @@ export function ReviewPage() {
     }
   };
 
-  // TODO: add a default message if it has already submitted a review
-
   return (
     <DefaultLayout className="p-6 md:p-10 ">
       <section className="p-6 border border-[#809966]/30 rounded-lg">
-        <h1 className="text-2xl font-medium tracking-wide mb-2">
-          Leave a review
-        </h1>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="rating"
-              render={() => (
-                <FormItem className="w-full mt-6">
-                  <FormLabel>Rate this app</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      value={String(rating)}
-                      onValueChange={(value) =>
-                        setValue("rating", Number(value))
-                      }
-                      className="flex items-center "
-                    >
-                      {Array.from({ length: 5 }, (_, index) => {
-                        const value = index + 1;
-                        return (
-                          <Item
-                            key={value}
-                            value={String(value)}
-                            onMouseEnter={() => setHoveredValue(value)}
-                            onMouseLeave={() => setHoveredValue(0)}
-                          >
-                            <label className="cursor-pointer">
-                              <StarIcon
-                                filled={value <= (hoveredValue || rating)}
-                              />
-                            </label>
-                          </Item>
-                        );
-                      })}
-                    </RadioGroup>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        {isLoading ? (
+          <Skeleton className="h-4 w-full mb-4" />
+        ) : hasReviewed ? (
+          <h1 className="text-2xl font-medium tracking-wide mb-2">
+            Thanks For Your Review!
+          </h1>
+        ) : (
+          <>
+            <h1 className="text-2xl font-medium tracking-wide mb-2">
+              Leave a review
+            </h1>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <FormField
+                  control={form.control}
+                  name="rating"
+                  render={() => (
+                    <FormItem className="w-full mt-6">
+                      <FormLabel>Rate this app</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={String(rating)}
+                          onValueChange={(value) =>
+                            setValue("rating", Number(value))
+                          }
+                          className="flex items-center "
+                        >
+                          {Array.from({ length: 5 }, (_, index) => {
+                            const value = index + 1;
+                            return (
+                              <Item
+                                key={value}
+                                value={String(value)}
+                                onMouseEnter={() => setHoveredValue(value)}
+                                onMouseLeave={() => setHoveredValue(0)}
+                              >
+                                <label className="cursor-pointer">
+                                  <StarIcon
+                                    filled={value <= (hoveredValue || rating)}
+                                  />
+                                </label>
+                              </Item>
+                            );
+                          })}
+                        </RadioGroup>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem className="w-full mt-6">
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input id="title" type="title" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="w-full mt-6">
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input id="title" type="title" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="w-full mt-6">
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      id="description"
-                      className="resize-none mb-4"
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="w-full mt-6">
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          id="description"
+                          className="resize-none mb-4"
+                          rows={6}
+                          {...field}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-            <Button
-              type="submit"
-              disabled={!form.formState.isValid || isSubmitting}
-              className="flex justify-center items-center gap-2 mt-6"
-            >
-              {isSubmitting ? (
-                <>
-                  <Icons.spinner2 className="animate-spin h-4 w-4" />
-                  Submitting review...
-                </>
-              ) : (
-                "Submit"
-              )}
-            </Button>
-          </form>
-        </Form>
+                <Button
+                  type="submit"
+                  disabled={!form.formState.isValid || isSubmitting}
+                  className="flex justify-center items-center gap-2 mt-6"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Icons.spinner2 className="animate-spin h-4 w-4" />
+                      Submitting review...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </>
+        )}
       </section>
     </DefaultLayout>
   );
