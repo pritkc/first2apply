@@ -268,15 +268,23 @@ export class F2aSupabaseApi {
     title: string;
     description: string;
     rating: number;
-  }): Promise<{ review: Review }> {
-    return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke("create-review", {
-        body: {
+  }) {
+    return this._supabaseApiCall(
+      async () =>
+        await this._supabase.from("reviews").insert({
           title,
           description,
           rating,
-        },
-      })
+        })
+    );
+  }
+
+  /**
+   * Get user's review.
+   */
+  async getUserReview() {
+    return this._supabaseApiCall(
+      async () => await this._supabase.from("reviews").select("*")
     );
   }
 }

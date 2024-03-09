@@ -235,14 +235,17 @@ export async function createReview({
   title: string;
   description: string;
   rating: number;
-}): Promise<Review> {
-  const { review } = await _mainProcessApiCall<{ review: Review }>(
-    "create-review",
-    {
-      title,
-      description,
-      rating,
-    }
-  );
-  return review;
+}): Promise<void> {
+  await _mainProcessApiCall("create-review", {
+    title,
+    description,
+    rating,
+  });
+}
+
+/**
+ * Get a user review.
+ */
+export async function getUserReview(): Promise<Review[]> {
+  return await _mainProcessApiCall("get-user-review", {});
 }
