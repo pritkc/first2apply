@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
 import { useSites } from "@/hooks/sites";
 
-import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { ArchiveIcon, ArrowUpIcon, CheckIcon } from "@radix-ui/react-icons";
 import {
   TooltipProvider,
   TooltipTrigger,
@@ -14,139 +12,99 @@ import {
 import { Icons } from "@/components/icons";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import InfiniteScroll from "react-infinite-scroll-component";
+
+import { ArchiveIcon } from "@radix-ui/react-icons";
+
+import { cn } from "@/lib/utils";
+
+import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 
 export function JobsList({
   jobs,
+  selectedJobId,
   hasMore,
   parentContainerId,
-  onApply,
   onLoadMore,
   onUpdateJobStatus,
   onSelect,
 }: {
   jobs: Job[];
+  selectedJobId?: number;
   hasMore: boolean;
   parentContainerId: string;
-  onApply: (job: Job) => void;
   onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
   onLoadMore: () => void;
   onSelect: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
 
-  return jobs.length > 0 ? (
+  return (
     <InfiniteScroll
       dataLength={jobs.length}
       next={onLoadMore}
       hasMore={hasMore}
       loader={<Icons.spinner2 />}
-      className="space-y-6"
       scrollThreshold={0.8}
       scrollableTarget={parentContainerId}
     >
-      <ul className="space-y-6">
+      <ul>
         {jobs.map((job) => {
           return (
             <li
               key={job.id}
-              className="space-y-6"
+              className={cn(
+                "pt-6 px-2 xl:px-4 -mt-[1px]",
+                selectedJobId === job.id && "bg-muted"
+              )}
               onClick={() => onSelect(job)}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mb-6">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={siteLogos[job.siteId]} />
                   <AvatarFallback>LI</AvatarFallback>
                 </Avatar>
 
-                <div className="grow md:flex-auto overflow-ellipsis w-fit">
+                <div className="grow space-y-1">
                   <p className="text-xs text-muted-foreground">
                     {job.companyName}
                   </p>
-                  <p className="font-medium">{job.title}</p>
+                  <p className="leading-5 tracking-wide">{job.title}</p>
 
-                  <div className="flex items-center gap-1.5 pt-0.5 flex-wrap lg:flex-nowrap">
-                    {job.location && (
-                      <Badge className="shrink-0">{job.location}</Badge>
-                    )}
-                    {job.jobType && (
-                      <Badge className="shrink-0">{job.jobType}</Badge>
-                    )}
-                    {job.salary && (
-                      <Badge className="shrink-0">{job.salary}</Badge>
-                    )}
+                  <div className="flex items-center gap-1.5 pt-2 flex-wrap">
+                    {job.location && <Badge>{job.location}</Badge>}
+                    {job.jobType && <Badge>{job.jobType}</Badge>}
+                    {job.salary && <Badge>{job.salary}</Badge>}
                   </div>
                 </div>
 
-                {job.tags && (
-                  <div className="grow hidden md:flex flex-wrap gap-1.5 justify-end pl-2">
-                    {job.tags?.slice(0, 5).map((tag, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                {job.status !== "archived" && (
+                  <TooltipProvider delayDuration={500}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-8"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onUpdateJobStatus(job.id, "archived");
+                          }}
+                        >
+                          <ArchiveIcon className="h-4 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>Archive</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
-
-                {/* actions */}
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    className="w-full px-4"
-                    onClick={() => onApply(job)}
-                  >
-                    Apply
-                  </Button>
-                  {job.status !== "applied" && (
-                    <TooltipProvider delayDuration={500}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-8"
-                            onClick={() => onUpdateJobStatus(job.id, "applied")}
-                          >
-                            <CheckIcon className="h-5 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
-                          </Button>
-                        </TooltipTrigger>
-
-                        <TooltipContent>Mark as applied</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  {job.status !== "archived" && (
-                    <TooltipProvider delayDuration={500}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-8"
-                            onClick={() =>
-                              onUpdateJobStatus(job.id, "archived")
-                            }
-                          >
-                            <ArchiveIcon className="h-4 w-auto shrink-0 text-primary-foreground transition-transform duration-200" />
-                          </Button>
-                        </TooltipTrigger>
-
-                        <TooltipContent>Archive</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
               </div>
-              <hr className="w-full text-muted-foreground" />
+
+              <hr className="w-full border-muted" />
             </li>
           );
         })}
       </ul>
     </InfiniteScroll>
-  ) : (
-    <p className="text-center mt-10 max-w-md mx-auto">
-      No new job listings right now, but don't worry! We're on the lookout and
-      will update you as soon as we find anything.
-    </p>
   );
 }

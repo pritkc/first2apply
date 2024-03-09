@@ -63,7 +63,7 @@ export function initRendererIpcApi({
       });
 
       // intentionally not awaited to not have the user wait until JDs are in
-      jobScanner.scanJobs(newJobs).catch((error) => {
+      jobScanner.scanJobs(newJobs.reverse()).catch((error) => {
         console.error(getExceptionMessage(error));
       });
 
@@ -105,7 +105,10 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle("scan-job-description", async (event, { job }) =>
-    _apiCall(async () => jobScanner.scanJobs([job]))
+    _apiCall(async () => {
+      const [updatedJob] = await jobScanner.scanJobs([job]);
+      return { job: updatedJob };
+    })
   );
 
   ipcMain.handle(

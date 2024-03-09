@@ -1,8 +1,9 @@
 import { BrowserWindow } from "electron";
-import { Logger } from "pino";
+
 import { backOff } from "exponential-backoff";
 import { WorkerQueue } from "./workerQueue";
 import { sleep } from "./helpers";
+import { ILogger } from "./logger";
 
 const KNOWN_AUTHWALLS = ["authwall", "login"];
 
@@ -15,7 +16,7 @@ export class HtmlDownloader {
   /**
    * Class constructor.
    */
-  constructor(private _logger: Logger) {}
+  constructor(private _logger: ILogger) {}
 
   /**
    * Initialize the headless window.
