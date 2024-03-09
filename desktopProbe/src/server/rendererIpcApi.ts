@@ -116,4 +116,8 @@ export function initRendererIpcApi({
     async (event, { title, description, rating }) =>
       _apiCall(() => supabaseApi.createReview({ title, description, rating }))
   );
+
+  ipcMain.handle("get-user-review", async (event) =>
+    _apiCall(async () => supabaseApi.getUserReview())
+  );
 }
