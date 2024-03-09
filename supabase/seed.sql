@@ -60,8 +60,9 @@ public.reviews (
   title text not null,
   description text not null,
   rating integer not null,
-  constraint reviews_pkey primary key (id)
-  constraint reviews_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
+  constraint reviews_pkey primary key (id),
+  constraint reviews_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
+  constraint unique_user_review unique (user_id) -- This enforces one review per user for the app
 ) tablespace pg_default;
 
 alter table public.sites enable row level security;
@@ -93,12 +94,20 @@ to authenticated
 using (auth.uid() = user_id) 
 with check (auth.uid() = user_id);
 
-create policy "enable select for authenticated users only" 
+create policy "enable insert reviews for authenticated users only" 
 on public.reviews 
 as permissive 
 for insert 
 to authenticated 
-using (true);
+with check (auth.uid() = user_id);
+
+create policy "enable select reviews for authenticated users only" 
+on public.reviews 
+as permissive 
+for select 
+to authenticated 
+using (auth.uid() = user_id) 
+
 
 
 -- create custom DB functions
