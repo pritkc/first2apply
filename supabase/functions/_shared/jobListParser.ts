@@ -2,8 +2,14 @@ import {
   DOMParser,
   Element,
 } from "https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts";
-import { Job, JobType } from "./types.ts";
+import turndown from "npm:turndown@7.1.2";
+import { Job, JobType, SiteProvider } from "./types.ts";
 import { JobSite } from "./types.ts";
+
+const turndownService = new turndown({
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+});
 
 /**
  * Helper used to parse a salary string.
@@ -65,7 +71,6 @@ export function getJobSite({
   site?.blacklisted_paths.forEach((path) => {
     const pathname = parsedUrl.pathname.toLowerCase();
     const blacklistedPath = path.toLowerCase();
-    console.log(pathname, path);
     if (pathname === blacklistedPath || pathname + "/" === blacklistedPath) {
       throw new Error(
         `Looks like the URL you are trying to save does not contain any search params. Make sure to configure your desired filters like role/tech stach, location, etc. on ${parsedUrl.hostname} and try again. Optionally add the last 24h filter when possible.`
@@ -109,7 +114,7 @@ export function cleanJobUrl({
 /**
  * Parse a job page from a given url.
  */
-export function parseJobPage({
+export function parseJobsListUrl({
   allJobSites,
   url,
   html,
@@ -126,48 +131,7 @@ export function parseJobPage({
     );
   }
 
-  let foundJobs: ParsedJob[] = [];
-  switch (site.name) {
-    case "LinkedIn":
-      foundJobs = parseLinkedInJobs({ siteId: site.id, html });
-      break;
-    case "Glassdoor":
-      foundJobs = parseGlassDoorJobs({ siteId: site.id, html });
-      break;
-    case "Indeed":
-      foundJobs = parseIndeedJobs({ siteId: site.id, html });
-      break;
-    case "Remote OK":
-      foundJobs = parseRemoteOkJobs({ siteId: site.id, html });
-      break;
-    case "We Work Remotely":
-      foundJobs = parseWeWorkRemotelyJobs({ siteId: site.id, html });
-      break;
-    case "Dice":
-      foundJobs = parseDiceJobs({ siteId: site.id, html });
-      break;
-    case "Flexjobs":
-      foundJobs = parseFlexjobsJobs({ siteId: site.id, html });
-      break;
-    case "Bestjobs":
-      foundJobs = parseBestjobsJobs({ siteId: site.id, html });
-      break;
-    case "Echojobs":
-      foundJobs = parseEchojobsJobs({ siteId: site.id, html });
-      break;
-    case "Remotive":
-      foundJobs = parseRemotiveJobs({ siteId: site.id, html });
-      break;
-    case "Remoteio":
-      foundJobs = parseRemoteioJobs({ siteId: site.id, html });
-      break;
-    case "Builtin":
-      foundJobs = parseBuiltinJobs({ siteId: site.id, html });
-      break;
-    case "Naukri":
-      foundJobs = parseNaukriJobs({ siteId: site.id, html });
-      break;
-  }
+  const foundJobs: ParsedJob[] = parseSiteJobsList({ site, html });
 
   if (foundJobs.length === 0) {
     console.error(
@@ -176,6 +140,48 @@ export function parseJobPage({
   }
 
   return foundJobs;
+}
+
+/**
+ * Parse jobs list from a site provided url.
+ */
+function parseSiteJobsList({
+  site,
+  html,
+}: {
+  site: JobSite;
+  html: string;
+}): ParsedJob[] {
+  switch (site.provider) {
+    case SiteProvider.linkedin:
+      return parseLinkedInJobs({ siteId: site.id, html });
+    case SiteProvider.glassdoor:
+      return parseGlassDoorJobs({ siteId: site.id, html });
+    case SiteProvider.indeed:
+      return parseIndeedJobs({ siteId: site.id, html });
+    case SiteProvider.remoteok:
+      return parseRemoteOkJobs({ siteId: site.id, html });
+    case SiteProvider.weworkremotely:
+      return parseWeWorkRemotelyJobs({ siteId: site.id, html });
+    case SiteProvider.dice:
+      return parseDiceJobs({ siteId: site.id, html });
+    case SiteProvider.flexjobs:
+      return parseFlexjobsJobs({ siteId: site.id, html });
+    case SiteProvider.bestjobs:
+      return parseBestjobsJobs({ siteId: site.id, html });
+    case SiteProvider.echojobs:
+      return parseEchojobsJobs({ siteId: site.id, html });
+    case SiteProvider.remotive:
+      return parseRemotiveJobs({ siteId: site.id, html });
+    case SiteProvider.remoteio:
+      return parseRemoteioJobs({ siteId: site.id, html });
+    case SiteProvider.builtin:
+      return parseBuiltinJobs({ siteId: site.id, html });
+    case SiteProvider.naukri:
+      return parseNaukriJobs({ siteId: site.id, html });
+    case SiteProvider.robertHalf:
+      return parseRobertHalfJobs({ siteId: site.id, html });
+  }
 }
 
 /**
@@ -472,7 +478,6 @@ export function parseGlassDoorJobs({
     const companyName = el
       .querySelector(".jobCard .EmployerProfile_employerName__qujuA")
       ?.textContent?.trim();
-    console.log(companyName);
     if (!companyName) return null;
 
     const companyLogo = el
@@ -562,9 +567,6 @@ export function parseIndeedJobs({
       .replace(/\sin\s/i, "")
       .trim();
 
-    console.log(
-      el.querySelector(".salary-snippet-container")?.textContent?.trim()
-    );
     let salary = el
       .querySelector(".salary-snippet-container")
       ?.textContent?.trim()
@@ -936,21 +938,17 @@ export function parseRemotiveJobs({
 
     const externalUrl =
       "https://remotive.com/" + jobTitle.getAttribute("href")?.trim();
-    console.log(externalUrl);
     if (!externalUrl) return null;
 
     const externalId = externalUrl.split("?")[0].split("/").pop();
-    console.log(externalId);
     if (!externalId) return null;
 
     const title = jobTitle.querySelector("span")?.textContent?.trim();
-    console.log(title);
     if (!title) return null;
 
     const companyName = jobTitle
       .querySelector("span:nth-child(3)")
       ?.textContent?.trim();
-    console.log(companyName);
     if (!companyName) return null;
 
     const companyLogo =
@@ -972,7 +970,6 @@ export function parseRemotiveJobs({
     ]
       .filter(Boolean)
       .join(", ");
-    console.log(location);
 
     return {
       siteId,
@@ -1199,6 +1196,91 @@ export function parseNaukriJobs({
       title,
       companyName,
       location,
+      tags,
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return validJobs;
+}
+
+/**
+ * Method used to parse a robert half job page.
+ */
+export function parseRobertHalfJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): ParsedJob[] {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector(
+    ".rh-mt-20x .row .col-md-5.col-lg-5 > div"
+  );
+  if (!jobsList) return [];
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll("rhcl-job-card")
+  ) as Element[];
+  console.log(`[robert half] found ${jobElements.length} elements`);
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalId = el.getAttribute("job-id")?.trim();
+    if (!externalId) return null;
+
+    const externalUrl = el.getAttribute("destination")?.trim();
+    if (!externalUrl) return null;
+
+    const title = el.getAttribute("headline")?.trim();
+    if (!title) return null;
+
+    const companyName = "N/A";
+
+    const location = el.getAttribute("location")?.trim();
+    const salaryMin = el.getAttribute("salary-min")?.trim();
+    const salaryMax = el.getAttribute("salary-max")?.trim();
+    const salaryCurrency = el.getAttribute("salary-currency")?.trim();
+    const salaryPeriod = el.getAttribute("salary-period")?.trim();
+    let salary = undefined;
+    if (salaryMin && salaryMax && salaryMax !== "0" && salaryMin !== "0") {
+      const formatValue = (value: string) => {
+        const denominator = salaryPeriod?.toLowerCase().includes("hour")
+          ? 1
+          : 1000;
+        const suffix = salaryPeriod?.toLowerCase().includes("hour") ? "" : "k";
+        return `${parseFloat(value) / denominator}${suffix}`;
+      };
+      salary = `${salaryCurrency} ${formatValue(salaryMin)} - ${formatValue(
+        salaryMax
+      )} ${salaryPeriod}`.trim();
+    }
+
+    const worksite = el.getAttribute("worksite")?.trim().toLowerCase();
+    const jobType: JobType | undefined = worksite?.includes("remote")
+      ? "remote"
+      : worksite?.includes("hybrid")
+      ? "hybrid"
+      : worksite?.includes("onsite")
+      ? "onsite"
+      : undefined;
+
+    const copy = el.getAttribute("copy")?.trim();
+    const description = copy ? turndownService.turndown(copy) : undefined;
+    const tags = [el.getAttribute("type")?.trim() ?? ""];
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
+      salary,
+      jobType,
+      description,
       tags,
     };
   });
