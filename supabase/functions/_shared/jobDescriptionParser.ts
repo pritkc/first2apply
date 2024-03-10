@@ -52,6 +52,9 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
   [SiteProvider.naukri]: {
     description: [".description", ".styles_JDC__dang-inner-html__h0K4t"],
   },
+  [SiteProvider.robertHalf]: {
+    description: ["div[data-testid=job-description]"],
+  },
 };
 
 type JobDescription = {
@@ -101,6 +104,8 @@ export function parseJobDescription({
       return parseRemoteIoJobDescription({ html });
     case SiteProvider.naukri:
       return parseNaukriJobDescription({ html });
+    case SiteProvider.robertHalf:
+      return parseRobertHalfJobDescription({ html });
   }
 }
 
@@ -427,4 +432,13 @@ function parseNaukriJobDescription({ html }: { html: string }): JobDescription {
   return {
     content: description,
   };
+}
+
+/**
+ * Parse a RobertHalf job description from the HTML.
+ */
+function parseRobertHalfJobDescription({}: { html: string }): JobDescription {
+  // the entire JD is parsed from the list so no need to parse the description
+
+  return {};
 }

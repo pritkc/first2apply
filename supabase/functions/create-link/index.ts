@@ -1,9 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { DbSchema } from "../_shared/types.ts";
-import { parseJobPage } from "../_shared/jobParser.ts";
+import { parseJobsListUrl } from "../_shared/jobListParser.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
-import { cleanJobUrl } from "../_shared/jobParser.ts";
+import { cleanJobUrl } from "../_shared/jobListParser.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     // parse the html and save found jobs in the db
     // need to save it to be able to diff the jobs list later
-    const jobs = await parseJobPage({ allJobSites, url: cleanUrl, html });
+    const jobs = await parseJobsListUrl({ allJobSites, url: cleanUrl, html });
     console.log(`found ${jobs.length} jobs`);
     const { error: insertError, data: upsertedJobs } = await supabaseClient
       .from("jobs")

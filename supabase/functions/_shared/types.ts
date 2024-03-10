@@ -12,6 +12,7 @@ export enum SiteProvider {
   remoteio = "remoteio",
   builtin = "builtin",
   naukri = "naukri",
+  robertHalf = "robertHalf",
 }
 
 export type JobSite = {
