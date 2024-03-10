@@ -28,6 +28,11 @@ import { Toaster } from "./components/ui/toaster";
 import { ForgotPasswordPage } from "./pages/forgotPassword";
 import { ResetPasswordPage } from "./pages/resetPassword";
 
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+
+TimeAgo.addDefaultLocale(en);
+
 // Auth guarded component wrapper
 function AuthGuardedComponent({ component }: { component: ComponentType }) {
   const Component = withAuthGuard(component);
