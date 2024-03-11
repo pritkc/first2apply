@@ -6,8 +6,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { DefaultLayout } from "./defaultLayout";
 import { CreateLink } from "@/components/createLink";
 import { LinksList } from "@/components/linksList";
-import { CreateLinkSkeleton } from "@/components/skeletons/CreateLinkSkeleton";
-import { LinksListSkeleton } from "@/components/skeletons/LinksListSkeleton";
+import { LinksListSkeleton } from "@/components/skeletons/linksListSkeleton.tsx";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -26,8 +25,7 @@ export function LinksPage() {
 
   if (isLoading) {
     return (
-      <DefaultLayout className="p-6 md:p-10 space-y-16">
-        <CreateLinkSkeleton />
+      <DefaultLayout className="p-6 md:p-10">
         <LinksListSkeleton />
       </DefaultLayout>
     );
