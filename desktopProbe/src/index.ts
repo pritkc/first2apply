@@ -210,7 +210,6 @@ async function bootstrap() {
       return;
     }
 
-    session.defaultSession.clearCache();
     if (!ENV.appBundleId) throw new Error(`missing APP_BUNDLE_ID`);
     if (process.platform === "win32") {
       app.setAppUserModelId(ENV.appBundleId);
