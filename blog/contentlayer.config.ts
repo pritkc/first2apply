@@ -33,7 +33,7 @@ const computedFields: ComputedFields = {
   },
   path: {
     type: 'string',
-    resolve: (doc) => doc._raw.flattenedPath.replace(/^.+?(\/)/, ''),
+    resolve: (doc) => doc._raw.flattenedPath,
   },
   filePath: {
     type: 'string',

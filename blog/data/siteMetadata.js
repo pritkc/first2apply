@@ -7,10 +7,10 @@ const siteMetadata = {
     'Welcome to the First 2 Apply Blog - your ultimate resource for navigating the job market with ease. Discover expert tips, success stories, and the latest features of First 2 Apply, designed to put your job hunt on autopilot. Stay ahead in your career with our insights and updates.',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://first2apply.com',
+  siteUrl: 'https://first2apply.com/blog',
   // siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
-  siteLogo: 'static/images/logo.png',
-  socialBanner: 'static/images/twitter-card.png',
+  siteLogo: '/static/images/logo.png',
+  socialBanner: '/static/images/twitter-card.png',
   // mastodon: 'https://mastodon.social/@mastodonuser',
   email: 'contact@first2apply.com',
   // github: 'https://github.com',
