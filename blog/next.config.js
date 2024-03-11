@@ -60,6 +60,7 @@ const securityHeaders = [
 module.exports = () => {
   const plugins = [withContentlayer, withBundleAnalyzer]
   return plugins.reduce((acc, next) => next(acc), {
+    basePath: '/blog',
     reactStrictMode: true,
     pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
     eslint: {
@@ -89,19 +90,19 @@ module.exports = () => {
 
       return config
     },
-    async rewrites() {
-      return [
-        {
-          source: '/blog',
-          destination:
-            'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog',
-        },
-        {
-          source: '/blog/:path*',
-          destination:
-            'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog/:path*',
-        },
-      ]
-    },
+    // async rewrites() {
+    //   return [
+    //     {
+    //       source: '/blog',
+    //       destination:
+    //         'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog',
+    //     },
+    //     {
+    //       source: '/blog/:path*',
+    //       destination:
+    //         'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog/:path*',
+    //     },
+    //   ]
+    // },
   })
 }
