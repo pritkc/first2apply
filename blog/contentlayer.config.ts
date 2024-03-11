@@ -33,7 +33,7 @@ const computedFields: ComputedFields = {
   },
   path: {
     type: 'string',
-    resolve: (doc) => doc._raw.flattenedPath,
+    resolve: (doc) => doc._raw.flattenedPath.replace(/^.+?(\/)/, ''),
   },
   filePath: {
     type: 'string',
@@ -67,10 +67,7 @@ function createSearchIndex(allBlogs) {
     siteMetadata?.search?.provider === 'kbar' &&
     siteMetadata.search.kbarConfig.searchDocumentsPath
   ) {
-    writeFileSync(
-      `public/${siteMetadata.search.kbarConfig.searchDocumentsPath}`,
-      JSON.stringify(allCoreContent(sortPosts(allBlogs)))
-    )
+    writeFileSync(`public/search.json`, JSON.stringify(allCoreContent(sortPosts(allBlogs))))
     console.log('Local search index generated...')
   }
 }
