@@ -89,5 +89,19 @@ module.exports = () => {
 
       return config
     },
+    async rewrites() {
+      return [
+        {
+          source: '/blog',
+          destination:
+            'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog',
+        },
+        {
+          source: '/blog/:path*',
+          destination:
+            'https://first2apply-blog-4lnkohjtg-dragos-sebestins-projects.vercel.app/blog/:path*',
+        },
+      ]
+    },
   })
 }
