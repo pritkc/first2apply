@@ -7,6 +7,7 @@ export class TrayMenu {
   private _tray: Tray;
   private _iconPathMacOs = "/images/trayIconTemplate.png";
   private _iconPathWin = "/images/trayIcon.ico";
+  private _iconPathLinux = "/images/trayIcon.png";
 
   constructor({
     logger,
@@ -19,7 +20,11 @@ export class TrayMenu {
   }) {
     this._logger = logger;
     const iconName =
-      process.platform === "win32" ? this._iconPathWin : this._iconPathMacOs;
+      process.platform === "win32"
+        ? this._iconPathWin
+        : process.platform === "darwin"
+        ? this._iconPathMacOs
+        : this._iconPathLinux;
     const iconPath = path.join(__dirname, iconName);
     const image = nativeImage.createFromPath(iconPath);
     if (process.platform === "darwin") {
