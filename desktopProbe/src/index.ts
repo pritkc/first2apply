@@ -3,7 +3,6 @@ import {
   BrowserWindow,
   safeStorage,
   nativeTheme,
-  session,
   dialog,
   Notification,
   shell,
