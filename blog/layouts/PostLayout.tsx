@@ -20,8 +20,8 @@ const postDateTemplate: Intl.DateTimeFormatOptions = {
 interface LayoutProps {
   content: CoreContent<Blog>
   authorDetails: CoreContent<Authors>[]
-  next?: { path: string; title: string }
-  prev?: { path: string; title: string }
+  next?: { slug: string; title: string }
+  prev?: { slug: string; title: string }
   children: ReactNode
 }
 
@@ -113,23 +113,23 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
                 )}
                 {(next || prev) && (
                   <div className="flex justify-between py-4 xl:block xl:space-y-8 xl:py-8">
-                    {prev && prev.path && (
+                    {prev && prev.slug && (
                       <div>
                         <h2 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           Previous Article
                         </h2>
                         <div className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400">
-                          <Link href={`/${prev.path}`}>{prev.title}</Link>
+                          <Link href={`/${prev.slug}`}>{prev.title}</Link>
                         </div>
                       </div>
                     )}
-                    {next && next.path && (
+                    {next && next.slug && (
                       <div>
                         <h2 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           Next Article
                         </h2>
                         <div className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400">
-                          <Link href={`/${next.path}`}>{next.title}</Link>
+                          <Link href={`/${next.slug}`}>{next.title}</Link>
                         </div>
                       </div>
                     )}
