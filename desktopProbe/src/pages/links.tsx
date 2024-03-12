@@ -6,7 +6,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { DefaultLayout } from "./defaultLayout";
 import { CreateLink } from "@/components/createLink";
 import { LinksList } from "@/components/linksList";
-import { LinksListSkeleton } from "@/components/skeletons/linksListSkeleton.tsx";
+import { LinksListSkeleton } from "@/components/skeletons/linksListSkeleton";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 

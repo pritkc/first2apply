@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 import ReactTimeAgo from "react-time-ago";
+import { useMemo } from "react";
 
 export function LinksList({
   links,
@@ -17,7 +18,8 @@ export function LinksList({
   links: Link[];
   onDeleteLink: (linkId: number) => void;
 }) {
-  const { siteLogos } = useSites();
+  const { siteLogos, sites } = useSites();
+  const sitesMap = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
 
   return (
     <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 2xl:gap-6 mt-4">
@@ -43,7 +45,12 @@ export function LinksList({
                 </AvatarFallback>
               </Avatar>
 
-              <p className="text-lg leading-6 text-balance">{link.title}</p>
+              <div>
+                <p className="text-sm text-muted-foreground p-0">
+                  {sitesMap.get(link.site_id)?.name}
+                </p>
+                <p className="text-lg leading-6 text-balance">{link.title}</p>
+              </div>
             </div>
 
             <p className="text-xs grow break-all mt-6 mb-4 whitespace-pre-wrap text-muted-foreground font-light text-pretty">
