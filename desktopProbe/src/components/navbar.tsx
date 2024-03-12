@@ -7,6 +7,7 @@ import {
   MagnifyingGlassIcon,
   MoonIcon,
   QuestionMarkCircledIcon,
+  ChatBubbleIcon,
   SunIcon,
 } from "@radix-ui/react-icons";
 import {
