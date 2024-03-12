@@ -11,8 +11,7 @@ import {
   Link,
 } from "../../../supabase/functions/_shared/types";
 import * as luxon from "luxon";
-import { getExceptionMessage } from "@/lib/error";
-import { promiseAllSequence } from "./helpers";
+import { backOff } from "exponential-backoff";
 
 /**
  * Class used to interact with our Supabase API.
@@ -236,7 +235,19 @@ export class F2aSupabaseApi {
     T,
     E extends Error | PostgrestError | FunctionsHttpError
   >(method: () => Promise<{ data?: T; error: E }>) {
-    const { data, error } = await method();
+    const { data, error } = await backOff(
+      async () => {
+        const result = await method();
+        if (result.error) throw result.error;
+
+        return result;
+      },
+      {
+        numOfAttempts: 5,
+        jitter: "full",
+        startingDelay: 300,
+      }
+    );
 
     // edge functions don't throw errors, instead they return an errorMessage field in the data object
     // work around for this issue https://github.com/supabase/functions-js/issues/45
