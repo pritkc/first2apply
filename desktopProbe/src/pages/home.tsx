@@ -24,7 +24,7 @@ import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobSummary } from "@/components/jobSummary";
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { ReviewSuggestionPopup } from "../components/reviewSuggestionPopup";
+import { ReviewSuggestionPopup } from "@/components/reviewSuggestionPopup";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
