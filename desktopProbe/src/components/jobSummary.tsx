@@ -39,11 +39,12 @@ export function JobSummary({
             )}
           </p>
         </div>
-
-        <Avatar className="w-16 h-16">
-          <AvatarImage src={job.companyLogo || siteLogos[job.siteId]} />
-          <AvatarFallback>LI</AvatarFallback>
-        </Avatar>
+        {job.companyLogo && (
+          <Avatar className="w-16 h-16">
+            <AvatarImage src={job.companyLogo} />
+            <AvatarFallback>LI</AvatarFallback>
+          </Avatar>
+        )}
       </div>
 
       <div className="space-y-1.5 mt-3 lg:mt-4">
