@@ -77,6 +77,8 @@ export class F2aAutoUpdater {
       }
     );
 
+    this._logger.info("auto updater started");
+
     // check for updates every hour
     this._cronJob = schedule("0 * * * *", () => {
       this._checkForUpdates();
@@ -104,9 +106,13 @@ export class F2aAutoUpdater {
     updateURL: string;
   }) {
     // show a notification
+    const message =
+      process.platform === "darwin"
+        ? "A new version has been downloaded. Restart the application to apply the updates."
+        : "A new version is available. You can now download and install it.";
     this._notification = new Notification({
       title: releaseName,
-      body: "A new version has been downloaded. Restart the application to apply the updates.",
+      body: message,
       actions: [{ text: "Restart Now", type: "button" }],
     });
     this._notification.show();
