@@ -188,12 +188,19 @@ export class F2aAutoUpdater {
       const release = releasesJson.releases.find(
         (release) => release.version === latestVersion
       );
+      if (!release) {
+        throw new Error(
+          `Release metadata not found for version ${latestVersion}`
+        );
+      }
 
       // show the update notification
       this._showUpdateNotification({
         releaseName: latestVersion,
         updateURL: release.updateTo.url,
       });
+    } else {
+      this._logger.info("no updates available");
     }
   }
 }
