@@ -1,4 +1,4 @@
-import { app, autoUpdater, Notification } from "electron";
+import { app, autoUpdater, Notification, shell } from "electron";
 
 import { schedule, ScheduledTask } from "node-cron";
 
@@ -56,7 +56,7 @@ export class F2aAutoUpdater {
     autoUpdater.on(
       "update-downloaded",
       (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-        this._showUpdateNotification(releaseName);
+        this._showUpdateNotification({ releaseName, updateURL });
       }
     );
 
@@ -79,7 +79,13 @@ export class F2aAutoUpdater {
   /**
    * Show a notification for new updates.
    */
-  private _showUpdateNotification(releaseName: string) {
+  private _showUpdateNotification({
+    releaseName,
+    updateURL,
+  }: {
+    releaseName: string;
+    updateURL: string;
+  }) {
     // show a notification
     this._notification = new Notification({
       title: releaseName,
@@ -97,6 +103,14 @@ export class F2aAutoUpdater {
         this._analytics.trackEvent("apply_update", {
           release_name: releaseName,
         });
+
+        // on linux we can't apply the update automatically, so just open the download page
+        // and let the user install it manually
+        if (process.platform === "linux") {
+          shell.openExternal(updateURL);
+          return;
+        }
+
         await this._onQuit();
         autoUpdater.quitAndInstall();
       } catch (error) {
