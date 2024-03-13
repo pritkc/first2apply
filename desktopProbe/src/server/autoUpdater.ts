@@ -85,7 +85,9 @@ export class F2aAutoUpdater {
     });
 
     // check for updates on startup
-    this._checkForUpdates();
+    process.nextTick(() => {
+      this._checkForUpdates();
+    });
   }
 
   /**
