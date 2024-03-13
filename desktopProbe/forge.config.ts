@@ -17,7 +17,6 @@ import { rendererConfig } from "./webpack.renderer.config";
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: "first2apply",
     asar: true,
     icon: path.join(__dirname, "packagers", "icons", "paper-plane"),
     appBundleId: process.env.APP_BUNDLE_ID,
