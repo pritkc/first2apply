@@ -202,7 +202,7 @@ export class F2aAutoUpdater {
 
       // show the update notification
       this._showUpdateNotification({
-        releaseName: latestVersion,
+        releaseName: release.updateTo.name,
         updateURL: release.updateTo.url,
       });
     } else {
