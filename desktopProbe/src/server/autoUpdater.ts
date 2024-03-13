@@ -128,7 +128,9 @@ export class F2aAutoUpdater {
 
     const applyUpdate = async () => {
       try {
-        this._logger.info("Restarting to apply update ...");
+        process.platform === "darwin"
+          ? this._logger.info("restarting to apply update ...")
+          : this._logger.info("opening download url ...");
         this._analytics.trackEvent("apply_update", {
           release_name: releaseName,
         });
@@ -143,7 +145,7 @@ export class F2aAutoUpdater {
         await this._onQuit();
         autoUpdater.quitAndInstall();
       } catch (error) {
-        console.error(getExceptionMessage(error));
+        this._logger.error(getExceptionMessage(error));
       }
     };
 
