@@ -476,7 +476,7 @@ export function parseGlassDoorJobs({
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".jobCard .EmployerProfile_employerName__qujuA")
+      .querySelector(".jobCard .EmployerProfile_compactEmployerName__LE242")
       ?.textContent?.trim();
     if (!companyName) return null;
 

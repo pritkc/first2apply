@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
         return jobsList;
       })
     ).then((r) => r.flat());
+    console.log(`found ${parsedJobs.length} jobs`);
 
     const { data: upsertedJobs, error: insertError } = await supabaseClient
       .from("jobs")
