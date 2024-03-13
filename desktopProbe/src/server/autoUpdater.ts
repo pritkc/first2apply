@@ -112,10 +112,14 @@ export class F2aAutoUpdater {
       process.platform === "darwin"
         ? "A new version has been downloaded. Restart the application to apply the updates."
         : "A new version is available. You can now download and install it.";
+    const actions: Electron.NotificationAction[] | undefined =
+      process.platform === "darwin"
+        ? [{ text: "Restart Now", type: "button" }]
+        : undefined;
     this._notification = new Notification({
       title: releaseName,
       body: message,
-      actions: [{ text: "Restart Now", type: "button" }],
+      actions,
     });
     this._notification.show();
     this._analytics.trackEvent("show_update_notification", {
