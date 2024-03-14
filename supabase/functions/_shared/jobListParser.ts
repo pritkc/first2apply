@@ -1115,6 +1115,22 @@ export function parseRemoteioJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
+  // check if the list is empty first
+  const noResultsNode = document.querySelector(".shadow-singlePost");
+  if (
+    noResultsNode &&
+    noResultsNode.textContent
+      .trim()
+      .toLowerCase()
+      .startsWith("No results found")
+  ) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   const jobsList = document.querySelector("main");
   if (!jobsList)
     return {
