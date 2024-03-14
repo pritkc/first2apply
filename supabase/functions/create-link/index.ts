@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     // parse the html and save found jobs in the db
     // need to save it to be able to diff the jobs list later
-    const { jobs } = await parseJobsListUrl({
+    const { jobs, parseFailed } = await parseJobsListUrl({
       allJobSites,
       url: cleanUrl,
       html,
@@ -61,6 +61,13 @@ Deno.serve(async (req) => {
 
     const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
     console.log(`[${site.provider}]found ${newJobs.length} new jobs`);
+
+    // if the parsing failed, save the html dump for debugging
+    if (parseFailed) {
+      await supabaseClient
+        .from("html_dumps")
+        .insert([{ url: cleanUrl, html: html.content }]);
+    }
 
     const [link] = createdLinks ?? [];
     return new Response(JSON.stringify({ link, newJobs }), {
