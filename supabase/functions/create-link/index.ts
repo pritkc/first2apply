@@ -44,19 +44,23 @@ Deno.serve(async (req) => {
 
     // parse the html and save found jobs in the db
     // need to save it to be able to diff the jobs list later
-    const jobs = await parseJobsListUrl({ allJobSites, url: cleanUrl, html });
-    console.log(`found ${jobs.length} jobs`);
+    const { jobs } = await parseJobsListUrl({
+      allJobSites,
+      url: cleanUrl,
+      html,
+    });
+    console.log(`[${site.provider}] found ${jobs.length} jobs`);
     const { error: insertError, data: upsertedJobs } = await supabaseClient
       .from("jobs")
       .upsert(
         jobs.map((j) => ({ ...j, status: "new" as const })),
-        { onConflict: "externalId", ignoreDuplicates: true }
+        { onConflict: "user_id, externalId", ignoreDuplicates: true }
       )
       .select("*");
     if (insertError) throw insertError;
 
     const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
-    console.log(`found ${newJobs.length} new jobs`);
+    console.log(`[${site.provider}]found ${newJobs.length} new jobs`);
 
     const [link] = createdLinks ?? [];
     return new Response(JSON.stringify({ link, newJobs }), {

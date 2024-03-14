@@ -117,7 +117,7 @@ export function parseJobsListUrl({
   allJobSites: JobSite[];
   url: string;
   html: string;
-}): ParsedJob[] {
+}) {
   const site = getJobSite({ allJobSites, url });
   if (!site) {
     const parsedUrl = new URL(url);
@@ -131,11 +131,18 @@ export function parseJobsListUrl({
 
   if (!listFound || (elementsCount > 0 && jobs.length === 0)) {
     console.error(
-      `[${site.provider}] no jobs found on ${url}, this might indicate a problem with the parser`
+      `[${
+        site.provider
+      }] no jobs found on ${url}, this might indicate a problem with the parser: ${JSON.stringify(
+        {
+          listFound,
+          elementsCount,
+        }
+      )}`
     );
   }
 
-  return jobs;
+  return { jobs, site };
 }
 
 type ParsedJob = Omit<
@@ -699,6 +706,16 @@ export function parseDiceJobs({
 }): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
+
+  // check if the list is empty first
+  const noResultsNode = document.querySelector(".no-jobs-message");
+  if (noResultsNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
 
   const jobsList = document.querySelector("dhi-search-cards-widget");
   if (!jobsList) {
