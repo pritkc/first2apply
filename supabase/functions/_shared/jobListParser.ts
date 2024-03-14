@@ -129,7 +129,8 @@ export function parseJobsListUrl({
   const { jobs, listFound, elementsCount } = parseSiteJobsList({ site, html });
   console.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
-  if (!listFound || (elementsCount > 0 && jobs.length === 0)) {
+  const parseFailed = !listFound || (elementsCount > 0 && jobs.length === 0);
+  if (parseFailed) {
     console.error(
       `[${
         site.provider
@@ -142,7 +143,7 @@ export function parseJobsListUrl({
     );
   }
 
-  return { jobs, site };
+  return { jobs, site, parseFailed };
 }
 
 type ParsedJob = Omit<
