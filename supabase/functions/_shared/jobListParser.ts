@@ -203,6 +203,16 @@ export function parseLinkedInJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
+  // check if the list is empty first
+  const noResultsNode = document.querySelector(".no-results");
+  if (noResultsNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   const jobsList = document.querySelector(".jobs-search__results-list");
   if (!jobsList) {
     return {
@@ -384,6 +394,16 @@ export function parseWeWorkRemotelyJobs({
 }): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
+
+  // check if the list is empty first
+  const noResultsNode = document.querySelector(".no_results");
+  if (noResultsNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
 
   const jobsList = document.querySelector("#job_list");
   if (!jobsList) {
