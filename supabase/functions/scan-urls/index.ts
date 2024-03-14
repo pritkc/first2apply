@@ -52,22 +52,23 @@ Deno.serve(async (req) => {
           console.error(`link not found: ${html.linkId}`);
           return [];
         }
-        const jobsList = await parseJobsListUrl({
+        const { jobs, site } = await parseJobsListUrl({
           allJobSites,
           url: link.url,
           html: html.content,
         });
 
-        return jobsList;
+        console.log(`[${site.provider}] found ${jobs.length} jobs`);
+
+        return jobs;
       })
     ).then((r) => r.flat());
-    console.log(`found ${parsedJobs.length} jobs`);
 
     const { data: upsertedJobs, error: insertError } = await supabaseClient
       .from("jobs")
       .upsert(
         parsedJobs.map((job) => ({ ...job, status: "new" as const })),
-        { onConflict: "externalId", ignoreDuplicates: true }
+        { onConflict: "user_id, externalId", ignoreDuplicates: true }
       )
       .select("*");
     if (insertError) throw new Error(insertError.message);
