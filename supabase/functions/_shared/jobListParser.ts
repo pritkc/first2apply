@@ -510,6 +510,18 @@ export function parseGlassDoorJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
+  // check if the list is empty first
+  const noResultsNode = document.querySelector(
+    ".ErrorPage_errorPageTitle__XtznY"
+  );
+  if (noResultsNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   const jobsList = document.querySelector(".JobsList_jobsList__lqjTr");
   if (!jobsList) {
     return {
