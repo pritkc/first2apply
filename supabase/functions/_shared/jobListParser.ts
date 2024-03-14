@@ -37,11 +37,6 @@ function parseLocation({
   return cleanedLocation;
 }
 
-type ParsedJob = Omit<
-  Job,
-  "id" | "user_id" | "visible" | "status" | "created_at" | "updated_at"
->;
-
 /**
  * Get the site for a given url.
  */
@@ -131,16 +126,27 @@ export function parseJobsListUrl({
     );
   }
 
-  const foundJobs: ParsedJob[] = parseSiteJobsList({ site, html });
+  const { jobs, listFound, elementsCount } = parseSiteJobsList({ site, html });
+  console.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
-  if (foundJobs.length === 0) {
+  if (!listFound || (elementsCount > 0 && jobs.length === 0)) {
     console.error(
-      `[${site.name}] no jobs found on ${url}, this might indicate a problem with the parser`
+      `[${site.provider}] no jobs found on ${url}, this might indicate a problem with the parser`
     );
   }
 
-  return foundJobs;
+  return jobs;
 }
+
+type ParsedJob = Omit<
+  Job,
+  "id" | "user_id" | "visible" | "status" | "created_at" | "updated_at"
+>;
+type JobSiteParseResult = {
+  jobs: ParsedJob[];
+  listFound: boolean;
+  elementsCount: number;
+};
 
 /**
  * Parse jobs list from a site provided url.
@@ -151,7 +157,7 @@ function parseSiteJobsList({
 }: {
   site: JobSite;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   switch (site.provider) {
     case SiteProvider.linkedin:
       return parseLinkedInJobs({ siteId: site.id, html });
@@ -193,16 +199,20 @@ export function parseLinkedInJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector(".jobs-search__results-list");
-  if (!jobsList) return [];
+  if (!jobsList) {
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
+  }
 
   const jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
-  console.log(`[linkedin] found ${jobElements.length} elements`);
-
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalUrl = el
       .querySelector(".base-card__full-link")
@@ -249,7 +259,12 @@ export function parseLinkedInJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+
+  return {
+    jobs: validJobs,
+    listFound: jobsList !== null,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -261,19 +276,22 @@ export function parseRemoteOkJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("#jobsboard");
   if (!jobsList) {
-    return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll("tr.job")
   ) as Element[];
-  console.log(`[remoteok] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el.getAttribute("data-slug")?.trim();
@@ -347,7 +365,11 @@ export function parseRemoteOkJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -359,19 +381,22 @@ export function parseWeWorkRemotelyJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("#job_list");
   if (!jobsList) {
-    return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll("ul > li")
   ) as Element[];
-  console.log(`[wwr] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const linkToJob = el.querySelector(":scope > a");
@@ -433,9 +458,15 @@ export function parseWeWorkRemotelyJobs({
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
   const uniqueJobsIds = [...new Set(validJobs.map((job) => job.externalId))];
-  return uniqueJobsIds.map(
+  const uniqueJobs = uniqueJobsIds.map(
     (id) => validJobs.find((job) => job.externalId === id)!
   );
+
+  return {
+    jobs: uniqueJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -447,19 +478,22 @@ export function parseGlassDoorJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector(".JobsList_jobsList__lqjTr");
   if (!jobsList) {
-    return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(":scope > li")
   ) as Element[];
-  console.log(`[glassdoor] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el.getAttribute("data-jobid")?.trim();
@@ -509,7 +543,11 @@ export function parseGlassDoorJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -521,19 +559,22 @@ export function parseIndeedJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("#mosaic-jobResults ul");
   if (!jobsList) {
-    return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(":scope > li")
   ) as Element[];
-  console.log(`[indeed] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobLinkEl = el.querySelector(".jobTitle > a");
@@ -607,7 +648,11 @@ export function parseIndeedJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -619,20 +664,22 @@ export function parseDiceJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("dhi-search-cards-widget");
   if (!jobsList) {
-    return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   const jobElements = Array.from(
     jobsList.querySelectorAll("dhi-search-card")
   ) as Element[];
-  if (!jobElements) return [];
-  else console.log(`[dice] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el
@@ -673,7 +720,11 @@ export function parseDiceJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -685,17 +736,21 @@ export function parseFlexjobsJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector(".sc-14nyru2-1.bcguRu");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(
     jobsList.querySelectorAll("div.sc-jv5lm6-0.kSiIaQ")
   ) as Element[];
-  console.log(`[flexjobs] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el?.getAttribute("id")?.trim();
@@ -743,7 +798,11 @@ export function parseFlexjobsJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -756,17 +815,21 @@ export function parseBestjobsJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector(".card-list");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(".job-card")
   ) as Element[];
-  console.log(`[bestjobs] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalUrl = el
@@ -822,7 +885,11 @@ export function parseBestjobsJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -835,15 +902,19 @@ export function parseEchojobsJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("tbody");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(jobsList.querySelectorAll("tr")) as Element[];
-  console.log(`[echojobs] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector("td > div");
@@ -902,7 +973,11 @@ export function parseEchojobsJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -914,14 +989,19 @@ export function parseRemotiveJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  let jobsList = document.querySelector("#initial_job_list > ul");
+  const jobsList =
+    document.querySelector("#initial_job_list > ul") ||
+    document.querySelector("#hits > ul");
   if (!jobsList) {
-    jobsList = document.querySelector("#hits > ul");
-    if (!jobsList) return [];
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   }
 
   let jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
@@ -930,7 +1010,6 @@ export function parseRemotiveJobs({
       jobsList.querySelectorAll("div[x-data]")
     ) as Element[];
   }
-  console.log(`[remotive] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobTitle = el?.querySelector(".job-tile-title a");
@@ -984,7 +1063,11 @@ export function parseRemotiveJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -996,17 +1079,21 @@ export function parseRemoteioJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("main");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(".shadow-singlePost")
   ) as Element[];
-  console.log(`[remoteio] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector("div:nth-child(2) > a");
@@ -1059,7 +1146,11 @@ export function parseRemoteioJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -1071,17 +1162,21 @@ export function parseBuiltinJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("#jobs-list");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(
     jobsList.querySelectorAll('[data-id="job-card"]')
   ) as Element[];
-  console.log(`[builtin] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector("#job-card-alias");
@@ -1138,7 +1233,11 @@ export function parseBuiltinJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -1150,17 +1249,21 @@ export function parseNaukriJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector("#listContainer");
-  if (!jobsList) return [];
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
 
   const jobElements = Array.from(
     jobsList.querySelectorAll(".srp-jobtuple-wrapper")
   ) as Element[];
-  console.log(`[naukri] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const jobInfo = el.querySelector(".title");
@@ -1201,7 +1304,11 @@ export function parseNaukriJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
 
 /**
@@ -1213,19 +1320,22 @@ export function parseRobertHalfJobs({
 }: {
   siteId: number;
   html: string;
-}): ParsedJob[] {
+}): JobSiteParseResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
   const jobsList = document.querySelector(
     ".rh-mt-20x .row .col-md-5.col-lg-5 > div"
   );
-  if (!jobsList) return [];
-
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
   const jobElements = Array.from(
     jobsList.querySelectorAll("rhcl-job-card")
   ) as Element[];
-  console.log(`[robert half] found ${jobElements.length} elements`);
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el.getAttribute("job-id")?.trim();
@@ -1286,5 +1396,9 @@ export function parseRobertHalfJobs({
   });
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
-  return validJobs;
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
 }
