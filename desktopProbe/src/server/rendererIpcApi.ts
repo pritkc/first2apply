@@ -87,6 +87,10 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.updateJobStatus({ jobId, status }))
   );
 
+  ipcMain.handle("update-job-labels", async (event, { jobId, labels }) =>
+    _apiCall(() => supabaseApi.updateJobLabels({ jobId, labels }))
+  );
+
   ipcMain.handle("list-sites", async (event) =>
     _apiCall(() => supabaseApi.listSites())
   );
