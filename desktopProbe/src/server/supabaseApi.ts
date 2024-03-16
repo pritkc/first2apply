@@ -7,6 +7,7 @@ import {
 import {
   DbSchema,
   Job,
+  JobLabel,
   JobStatus,
   Link,
 } from "../../../supabase/functions/_shared/types";
@@ -213,6 +214,22 @@ export class F2aSupabaseApi {
           .from("jobs")
           .update({
             status,
+            updated_at: luxon.DateTime.now().toUTC().toJSDate(),
+          })
+          .eq("id", jobId)
+    );
+  }
+
+  /**
+   * Update the labels of a job.
+   */
+  updateJobLabels({ jobId, labels }: { jobId: string; labels: JobLabel[] }) {
+    return this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("jobs")
+          .update({
+            labels,
             updated_at: luxon.DateTime.now().toUTC().toJSDate(),
           })
           .eq("id", jobId)

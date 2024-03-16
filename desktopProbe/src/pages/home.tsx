@@ -1,29 +1,34 @@
+import { ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ReloadIcon } from "@radix-ui/react-icons";
 
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
 
 import {
   listJobs,
-  updateJobStatus,
-  scanJob,
   openExternalUrl,
+  scanJob,
+  updateJobLabels,
+  updateJobStatus,
 } from "@/lib/electronMainSdk";
 
-import { DefaultLayout } from "./defaultLayout";
-import { Skeleton } from "@/components/ui/skeleton";
+import { JobDetails } from "@/components/jobDetails";
+import { JobsList } from "@/components/jobsList";
 import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
 import { Button } from "@/components/ui/button";
-import { JobsList } from "@/components/jobsList";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { JobDetails } from "@/components/jobDetails";
+import { DefaultLayout } from "./defaultLayout";
 
-import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobSummary } from "@/components/jobSummary";
-import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { toast } from "@/components/ui/use-toast";
+import {
+  Job,
+  JobLabel,
+  JobStatus,
+} from "../../../supabase/functions/_shared/types";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -190,6 +195,27 @@ export function Home() {
     }
   };
 
+  const updateLabel = async (jobId: number, label: JobLabel | "") => {
+    // For now we are using only one label per job
+    const labels = label ? [label] : [];
+
+    try {
+      await updateJobLabels({ jobId, labels });
+      // Need a better way to invalidate the jobs values
+      setListing((listing) => ({
+        ...listing,
+        jobs: listing.jobs.map((job) => {
+          if (job.id == jobId) {
+            return { ...job, labels };
+          }
+          return job;
+        }),
+      }));
+    } catch (error) {
+      handleError({ error, title: "Failed to update job label" });
+    }
+  };
+
   const onLoadMore = async () => {
     try {
       const result = await listJobs({
@@ -352,6 +378,7 @@ export function Home() {
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
+                            onUpdateJobLabel={updateLabel}
                           />
                           <JobDetails
                             job={selectedJob}
