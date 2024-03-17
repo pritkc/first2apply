@@ -7,7 +7,6 @@ loadEnvVars({ path: path.join(__dirname, "..", "desktopProbe", ".env") });
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerDeb } from "@electron-forge/maker-deb";
-import { MakerRpm } from "@electron-forge/maker-rpm";
 import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerAppX } from "@electron-forge/maker-appx";
 import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
@@ -62,8 +61,14 @@ const config: ForgeConfig = {
       assets: "./packagers/appx/icons",
       manifest: "./packagers/appx/AppXManifest.xml",
     }),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    // new MakerRpm({}),
+    new MakerDeb({
+      options: {
+        name: "First 2 Apply",
+        bin: "First 2 Apply",
+        icon: path.join(__dirname, "packagers", "icons", "paper-plane.png"),
+      },
+    }),
     {
       name: "@electron-forge/maker-zip",
       config: (arch: string) => ({

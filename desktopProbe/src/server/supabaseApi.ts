@@ -79,15 +79,7 @@ export class F2aSupabaseApi {
   /**
    * Create a new link.
    */
-  async createLink({
-    title,
-    url,
-    html,
-  }: {
-    title: string;
-    url: string;
-    html: string;
-  }) {
+  async createLink({ title, url }: { title: string; url: string }) {
     const { link, newJobs } = await this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>(
         "create-link",
@@ -95,7 +87,6 @@ export class F2aSupabaseApi {
           body: {
             title,
             url,
-            html,
           },
         }
       )
@@ -227,6 +218,16 @@ export class F2aSupabaseApi {
     return this._supabaseApiCall(
       async () => await this._supabase.from("sites").select("*")
     );
+  }
+
+  /**
+   * Get a job by id.
+   */
+  async getJob(jobId: number) {
+    const [job] = await this._supabaseApiCall(async () =>
+      this._supabase.from("jobs").select("*").eq("id", jobId)
+    );
+    return job;
   }
 
   /**
