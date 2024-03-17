@@ -11,6 +11,7 @@ const KNOWN_AUTHWALLS = ["authwall", "login"];
  * Wrapper over a headless window that can be used to download HTML.
  */
 export class HtmlDownloader {
+  private _isRunning = false;
   private _pool: BrowserWindowPool | undefined;
 
   /**
@@ -22,7 +23,8 @@ export class HtmlDownloader {
    * Initialize the headless window.
    */
   init() {
-    this._pool = new BrowserWindowPool(2);
+    this._pool = new BrowserWindowPool(5);
+    this._isRunning = true;
   }
 
   /**
@@ -40,6 +42,7 @@ export class HtmlDownloader {
    * Close the headless window.
    */
   async close() {
+    this._isRunning = false;
     return this._pool?.close();
   }
 
@@ -51,6 +54,8 @@ export class HtmlDownloader {
     url: string,
     scrollTimes: number
   ) {
+    if (!this._isRunning) return "<html></html>";
+
     this._logger.info(`downloading url: ${url} ...`);
     await backOff(
       async () => {
@@ -91,7 +96,8 @@ export class HtmlDownloader {
         numOfAttempts: 20,
         maxDelay: 5_000,
         retry: () => {
-          return this._pool.isRunning();
+          // perform retries only if the window is still running
+          return this._isRunning;
         },
       }
     );
@@ -110,7 +116,6 @@ export class HtmlDownloader {
  * Class used to manage a pool of headless windows.
  */
 class BrowserWindowPool {
-  private _isRunning = true;
   private _pool: Array<{
     id: number;
     window: BrowserWindow;
@@ -147,8 +152,6 @@ class BrowserWindowPool {
    * Get an available window and use it.
    */
   async useBrowserWindow<T>(fn: (window: BrowserWindow) => Promise<T>) {
-    if (!this._isRunning) throw new Error("Pool is closed");
-
     return this._queue.enqueue(() => {
       const worker = this._pool.find((w) => w.isAvailable);
       if (!worker) throw new Error("No available window found");
@@ -164,8 +167,6 @@ class BrowserWindowPool {
    * Wait until all windows are available and close them.
    */
   close() {
-    this._isRunning = false;
-
     return new Promise<void>((resolve) => {
       // wait until the queue is empty
       this._queue.on("empty", () => {
@@ -178,12 +179,5 @@ class BrowserWindowPool {
       // trigger the empty event if the queue is already empty
       this._queue.next();
     });
-  }
-
-  /**
-   * Check if the pool is running.
-   */
-  isRunning() {
-    return this._isRunning;
   }
 }
