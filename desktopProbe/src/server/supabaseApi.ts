@@ -231,10 +231,11 @@ export class F2aSupabaseApi {
   /**
    * Get a job by id.
    */
-  getJob(jobId: number) {
-    return this._supabaseApiCall(async () =>
+  async getJob(jobId: number) {
+    const [job] = await this._supabaseApiCall(async () =>
       this._supabase.from("jobs").select("*").eq("id", jobId)
     );
+    return job;
   }
 
   /**
