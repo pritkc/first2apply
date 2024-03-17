@@ -76,23 +76,32 @@ export class JobScanner {
         links_count: links.length,
       });
 
-      const newJobs = await promiseAllSequence(links, async (link) => {
-        if (!this._isRunning) return null; // stop if the scanner is closed
+      const newJobs = await Promise.all(
+        links.map(async (link) => {
+          const html = await this._htmlDownloader
+            .loadUrl(link.url, 5)
+            .catch((error) => {
+              const errorMessage = getExceptionMessage(error);
+              this._logger.error(`failed to download html: ${errorMessage}`);
+              return `<html><body class="f2a-error">${errorMessage}<body><html>`;
+            });
 
-        const html = await this._htmlDownloader
-          .loadUrl(link.url)
-          .catch((error) => {
-            const errorMessage = getExceptionMessage(error);
-            this._logger.error(errorMessage);
-            return `<html><body class="error">${errorMessage}<body><html>`;
-          });
+          if (!this._isRunning) return []; // stop if the scanner is closed
 
-        const { newJobs } = await this._supabaseApi.scanHtmls([
-          { linkId: link.id, content: html },
-        ]);
+          const { newJobs } = await this._supabaseApi
+            .scanHtmls([{ linkId: link.id, content: html }])
+            .catch((error) => {
+              // intetionally return an empty array if there is an error
+              // in order to continue scanning the rest of the links
+              this._logger.error(
+                `failed to scan html: ${getExceptionMessage(error)}`
+              );
+              return { newJobs: [] };
+            });
 
-        return newJobs;
-      }).then((r) => r.flat().filter((j) => j !== null));
+          return newJobs;
+        })
+      ).then((r) => r.flat());
       this._logger.info(`downloaded html for ${links.length} links`);
 
       // scan job descriptions
@@ -133,6 +142,9 @@ export class JobScanner {
                 1
               );
               this._logger.info(`downloaded html for ${job.title}`);
+
+              // stop if the scanner is closed
+              if (!this._isRunning) return job;
 
               const { job: updatedJob } =
                 await this._supabaseApi.scanJobDescription({
