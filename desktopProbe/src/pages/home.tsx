@@ -277,6 +277,13 @@ export function Home() {
     }
   };
 
+  /**
+   * Open a job in the default browser.
+   */
+  const onViewJob = (job: Job) => {
+    openExternalUrl(job.externalUrl);
+  };
+
   if (isLoadingLinks) {
     return <Loading />;
   }
@@ -352,6 +359,7 @@ export function Home() {
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
+                            onView={onViewJob}
                           />
                           <JobDetails
                             job={selectedJob}

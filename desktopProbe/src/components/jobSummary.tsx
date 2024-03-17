@@ -2,6 +2,7 @@ import {
   BackpackIcon,
   CookieIcon,
   ListBulletIcon,
+  ExternalLinkIcon,
 } from "@radix-ui/react-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -16,10 +17,12 @@ export function JobSummary({
   job,
   onApply,
   onArchive,
+  onView,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onArchive: (job: Job) => void;
+  onView: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
 
@@ -74,7 +77,7 @@ export function JobSummary({
       <div className="flex gap-3 mt-4 lg:mt-6">
         {job.status !== "applied" && (
           <Button
-            size="lg"
+            // size="lg"
             className="w-24 text-sm"
             onClick={() => {
               onApply(job);
@@ -85,7 +88,7 @@ export function JobSummary({
         )}
         {job.status !== "archived" && (
           <Button
-            size="lg"
+            // size="lg"
             variant="outline"
             className="w-24 text-sm"
             onClick={() => {
@@ -95,6 +98,9 @@ export function JobSummary({
             Archive
           </Button>
         )}
+        <Button variant="secondary" onClick={() => onView(job)}>
+          <ExternalLinkIcon className="h-8"></ExternalLinkIcon>
+        </Button>
       </div>
     </div>
   );
