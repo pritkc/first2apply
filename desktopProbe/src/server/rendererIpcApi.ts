@@ -110,4 +110,11 @@ export function initRendererIpcApi({
       return { job: updatedJob };
     })
   );
+
+  ipcMain.handle("get-job-by-id", async (event, { jobId }) =>
+    _apiCall(async () => {
+      const job = await supabaseApi.getJob(jobId);
+      return { job };
+    })
+  );
 }

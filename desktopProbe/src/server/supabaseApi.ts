@@ -229,6 +229,15 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Get a job by id.
+   */
+  getJob(jobId: number) {
+    return this._supabaseApiCall(async () =>
+      this._supabase.from("jobs").select("*").eq("id", jobId)
+    );
+  }
+
+  /**
    * Wrapper around a Supabase method that handles errors.
    */
   private async _supabaseApiCall<
