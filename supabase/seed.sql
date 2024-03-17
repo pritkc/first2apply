@@ -63,6 +63,7 @@ public.reviews (
   constraint reviews_pkey primary key (id),
   constraint reviews_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
   constraint unique_user_review unique (user_id) -- This enforces one review per user for the app
+) tablespace pg_default;
 
 create table
 public.html_dumps (
