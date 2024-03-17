@@ -222,18 +222,27 @@ export class F2aSupabaseApi {
 
   /**
    * Update the labels of a job.
+   * @returns the updated job
    */
-  updateJobLabels({ jobId, labels }: { jobId: string; labels: JobLabel[] }) {
-    return this._supabaseApiCall(
+  async updateJobLabels({
+    jobId,
+    labels,
+  }: {
+    jobId: string;
+    labels: JobLabel[];
+  }) {
+    const [updatedJob] = await this._supabaseApiCall(
       async () =>
         await this._supabase
           .from("jobs")
           .update({
             labels,
-            updated_at: luxon.DateTime.now().toUTC().toJSDate(),
           })
           .eq("id", jobId)
+          .select("*")
     );
+
+    return updatedJob;
   }
 
   /**
