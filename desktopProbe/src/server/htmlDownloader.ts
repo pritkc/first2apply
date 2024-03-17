@@ -80,7 +80,8 @@ export class HtmlDownloader {
           await window.webContents.executeJavaScript(
             'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});'
           );
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await sleep(2_000);
+
           // check if page was redirected to a login page
           const finalUrl = window.webContents.getURL();
           if (
