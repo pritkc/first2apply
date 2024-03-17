@@ -20,6 +20,7 @@ export const JOB_LABELS = {
   SUBMITTED: "Submitted",
   INTERVIEWING: "Interviewing",
   OFFER: "Offer",
+  GHOSTED: "Ghosted",
   REJECTED: "Rejected",
 } as const;
 

@@ -186,8 +186,8 @@ export async function updateJobLabels({
 }: {
   jobId: number;
   labels: JobLabel[];
-}): Promise<void> {
-  await _mainProcessApiCall("update-job-labels", { jobId, labels });
+}): Promise<Job> {
+  return await _mainProcessApiCall("update-job-labels", { jobId, labels });
 }
 
 /**

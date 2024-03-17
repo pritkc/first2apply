@@ -6,8 +6,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
-import { useSites } from "@/hooks/sites";
-import { useEffect, useState } from "react";
 import {
   JOB_LABELS,
   Job,
@@ -20,16 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { useToast } from "./ui/use-toast";
 
-const LABEL_COLOR_CLASSES = {
-  [JOB_LABELS.CONSIDERING]: "bg-blue-500",
-  [JOB_LABELS.SUBMITTED]: "bg-green-500",
-  [JOB_LABELS.INTERVIEWING]: "bg-yellow-500",
-  [JOB_LABELS.OFFER]: "bg-purple-500",
-  [JOB_LABELS.REJECTED]: "bg-red-500",
-  empty: "",
-};
+import { LABEL_COLOR_CLASSES } from "@/lib/labels";
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -42,45 +32,13 @@ export function JobSummary({
   job,
   onApply,
   onArchive,
-  onUpdateJobLabel,
+  onUpdateLabels,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onArchive: (job: Job) => void;
-  onUpdateJobLabel: (jobId: number, label: JobLabel | "") => void;
+  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
 }) {
-  const { toast } = useToast();
-
-  const [label, setLabel] = useState<JobLabel | "">("");
-
-  useEffect(() => {
-    const labelValue = job.labels?.[0] ?? "";
-    setLabel(labelValue);
-  }, [job]);
-
-  const validateAndSetLabel = (labelValue: string) => {
-    // When the user removes the label
-    if (labelValue === "empty") {
-      onUpdateJobLabel(job.id, "");
-      // Empty string means no label, used instead of undefined because otherwise it won't update the select re render
-      setLabel("");
-      return;
-    }
-
-    const isValid = isJobLabel(labelValue);
-    if (!isValid) {
-      toast({
-        title: "Error",
-        description: `Invalid job label selected! ${labelValue}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    onUpdateJobLabel(job.id, labelValue);
-    setLabel(labelValue);
-  };
-
   return (
     <div className="border border-muted rounded-lg p-4 lg:p-6">
       <div className="flex justify-between items-start gap-4 lg:gap-6">
@@ -154,44 +112,67 @@ export function JobSummary({
           </Button>
         )}
 
-        {job.status === "applied" && (
-          <Select
-            // For now we use only the first one as there should be only one label per job
-            value={label}
-            onValueChange={(labelValue) => validateAndSetLabel(labelValue)}
-          >
-            <SelectTrigger
-              className={`w-[180px] ${
-                label && LABEL_COLOR_CLASSES[label]
-              } bg-opacity-70 `}
-            >
-              <SelectValue placeholder="Add Label" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(JOB_LABELS).map((jobLabel) => (
-                <SelectItem
-                  key={jobLabel}
-                  value={jobLabel}
-                  className={`${LABEL_COLOR_CLASSES[jobLabel]} bg-opacity-70`}
-                >
-                  {jobLabel}
-                </SelectItem>
-              ))}
-
-              {/* Remove a lable only if there is one */}
-              {job.labels?.[0] && (
-                // Need to assing an actual value, can't use an empty string
-                <SelectItem
-                  value={"empty"}
-                  className={`bg-gray-500 bg-opacity-70`}
-                >
-                  Remove Label
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="ml-auto">
+          <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Component used to render a label selector.
+ * For now we only allow setting one label per job.
+ */
+function JobLabelSelector({
+  job,
+  onUpdateLabels,
+}: {
+  job: Job;
+  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
+}) {
+  const label = job.labels[0] ?? "";
+  console.log("label", label ?? "none");
+
+  const LabelOptionWithColor = ({
+    jobLabel,
+    colorClass,
+  }: {
+    jobLabel: string;
+    colorClass: string;
+  }) => (
+    <SelectItem value={jobLabel}>
+      <div className="flex items-center">
+        <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+        <div className="flex-1 ml-2">{jobLabel}</div>
+      </div>
+    </SelectItem>
+  );
+
+  return (
+    <Select
+      value={label}
+      onValueChange={(labelValue) => {
+        const newLabels = isJobLabel(labelValue) ? [labelValue] : [];
+        onUpdateLabels(job.id, newLabels);
+      }}
+    >
+      <SelectTrigger className="w-[160px] h-10">
+        <SelectValue placeholder="Add Label" />
+      </SelectTrigger>
+      <SelectContent>
+        {/* no label */}
+        <LabelOptionWithColor jobLabel="None" colorClass="bg-background" />
+
+        {/* labels with colors */}
+        {Object.values(JOB_LABELS).map((jobLabel) => (
+          <LabelOptionWithColor
+            key={jobLabel}
+            jobLabel={jobLabel}
+            colorClass={LABEL_COLOR_CLASSES[jobLabel]}
+          />
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

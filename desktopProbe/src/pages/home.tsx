@@ -195,21 +195,12 @@ export function Home() {
     }
   };
 
-  const updateLabel = async (jobId: number, label: JobLabel | "") => {
-    // For now we are using only one label per job
-    const labels = label ? [label] : [];
-
+  const onUpdateJobLabels = async (jobId: number, labels: JobLabel[]) => {
     try {
-      await updateJobLabels({ jobId, labels });
-      // Need a better way to invalidate the jobs values
+      const updatedJob = await updateJobLabels({ jobId, labels });
       setListing((listing) => ({
         ...listing,
-        jobs: listing.jobs.map((job) => {
-          if (job.id == jobId) {
-            return { ...job, labels };
-          }
-          return job;
-        }),
+        jobs: listing.jobs.map((job) => (job.id === jobId ? updatedJob : job)),
       }));
     } catch (error) {
       handleError({ error, title: "Failed to update job label" });
@@ -378,7 +369,7 @@ export function Home() {
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
-                            onUpdateJobLabel={updateLabel}
+                            onUpdateLabels={onUpdateJobLabels}
                           />
                           <JobDetails
                             job={selectedJob}
