@@ -24,7 +24,7 @@ export function JobDetails({
       <Skeleton className="h-4 w-4/5 mb-4" />
 
       <p className="text-center my-8">
-        Hang thight, we are fetching the job description from{" "}
+        Hang tight, we are fetching the job description from{" "}
         {site?.name ?? "the source"} ...
         <br />
         It can take up to a couple of minutes.

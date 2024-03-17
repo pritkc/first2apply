@@ -66,7 +66,8 @@ export function CreateLink() {
       form.reset();
       toast({
         title: "Success",
-        description: "Job search saved successfully!",
+        description:
+          "Job search saved successfully! We are scanning the site for new jobs in the background.",
         variant: "success",
       });
 

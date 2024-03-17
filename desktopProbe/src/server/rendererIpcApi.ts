@@ -24,11 +24,9 @@ async function _apiCall<T>(method: () => Promise<T>) {
 export function initRendererIpcApi({
   supabaseApi,
   jobScanner,
-  htmlDownloader,
 }: {
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
-  htmlDownloader: HtmlDownloader;
 }) {
   ipcMain.handle("signup-with-email", async (event, { email, password }) =>
     _apiCall(() => supabaseApi.signupWithEmail({ email, password }))
@@ -56,14 +54,13 @@ export function initRendererIpcApi({
 
   ipcMain.handle("create-link", async (event, { title, url }) =>
     _apiCall(async () => {
-      const { link, newJobs } = await supabaseApi.createLink({
+      const { link } = await supabaseApi.createLink({
         title,
         url,
-        html: await htmlDownloader.loadUrl(url),
       });
 
       // intentionally not awaited to not have the user wait until JDs are in
-      jobScanner.scanJobs(newJobs.reverse()).catch((error) => {
+      jobScanner.scanLinks({ links: [link] }).catch((error) => {
         console.error(getExceptionMessage(error));
       });
 
@@ -119,5 +116,12 @@ export function initRendererIpcApi({
 
   ipcMain.handle("get-user-review", async (event) =>
     _apiCall(async () => supabaseApi.getUserReview())
+  );
+
+  ipcMain.handle("get-job-by-id", async (event, { jobId }) =>
+    _apiCall(async () => {
+      const job = await supabaseApi.getJob(jobId);
+      return { job };
+    })
   );
 }

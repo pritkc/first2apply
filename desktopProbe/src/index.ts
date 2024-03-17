@@ -233,7 +233,7 @@ async function bootstrap() {
     );
 
     // init the renderer IPC API
-    initRendererIpcApi({ supabaseApi, jobScanner, htmlDownloader });
+    initRendererIpcApi({ supabaseApi, jobScanner });
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });
@@ -258,7 +258,7 @@ async function bootstrap() {
           analytics.setUserId(session.user.id);
 
           // perform an initial scan
-          jobScanner.scanLinks().catch((error) => {
+          jobScanner.scanAllLinks().catch((error) => {
             logger.error(getExceptionMessage(error));
           });
         }
@@ -273,14 +273,20 @@ async function bootstrap() {
           event === "PASSWORD_RECOVERY"
         ) {
           logger.info(`saving new session to disk`);
-          const encryptedSession = safeStorage.encryptString(
-            JSON.stringify(session)
-          );
-          fs.writeFileSync(
-            sessionPath,
-            encryptedSession.toString("base64"),
-            "utf-8"
-          );
+          if (safeStorage.isEncryptionAvailable()) {
+            const encryptedSession = safeStorage.encryptString(
+              JSON.stringify(session)
+            );
+            fs.writeFileSync(
+              sessionPath,
+              encryptedSession.toString("base64"),
+              "utf-8"
+            );
+          } else {
+            logger.error(
+              `encryption is not available, cannot save plain session to disk`
+            );
+          }
         }
       } catch (error) {
         logger.error(getExceptionMessage(error));

@@ -249,3 +249,13 @@ export async function createReview({
 export async function getUserReview(): Promise<Review[]> {
   return await _mainProcessApiCall("get-user-review", {});
 }
+
+/**
+ * Get a job by id.
+ */
+export async function getJobById(jobId: number): Promise<Job> {
+  const { job } = await _mainProcessApiCall<{ job: Job }>("get-job-by-id", {
+    jobId,
+  });
+  return job;
+}
