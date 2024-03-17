@@ -78,15 +78,7 @@ export class F2aSupabaseApi {
   /**
    * Create a new link.
    */
-  async createLink({
-    title,
-    url,
-    html,
-  }: {
-    title: string;
-    url: string;
-    html: string;
-  }) {
+  async createLink({ title, url }: { title: string; url: string }) {
     const { link, newJobs } = await this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>(
         "create-link",
@@ -94,7 +86,6 @@ export class F2aSupabaseApi {
           body: {
             title,
             url,
-            html,
           },
         }
       )

@@ -233,7 +233,7 @@ async function bootstrap() {
     );
 
     // init the renderer IPC API
-    initRendererIpcApi({ supabaseApi, jobScanner, htmlDownloader });
+    initRendererIpcApi({ supabaseApi, jobScanner });
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });
@@ -258,7 +258,7 @@ async function bootstrap() {
           analytics.setUserId(session.user.id);
 
           // perform an initial scan
-          jobScanner.scanLinks().catch((error) => {
+          jobScanner.scanAllLinks().catch((error) => {
             logger.error(getExceptionMessage(error));
           });
         }

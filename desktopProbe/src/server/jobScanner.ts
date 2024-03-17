@@ -6,7 +6,7 @@ import { ScheduledTask, schedule } from "node-cron";
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from "../lib/types";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
-import { Job } from "../../../supabase/functions/_shared/types";
+import { Job, Link } from "../../../supabase/functions/_shared/types";
 import { chunk, promiseAllSequence } from "./helpers";
 import { HtmlDownloader } from "./htmlDownloader";
 import { IAnalyticsClient } from "@/lib/analytics";
@@ -63,15 +63,23 @@ export class JobScanner {
   }
 
   /**
-   * Perform a scan of all links.
+   * Scan all links for the current user.
    */
-  async scanLinks() {
+  async scanAllLinks() {
+    // fetch all links from the database
+    const links = (await this._supabaseApi.listLinks()) ?? [];
+    this._logger.info(`found ${links?.length} links`);
+
+    // start the scan
+    return this.scanLinks({ links });
+  }
+
+  /**
+   * Perform a scan of a list links.
+   */
+  async scanLinks({ links }: { links: Link[] }) {
     try {
       this._logger.info("scanning links...");
-
-      // fetch all links from the database
-      const links = (await this._supabaseApi.listLinks()) ?? [];
-      this._logger.info(`found ${links?.length} links`);
       this._analytics.trackEvent("scan_links_start", {
         links_count: links.length,
       });
@@ -266,7 +274,7 @@ export class JobScanner {
       }
       // start new cron job if needed
       if (settings.cronRule) {
-        this._cronJob = schedule(settings.cronRule, () => this.scanLinks());
+        this._cronJob = schedule(settings.cronRule, () => this.scanAllLinks());
         this._logger.info(`cron job started successfully`);
       }
     }
