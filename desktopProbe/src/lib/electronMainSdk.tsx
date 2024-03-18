@@ -232,3 +232,14 @@ export async function getJobById(jobId: number): Promise<Job> {
   });
   return job;
 }
+
+/**
+ * Export job list to csv file.
+ */
+export async function exportJobsToCsv(jobs: Job[]): Promise<string> {
+  const { fileName } = await _mainProcessApiCall<{ fileName: string }>(
+    "export-jobs-csv",
+    { jobs }
+  );
+  return fileName;
+}
