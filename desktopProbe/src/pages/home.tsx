@@ -25,6 +25,7 @@ import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
 import { JobSummary } from "@/components/jobSummary";
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { CsvExporter } from "../components/CsvExporter";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -264,6 +265,7 @@ export function Home() {
 
   return (
     <DefaultLayout className="px-6 pt-6 md:px-10">
+      <CsvExporter jobs={listing.jobs} />
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger value="new" className="px-6 py-2.5 flex-1">

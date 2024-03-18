@@ -1,8 +1,11 @@
-import { ipcMain, shell } from "electron";
+import { dialog, ipcMain, shell } from "electron";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
 import { JobScanner } from "./jobScanner";
 import { HtmlDownloader } from "./htmlDownloader";
+import fs from "fs";
+import { json2csv } from "json-2-csv";
+import { Job } from "../../../supabase/functions/_shared/types";
 
 /**
  * Helper methods used to centralize error handling.
@@ -112,6 +115,41 @@ export function initRendererIpcApi({
     _apiCall(async () => {
       const job = await supabaseApi.getJob(jobId);
       return { job };
+    })
+  );
+
+  ipcMain.handle("export-jobs-csv", async (event, { jobs }) =>
+    _apiCall(async () => {
+      const res = await dialog.showSaveDialog({
+        properties: ["createDirectory"],
+        filters: [{ name: "CSV Jobs", extensions: ["csv"] }],
+      });
+      const filePath = res.filePath;
+      if (!filePath) {
+        return { fileName: "" };
+      }
+      const fileName = res.filePath.split("/").pop();
+
+      const sanitizedJobs = jobs.map((job: Job) => ({
+        title: job.title,
+        company: job.companyName,
+        location: job.location,
+        salary: job.salary,
+        description: job.description,
+        jobType: job.jobType,
+        jobStatus: job.status,
+        extenralUrl: job.externalUrl,
+      }));
+
+      const csvJobs = json2csv(sanitizedJobs);
+      fs.writeFile(filePath, csvJobs, function (err) {
+        if (err) {
+          const message =
+            err?.message ?? "An error occurred while saving the file";
+          dialog.showErrorBox("File save error", message);
+        }
+      });
+      return { fileName };
     })
   );
 }
