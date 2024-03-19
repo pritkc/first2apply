@@ -2,6 +2,7 @@ import {
   BackpackIcon,
   CookieIcon,
   ListBulletIcon,
+  ExternalLinkIcon,
 } from "@radix-ui/react-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -33,11 +34,13 @@ export function JobSummary({
   onApply,
   onArchive,
   onUpdateLabels,
+  onView,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onArchive: (job: Job) => void;
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
+  onView: (job: Job) => void;
 }) {
   return (
     <div className="border border-muted rounded-lg p-4 lg:p-6">
@@ -89,7 +92,7 @@ export function JobSummary({
       <div className="flex flex-wrap gap-3 mt-6 lg:mt-10">
         {job.status !== "applied" && (
           <Button
-            size="lg"
+            // size="lg"
             className="w-24 text-sm"
             onClick={() => {
               onApply(job);
@@ -100,7 +103,7 @@ export function JobSummary({
         )}
         {job.status !== "archived" && (
           <Button
-            size="lg"
+            // size="lg"
             variant="outline"
             className="w-24 text-sm"
             onClick={() => {
@@ -111,6 +114,9 @@ export function JobSummary({
           </Button>
         )}
 
+        <Button variant="secondary" onClick={() => onView(job)}>
+          <ExternalLinkIcon className="h-8"></ExternalLinkIcon>
+        </Button>
         <div className="lg:ml-auto">
           <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
         </div>

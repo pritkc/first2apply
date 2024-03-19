@@ -236,3 +236,13 @@ export async function scanJob(job: Job): Promise<Job> {
   );
   return updatedJob;
 }
+
+/**
+ * Get a job by id.
+ */
+export async function getJobById(jobId: number): Promise<Job> {
+  const { job } = await _mainProcessApiCall<{ job: Job }>("get-job-by-id", {
+    jobId,
+  });
+  return job;
+}

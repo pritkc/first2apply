@@ -1,7 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
-import { DbSchema } from "../_shared/types.ts";
-import { parseJobsListUrl } from "../_shared/jobListParser.ts";
+import { DbSchema, Job } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import { cleanJobUrl } from "../_shared/jobListParser.ts";
 
@@ -11,7 +10,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { title, url, html } = await req.json();
+    const { title, url } = await req.json();
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -42,27 +41,12 @@ Deno.serve(async (req) => {
       .select("*");
     if (error) throw error;
 
-    // parse the html and save found jobs in the db
-    // need to save it to be able to diff the jobs list later
-    const { jobs } = await parseJobsListUrl({
-      allJobSites,
-      url: cleanUrl,
-      html,
-    });
-    console.log(`[${site.provider}] found ${jobs.length} jobs`);
-    const { error: insertError, data: upsertedJobs } = await supabaseClient
-      .from("jobs")
-      .upsert(
-        jobs.map((j) => ({ ...j, status: "new" as const })),
-        { onConflict: "user_id, externalId", ignoreDuplicates: true }
-      )
-      .select("*");
-    if (insertError) throw insertError;
-
-    const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
-    console.log(`[${site.provider}]found ${newJobs.length} new jobs`);
-
     const [link] = createdLinks ?? [];
+
+    // legacy, we don't parse the jobs list when creating a new link anymore
+    // but need to still return an empty array for compatibility
+    const newJobs: Job[] = [];
+
     return new Response(JSON.stringify({ link, newJobs }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
