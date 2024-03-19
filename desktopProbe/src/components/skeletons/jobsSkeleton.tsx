@@ -8,21 +8,19 @@ export function JobsListSkeleton() {
         <li key={index} className="pt-6 px-2 xl:px-4 -mt-[1px]">
           <div className="flex items-center gap-4 mb-6">
             {/* Avatar */}
-            <Skeleton className="w-16 h-16 rounded-full" />
+            <Skeleton className="min-w-16 h-16 rounded-full" />
             <div className="grow space-y-1">
               {/* Company Name */}
-              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-full max-w-20" />
               {/* Job Title */}
-              <Skeleton className="h-5 w-60" />
+              <Skeleton className="h-5 w-full max-w-60" />
 
               {/* Location, JobType & Salary */}
               <div className="flex items-center gap-1.5 pt-2">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-full max-w-32" />
+                <Skeleton className="h-5 w-full max-w-20" />
               </div>
             </div>
-            {/* Actions */}
-            <Skeleton className="w-8 h-8" /> {/* Archive Button */}
           </div>
           <Skeleton className="w-full h-px" /> {/* Divider */}
         </li>
@@ -35,9 +33,9 @@ export function JobSummarySkeleton() {
   return (
     <div className="border border-muted rounded-lg p-4 lg:p-6">
       <div className="flex justify-between items-start gap-4 lg:gap-6">
-        <div>
-          <Skeleton className="h-7 w-96 mt-3 lg:mt-4" />
-          <Skeleton className="h-4 mt-2 w-52" />
+        <div className="flex-1">
+          <Skeleton className="h-7 w-full max-w-80 mt-3 lg:mt-4" />
+          <Skeleton className="h-4 mt-2 w-full max-w-52" />
         </div>
 
         <Skeleton className="w-16 h-16 rounded-full" />
@@ -54,8 +52,8 @@ export function JobSummarySkeleton() {
           <Skeleton className="h-5 w-28" />
         </div>
         <div className="flex gap-3 items-center">
-          <Skeleton className="w-5 h-5" />
-          <Skeleton className="h-5 w-64" />
+          <Skeleton className="min-w-5 h-5" />
+          <Skeleton className="h-5 w-full max-w-64" />
         </div>
       </div>
 
