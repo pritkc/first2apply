@@ -87,7 +87,7 @@ export function JobSummary({
         )}
       </div>
 
-      <div className="flex gap-3 mt-4 lg:mt-6">
+      <div className="flex flex-wrap gap-3 mt-4 lg:mt-6">
         {job.status !== "applied" && (
           <Button
             size="lg"
@@ -112,7 +112,7 @@ export function JobSummary({
           </Button>
         )}
 
-        <div className="ml-auto">
+        <div className="lg:ml-auto">
           <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
         </div>
       </div>
