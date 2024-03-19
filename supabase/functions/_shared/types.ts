@@ -20,8 +20,8 @@ export const JOB_LABELS = {
   SUBMITTED: "Submitted",
   INTERVIEWING: "Interviewing",
   OFFER: "Offer",
-  GHOSTED: "Ghosted",
   REJECTED: "Rejected",
+  GHOSTED: "Ghosted",
 } as const;
 
 export type JobLabel = (typeof JOB_LABELS)[keyof typeof JOB_LABELS];
