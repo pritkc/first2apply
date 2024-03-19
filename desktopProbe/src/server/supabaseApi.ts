@@ -7,6 +7,7 @@ import {
 import {
   DbSchema,
   Job,
+  JobLabel,
   JobStatus,
   Link,
 } from "../../../supabase/functions/_shared/types";
@@ -208,6 +209,31 @@ export class F2aSupabaseApi {
           })
           .eq("id", jobId)
     );
+  }
+
+  /**
+   * Update the labels of a job.
+   * @returns the updated job
+   */
+  async updateJobLabels({
+    jobId,
+    labels,
+  }: {
+    jobId: string;
+    labels: JobLabel[];
+  }) {
+    const [updatedJob] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("jobs")
+          .update({
+            labels,
+          })
+          .eq("id", jobId)
+          .select("*")
+    );
+
+    return updatedJob;
   }
 
   /**

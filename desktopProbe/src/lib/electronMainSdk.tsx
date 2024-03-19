@@ -2,6 +2,7 @@ import { User } from "@supabase/supabase-js";
 import { JobScannerSettings } from "./types";
 import {
   Job,
+  JobLabel,
   JobSite,
   JobStatus,
   Link,
@@ -174,6 +175,19 @@ export async function updateJobStatus({
   status: JobStatus;
 }): Promise<void> {
   await _mainProcessApiCall("update-job-status", { jobId, status });
+}
+
+/**
+ * Update the labels of a job.
+ */
+export async function updateJobLabels({
+  jobId,
+  labels,
+}: {
+  jobId: number;
+  labels: JobLabel[];
+}): Promise<Job> {
+  return await _mainProcessApiCall("update-job-labels", { jobId, labels });
 }
 
 /**
