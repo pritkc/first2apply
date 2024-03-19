@@ -58,7 +58,6 @@ export function JobSummary({
         {job.companyLogo && (
           <Avatar className="w-16 h-16">
             <AvatarImage src={job.companyLogo} />
-            <AvatarFallback>LI</AvatarFallback>
           </Avatar>
         )}
       </div>
@@ -87,7 +86,7 @@ export function JobSummary({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-4 lg:mt-6">
+      <div className="flex flex-wrap gap-3 mt-6 lg:mt-10">
         {job.status !== "applied" && (
           <Button
             size="lg"
@@ -157,7 +156,7 @@ function JobLabelSelector({
         onUpdateLabels(job.id, newLabels);
       }}
     >
-      <SelectTrigger className="w-[160px] h-10">
+      <SelectTrigger className="w-[148px] h-10">
         <SelectValue placeholder="Add Label" />
       </SelectTrigger>
       <SelectContent>
