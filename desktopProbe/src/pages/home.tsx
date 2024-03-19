@@ -353,7 +353,6 @@ export function Home() {
                         selectedJobId={selectedJobId}
                         hasMore={listing.hasMore}
                         parentContainerId="jobsList"
-                        onUpdateJobStatus={onUpdateJobStatus}
                         onLoadMore={onLoadMore}
                         onSelect={(job) => scanJobAndSelect(job)}
                       />
