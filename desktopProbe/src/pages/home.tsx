@@ -1,4 +1,9 @@
-import { ReloadIcon } from "@radix-ui/react-icons";
+import {
+  ArchiveIcon,
+  DotsVerticalIcon,
+  TrashIcon,
+  UpdateIcon,
+} from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -13,15 +18,22 @@ import {
   updateJobStatus,
 } from "@/lib/electronMainSdk";
 
-import { JobDetails } from "@/components/jobDetails";
-import { JobsList } from "@/components/jobsList";
-import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
-import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DefaultLayout } from "./defaultLayout";
-
+import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
+import { JobsList } from "@/components/jobsList";
 import { JobSummary } from "@/components/jobSummary";
+import { JobDetails } from "@/components/jobDetails";
+import { Button } from "@/components/ui/button";
+
 import { ToastAction } from "@/components/ui/toast";
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -306,32 +318,41 @@ export function Home() {
     <DefaultLayout className="px-6 pt-6 md:px-10">
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
-          <TabsTrigger value="new" className="px-6 py-2.5 flex-1">
-            <div className="w-full flex items-center pl-9">
-              <span className="flex-1">New Jobs {`(${listing.new})`}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`w-8 ${
-                  status === "new"
-                    ? "opacity-100 transition-all duration-300"
-                    : "opacity-0 pointer-events-none"
-                }`}
-                onClick={(evt) => {
-                  evt.preventDefault();
-                  evt.stopPropagation();
-                  onTabChange("new");
-                }}
-              >
-                <ReloadIcon className="h-4 w-auto shrink-0 text-muted-foreground transition-transform duration-200" />
-              </Button>
-            </div>
+          <TabsTrigger
+            value="new"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "new" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "new" && <span className="w-6" />}
+            New Jobs {`(${listing.new})`}
+            {status === "new" && (
+              <TabActions tab="new" onTabChange={onTabChange} />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="applied" className="px-6 py-4 flex-1">
+          <TabsTrigger
+            value="applied"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "applied" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "applied" && <span className="w-6" />}
             Applied {`(${listing.applied})`}
+            {status === "applied" && (
+              <TabActions tab="applied" onTabChange={onTabChange} />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="archived" className="px-6 py-4 flex-1">
+          <TabsTrigger
+            value="archived"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "archived" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "archived" && <span className="w-6" />}
             Archived {`(${listing.archived})`}
+            {status === "archived" && (
+              <TabActions tab="archived" onTabChange={onTabChange} />
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -433,5 +454,52 @@ function NoLinks() {
         </Link>
       </div>
     </DefaultLayout>
+  );
+}
+
+/**
+ * Tab actions component.
+ */
+function TabActions({
+  tab,
+  onTabChange,
+}: {
+  tab: JobStatus;
+  onTabChange: (tab: JobStatus) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="w-6 h-6 focus-visible:outline-none focus-visible:ring-0"
+        onClick={(evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+        }}
+      >
+        <DotsVerticalIcon className="h-5 hover:h-6 transition-all duration-200 ease-in-out m-auto w-auto text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" className="space-y-1">
+        <DropdownMenuItem
+          className="cursor-pointer focus:bg-[#809966]/20"
+          onClick={() => onTabChange(tab)}
+        >
+          <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+          Refresh
+        </DropdownMenuItem>
+        {tab !== "archived" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer focus:bg-secondary/30">
+              <ArchiveIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+              Archive all
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuItem className="cursor-pointer bg-destructive/5 focus:bg-destructive/20">
+          <TrashIcon className="h-5 w-5 -ml-0.5 mr-2 inline-block mb-0.5 text-destructive" />
+          Delete all
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
