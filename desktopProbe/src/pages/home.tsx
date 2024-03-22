@@ -432,6 +432,9 @@ export function Home() {
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
+                            onDelete={(j) => {
+                              onUpdateJobStatus(j.id, "deleted");
+                            }}
                             onUpdateLabels={onUpdateJobLabels}
                             onView={onViewJob}
                           />
@@ -563,7 +566,7 @@ function TabActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Are you sure you want to archive all jobs?
+              Are you sure you want to archive all {tab} jobs?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone and all jobs will be moved to the
@@ -592,7 +595,7 @@ function TabActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Are you sure you want to delete all jobs?
+              Are you sure you want to delete all {tab} jobs?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone, you won't ever see these jobs again.
@@ -603,7 +606,7 @@ function TabActions({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive"
+              className="bg-destructive hover:bg-destructive/90"
               onClick={() => {
                 setIsDeleteAllDialogOpen(false);
                 onDeleteAll(tab);
