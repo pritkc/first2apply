@@ -2,7 +2,6 @@ import { dialog, ipcMain, shell } from "electron";
 import { F2aSupabaseApi } from "./supabaseApi";
 import { getExceptionMessage } from "../lib/error";
 import { JobScanner } from "./jobScanner";
-import { HtmlDownloader } from "./htmlDownloader";
 import fs from "fs";
 import { json2csv } from "json-2-csv";
 import { Job } from "../../../supabase/functions/_shared/types";
@@ -122,38 +121,42 @@ export function initRendererIpcApi({
     })
   );
 
-  ipcMain.handle("export-jobs-csv", async (event, { jobs }) =>
+  ipcMain.handle("export-jobs-csv", async (event, { status }) =>
     _apiCall(async () => {
       const res = await dialog.showSaveDialog({
         properties: ["createDirectory"],
         filters: [{ name: "CSV Jobs", extensions: ["csv"] }],
       });
       const filePath = res.filePath;
-      if (!filePath) {
-        return { fileName: "" };
-      }
-      const fileName = res.filePath.split("/").pop();
+      if (res.canceled) return;
 
-      const sanitizedJobs = jobs.map((job: Job) => ({
+      // load all jobs with pagination
+      const batchSize = 300;
+      let allJobs: Job[] = [];
+      let after: string | undefined;
+      do {
+        const { jobs, nextPageToken } = await supabaseApi.listJobs({
+          status,
+          limit: batchSize,
+          after,
+        });
+        allJobs = allJobs.concat(jobs);
+        after = nextPageToken;
+      } while (!!after);
+
+      // cherry-pick the fields we want to export
+      const sanitizedJobs = allJobs.map((job: Job) => ({
         title: job.title,
         company: job.companyName,
         location: job.location,
         salary: job.salary,
-        description: job.description,
-        jobType: job.jobType,
-        jobStatus: job.status,
-        extenralUrl: job.externalUrl,
+        job_type: job.jobType,
+        job_status: job.status,
+        external_url: job.externalUrl,
       }));
 
       const csvJobs = json2csv(sanitizedJobs);
-      fs.writeFile(filePath, csvJobs, function (err) {
-        if (err) {
-          const message =
-            err?.message ?? "An error occurred while saving the file";
-          dialog.showErrorBox("File save error", message);
-        }
-      });
-      return { fileName };
+      fs.writeFileSync(filePath, csvJobs);
     })
   );
 

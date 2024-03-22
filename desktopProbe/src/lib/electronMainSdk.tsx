@@ -248,14 +248,12 @@ export async function getJobById(jobId: number): Promise<Job> {
 }
 
 /**
- * Export job list to csv file.
+ * Export all jobs with the given status to a CSV file.
  */
-export async function exportJobsToCsv(jobs: Job[]): Promise<string> {
-  const { fileName } = await _mainProcessApiCall<{ fileName: string }>(
-    "export-jobs-csv",
-    { jobs }
-  );
-  return fileName;
+export async function exportJobsToCsv(status: JobStatus): Promise<void> {
+  await _mainProcessApiCall<{ fileName: string }>("export-jobs-csv", {
+    status,
+  });
 }
 
 /**
