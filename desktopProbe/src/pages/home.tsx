@@ -17,6 +17,7 @@ import {
   updateJobLabels,
   updateJobStatus,
   getJobById,
+  changeAllJobsStatus,
 } from "@/lib/electronMainSdk";
 
 import {
@@ -34,6 +35,17 @@ import { JobsList } from "@/components/jobsList";
 import { JobSummary } from "@/components/jobSummary";
 import { JobDetails } from "@/components/jobDetails";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import { ToastAction } from "@/components/ui/toast";
 import { toast } from "@/components/ui/use-toast";
@@ -42,6 +54,7 @@ import {
   JobLabel,
   JobStatus,
 } from "../../../supabase/functions/_shared/types";
+import { set } from "react-hook-form";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -147,6 +160,42 @@ export function Home() {
   // Handle tab change
   const onTabChange = (tabValue: string) => {
     navigate(`?status=${tabValue}&r=${Math.random()}`);
+  };
+
+  // archive all jobs from the current tab
+  const onArchiveAll = async (tab: JobStatus) => {
+    try {
+      await changeAllJobsStatus({ from: status, to: "archived" });
+
+      // refresh the tab
+      onTabChange(tab);
+
+      toast({
+        title: "All jobs archived",
+        description: `All your ${status} jobs have been archived, you can find them in the archived tab.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to archive all jobs" });
+    }
+  };
+
+  // delete all jobs from the current tab
+  const onDeleteAll = async (tab: JobStatus) => {
+    try {
+      await changeAllJobsStatus({ from: tab, to: "deleted" });
+
+      // refresh the tab
+      onTabChange(tab);
+
+      toast({
+        title: "All jobs deleted",
+        description: `All your ${status} jobs have been deleted.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to delete all jobs" });
+    }
   };
 
   // update the status of a job and remove it from the list if necessary
@@ -304,7 +353,12 @@ export function Home() {
             {status === "new" && <span className="w-6" />}
             New Jobs {`(${listing.new})`}
             {status === "new" && (
-              <TabActions tab="new" onTabChange={onTabChange} />
+              <TabActions
+                tab="new"
+                onTabChange={onTabChange}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
             )}
           </TabsTrigger>
           <TabsTrigger
@@ -316,7 +370,12 @@ export function Home() {
             {status === "applied" && <span className="w-6" />}
             Applied {`(${listing.applied})`}
             {status === "applied" && (
-              <TabActions tab="applied" onTabChange={onTabChange} />
+              <TabActions
+                tab="applied"
+                onTabChange={onTabChange}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
             )}
           </TabsTrigger>
           <TabsTrigger
@@ -328,7 +387,12 @@ export function Home() {
             {status === "archived" && <span className="w-6" />}
             Archived {`(${listing.archived})`}
             {status === "archived" && (
-              <TabActions tab="archived" onTabChange={onTabChange} />
+              <TabActions
+                tab="archived"
+                onTabChange={onTabChange}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
             )}
           </TabsTrigger>
         </TabsList>
@@ -443,43 +507,114 @@ function NoLinks() {
 function TabActions({
   tab,
   onTabChange,
+  onArchiveAll,
+  onDeleteAll,
 }: {
   tab: JobStatus;
   onTabChange: (tab: JobStatus) => void;
+  onArchiveAll: (tab: JobStatus) => Promise<void>;
+  onDeleteAll: (tab: JobStatus) => Promise<void>;
 }) {
+  const [isArchiveAllDialogOpen, setIsArchiveAllDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className="w-6 h-6 focus-visible:outline-none focus-visible:ring-0"
-        onClick={(evt) => {
-          evt.preventDefault();
-          evt.stopPropagation();
-        }}
-      >
-        <DotsVerticalIcon className="h-5 hover:h-6 transition-all duration-200 ease-in-out m-auto w-auto text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" className="space-y-1">
-        <DropdownMenuItem
-          className="cursor-pointer focus:bg-[#809966]/20"
-          onClick={() => onTabChange(tab)}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="w-6 h-6 focus-visible:outline-none focus-visible:ring-0"
+          onClick={(evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+          }}
         >
-          <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
-          Refresh
-        </DropdownMenuItem>
-        {tab !== "archived" && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer focus:bg-secondary/30">
+          <DotsVerticalIcon className="h-5 hover:h-6 transition-all duration-200 ease-in-out m-auto w-auto text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" className="space-y-1">
+          <DropdownMenuItem
+            className="cursor-pointer focus:bg-[#809966]/20"
+            onClick={() => onTabChange(tab)}
+          >
+            <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+            Refresh
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {tab !== "archived" && (
+            <DropdownMenuItem
+              className="cursor-pointer focus:bg-secondary/30"
+              onClick={() => setIsArchiveAllDialogOpen(true)}
+            >
               <ArchiveIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
               Archive all
             </DropdownMenuItem>
-          </>
-        )}
-        <DropdownMenuItem className="cursor-pointer bg-destructive/5 focus:bg-destructive/20">
-          <TrashIcon className="h-5 w-5 -ml-0.5 mr-2 inline-block mb-0.5 text-destructive" />
-          Delete all
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          )}
+          <DropdownMenuItem
+            className="cursor-pointer bg-destructive/5 focus:bg-destructive/20"
+            onClick={() => setIsDeleteAllDialogOpen(true)}
+          >
+            <TrashIcon className="h-5 w-5 -ml-0.5 mr-2 inline-block mb-0.5 text-destructive" />
+            Delete all
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* archive all jobs confirm dialog */}
+      <AlertDialog open={isArchiveAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to archive all jobs?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone and all jobs will be moved to the
+              archived tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsArchiveAllDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsArchiveAllDialogOpen(false);
+                onArchiveAll(tab);
+              }}
+            >
+              <ArchiveIcon className="h-4 w-4 mr-2 inline-block" />
+              Archive All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* delete all jobs confirm dialog */}
+      <AlertDialog open={isDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to delete all jobs?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone, you won't ever see these jobs again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteAllDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive"
+              onClick={() => {
+                setIsDeleteAllDialogOpen(false);
+                onDeleteAll(tab);
+              }}
+            >
+              <TrashIcon className="h-5 w-5 mr-2 inline-block" />
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
