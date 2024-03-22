@@ -16,6 +16,7 @@ import {
   scanJob,
   updateJobLabels,
   updateJobStatus,
+  getJobById,
 } from "@/lib/electronMainSdk";
 
 import {
@@ -85,7 +86,7 @@ export function Home() {
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
 
-  // Update jobs when location changes
+  // reload jobs when location changes
   useEffect(() => {
     const asyncLoad = async () => {
       try {
@@ -149,23 +150,12 @@ export function Home() {
   };
 
   // update the status of a job and remove it from the list if necessary
-  const updateListedJobStatus = async (
-    jobId: number,
-    newStatus: JobStatus,
-    removeFromList: boolean = true
-  ) => {
+  const updateListedJobStatus = async (jobId: number, newStatus: JobStatus) => {
     await updateJobStatus({ jobId, status: newStatus });
 
     setListing((listing) => {
       const oldJob = listing.jobs.find((job) => job.id === jobId);
-      const jobs = removeFromList
-        ? listing.jobs.filter((job) => job.id !== jobId)
-        : listing.jobs.map((job) => {
-            if (job.id === jobId) {
-              return { ...job, status: newStatus };
-            }
-            return job;
-          });
+      const jobs = listing.jobs.filter((job) => job.id !== jobId);
 
       const tabToDecrement = oldJob?.status as JobStatus;
       const tabToIncrement = newStatus;
@@ -201,7 +191,17 @@ export function Home() {
 
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
     try {
-      updateListedJobStatus(jobId, newStatus);
+      await updateListedJobStatus(jobId, newStatus);
+
+      // select the next job in the list
+      const currentJobIndex = listing.jobs.findIndex((job) => job.id === jobId);
+      const nextJob =
+        listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
+      if (nextJob) {
+        scanJobAndSelect(nextJob);
+      } else {
+        setSelectedJobId(null);
+      }
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
     }
@@ -255,7 +255,13 @@ export function Home() {
           return { ...listing, jobs };
         });
 
-        const updatedJob = await scanJob(job);
+        // fetch job again, just in case the JD was scrapped in the background
+        let updatedJob = await getJobById(job.id);
+
+        // if the JD is still empty, scan the job to get the job description
+        if (!updatedJob.description) {
+          updatedJob = await scanJob(updatedJob);
+        }
 
         // Update the job in the list
         setListing((listing) => {
@@ -271,39 +277,10 @@ export function Home() {
   };
 
   /**
-   * Mark a job as applied and inform the user via toast.
+   * Open a job in the default browser.
    */
-  const onApply = async (job: Job) => {
-    try {
-      // open url in default browser
-      openExternalUrl(job.externalUrl);
-
-      // update the job status in the list
-      await updateListedJobStatus(job.id, "applied", false);
-
-      // notify the user with options to undo
-      toast({
-        title: "Job marked as applied",
-        description: `"${job.title}" has been automatically marked as applied. If this was a mistake, you can undo this action.`,
-        variant: "success",
-        duration: Infinity,
-        action: (
-          <ToastAction
-            altText="undo"
-            className="bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
-            onClick={() => {
-              updateListedJobStatus(job.id, status, false).catch((error) => {
-                handleError({ error, title: "Failed to undo" });
-              });
-            }}
-          >
-            Undo
-          </ToastAction>
-        ),
-      });
-    } catch (error) {
-      handleError({ error, title: "Failed to mark job as applied" });
-    }
+  const onViewJob = (job: Job) => {
+    openExternalUrl(job.externalUrl);
   };
 
   if (isLoadingLinks) {
@@ -385,11 +362,14 @@ export function Home() {
                         <>
                           <JobSummary
                             job={selectedJob}
-                            onApply={onApply}
+                            onApply={(j) => {
+                              onUpdateJobStatus(j.id, "applied");
+                            }}
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
                             onUpdateLabels={onUpdateJobLabels}
+                            onView={onViewJob}
                           />
                           <JobDetails
                             job={selectedJob}

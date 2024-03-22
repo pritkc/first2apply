@@ -75,6 +75,14 @@ export type Job = {
   updated_at: Date;
 };
 
+export type HtmlDump = {
+  id: number;
+  user_id: string;
+  url: string;
+  html: string;
+  created_at: Date;
+};
+
 /**
  * Supabase database schema.
  */
@@ -111,6 +119,11 @@ export type DbSchema = {
           | Pick<Job, "status">
           | Pick<Job, "description">
           | Pick<Job, "labels">;
+      };
+      html_dumps: {
+        Row: HtmlDump;
+        Insert: Pick<HtmlDump, "url" | "html">;
+        Update: never;
       };
     };
     Views: {};

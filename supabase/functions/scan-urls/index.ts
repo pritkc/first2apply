@@ -52,13 +52,20 @@ Deno.serve(async (req) => {
           console.error(`link not found: ${html.linkId}`);
           return [];
         }
-        const { jobs, site } = await parseJobsListUrl({
+        const { jobs, site, parseFailed } = await parseJobsListUrl({
           allJobSites,
           url: link.url,
           html: html.content,
         });
 
         console.log(`[${site.provider}] found ${jobs.length} jobs`);
+
+        // if the parsing failed, save the html dump for debugging
+        if (parseFailed) {
+          await supabaseClient
+            .from("html_dumps")
+            .insert([{ url: link.url, html: html.content }]);
+        }
 
         return jobs;
       })
