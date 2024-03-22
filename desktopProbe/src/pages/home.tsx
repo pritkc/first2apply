@@ -3,6 +3,7 @@ import {
   DotsVerticalIcon,
   TrashIcon,
   UpdateIcon,
+  DownloadIcon,
 } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import {
   updateJobStatus,
   getJobById,
   changeAllJobsStatus,
+  exportJobsToCsv,
 } from "@/lib/electronMainSdk";
 
 import {
@@ -46,14 +48,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { CsvExporter } from "../components/CsvExporter";
 import { toast } from "@/components/ui/use-toast";
 import {
   Job,
   JobLabel,
   JobStatus,
 } from "../../../supabase/functions/_shared/types";
-import { set } from "react-hook-form";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -331,6 +331,22 @@ export function Home() {
     openExternalUrl(job.externalUrl);
   };
 
+  /**
+   * Download all jobs from the current tab as a CSV file.
+   */
+  const onCsvExport = async (tab: JobStatus) => {
+    try {
+      await exportJobsToCsv(tab);
+      toast({
+        title: "Jobs exported",
+        description: `All your ${tab} jobs have been exported to a CSV file.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to export jobs" });
+    }
+  };
+
   if (isLoadingLinks) {
     return <Loading />;
   }
@@ -341,7 +357,6 @@ export function Home() {
 
   return (
     <DefaultLayout className="px-6 pt-6 md:px-10">
-      <CsvExporter jobs={listing.jobs} />
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger
@@ -356,6 +371,7 @@ export function Home() {
               <TabActions
                 tab="new"
                 onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
                 onArchiveAll={onArchiveAll}
                 onDeleteAll={onDeleteAll}
               />
@@ -373,6 +389,7 @@ export function Home() {
               <TabActions
                 tab="applied"
                 onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
                 onArchiveAll={onArchiveAll}
                 onDeleteAll={onDeleteAll}
               />
@@ -390,6 +407,7 @@ export function Home() {
               <TabActions
                 tab="archived"
                 onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
                 onArchiveAll={onArchiveAll}
                 onDeleteAll={onDeleteAll}
               />
@@ -510,11 +528,13 @@ function NoLinks() {
 function TabActions({
   tab,
   onTabChange,
+  onCsvExport,
   onArchiveAll,
   onDeleteAll,
 }: {
   tab: JobStatus;
   onTabChange: (tab: JobStatus) => void;
+  onCsvExport: (tab: JobStatus) => Promise<void>;
   onArchiveAll: (tab: JobStatus) => Promise<void>;
   onDeleteAll: (tab: JobStatus) => Promise<void>;
 }) {
@@ -542,6 +562,13 @@ function TabActions({
             Refresh
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer focus:bg-secondary/30"
+            onClick={() => onCsvExport(tab)}
+          >
+            <DownloadIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+            CSV export
+          </DropdownMenuItem>
           {tab !== "archived" && (
             <DropdownMenuItem
               className="cursor-pointer focus:bg-secondary/30"
