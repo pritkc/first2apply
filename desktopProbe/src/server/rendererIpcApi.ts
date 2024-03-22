@@ -118,4 +118,11 @@ export function initRendererIpcApi({
       return { job };
     })
   );
+
+  ipcMain.handle("change-all-job-status", async (event, { from, to }) =>
+    _apiCall(async () => {
+      const job = await supabaseApi.changeAllJobStatus({ from, to });
+      return { job };
+    })
+  );
 }

@@ -246,3 +246,16 @@ export async function getJobById(jobId: number): Promise<Job> {
   });
   return job;
 }
+
+/**
+ * Change the status of all jobs from one status to another.
+ */
+export async function changeAllJobsStatus({
+  from,
+  to,
+}: {
+  from: JobStatus;
+  to: JobStatus;
+}): Promise<void> {
+  await _mainProcessApiCall("change-all-job-status", { from, to });
+}
