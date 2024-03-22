@@ -3,12 +3,40 @@ import {
   CookieIcon,
   ListBulletIcon,
   ExternalLinkIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
-import { useSites } from "@/hooks/sites";
-import { Job } from "../../../supabase/functions/_shared/types";
+import {
+  JOB_LABELS,
+  Job,
+  JobLabel,
+} from "../../../supabase/functions/_shared/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+
+import { LABEL_COLOR_CLASSES } from "@/lib/labels";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
+
+function isJobLabel(value: any): value is JobLabel {
+  return Object.values(JOB_LABELS).includes(value);
+}
 
 /**
  * Component to display the details of a job.
@@ -17,15 +45,17 @@ export function JobSummary({
   job,
   onApply,
   onArchive,
+  onDelete,
+  onUpdateLabels,
   onView,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onArchive: (job: Job) => void;
+  onDelete: (job: Job) => void;
+  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
   onView: (job: Job) => void;
 }) {
-  const { siteLogos } = useSites();
-
   return (
     <div className="border border-muted rounded-lg p-4 lg:p-6">
       <div className="flex justify-between items-start gap-4 lg:gap-6">
@@ -45,7 +75,6 @@ export function JobSummary({
         {job.companyLogo && (
           <Avatar className="w-16 h-16">
             <AvatarImage src={job.companyLogo} />
-            <AvatarFallback>LI</AvatarFallback>
           </Avatar>
         )}
       </div>
@@ -74,7 +103,7 @@ export function JobSummary({
         )}
       </div>
 
-      <div className="flex gap-3 mt-4 lg:mt-6">
+      <div className="flex flex-wrap gap-3 mt-6 lg:mt-10">
         {job.status !== "applied" && (
           <Button
             // size="lg"
@@ -89,7 +118,7 @@ export function JobSummary({
         {job.status !== "archived" && (
           <Button
             // size="lg"
-            variant="outline"
+            variant="secondary"
             className="w-24 text-sm"
             onClick={() => {
               onArchive(job);
@@ -98,10 +127,100 @@ export function JobSummary({
             Archive
           </Button>
         )}
-        <Button variant="secondary" onClick={() => onView(job)}>
-          <ExternalLinkIcon className="h-8"></ExternalLinkIcon>
+
+        <Button variant="outline" onClick={() => onView(job)}>
+          <ExternalLinkIcon className="h-8" />
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">
+              <TrashIcon className="h-8" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to delete this job?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                job and you won't be able to see it again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={() => onDelete(job)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <div className="lg:ml-auto">
+          <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Component used to render a label selector.
+ * For now we only allow setting one label per job.
+ */
+function JobLabelSelector({
+  job,
+  onUpdateLabels,
+}: {
+  job: Job;
+  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
+}) {
+  const label = job.labels[0] ?? "";
+  console.log("label", label ?? "none");
+
+  const LabelOptionWithColor = ({
+    jobLabel,
+    colorClass,
+  }: {
+    jobLabel: string;
+    colorClass: string;
+  }) => (
+    <SelectItem value={jobLabel}>
+      <div className="flex items-center">
+        <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+        <div className="flex-1 ml-2">{jobLabel}</div>
+      </div>
+    </SelectItem>
+  );
+
+  return (
+    <Select
+      value={label}
+      onValueChange={(labelValue) => {
+        const newLabels = isJobLabel(labelValue) ? [labelValue] : [];
+        onUpdateLabels(job.id, newLabels);
+      }}
+    >
+      <SelectTrigger className="w-[148px] h-10">
+        <SelectValue placeholder="Add Label" />
+      </SelectTrigger>
+      <SelectContent>
+        {/* no label */}
+        <LabelOptionWithColor jobLabel="None" colorClass="bg-background" />
+
+        {/* labels with colors */}
+        {Object.values(JOB_LABELS).map((jobLabel) => (
+          <LabelOptionWithColor
+            key={jobLabel}
+            jobLabel={jobLabel}
+            colorClass={LABEL_COLOR_CLASSES[jobLabel]}
+          />
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
