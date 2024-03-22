@@ -23,6 +23,11 @@ type ReleaseJson = {
   }[];
 };
 
+type LatestRelease = {
+  name: string;
+  url: string;
+};
+
 /**
  * Class used to handle the auto-updates. For now only supported on MacOS since Windows updates
  * are handled by the Microsoft Store.
@@ -32,6 +37,7 @@ export class F2aAutoUpdater {
   private _cronJob: ScheduledTask | undefined;
   private _notification: Notification | undefined;
   private _feedUrl: string;
+  private _latestRelease: LatestRelease | undefined;
 
   /**
    * Class constructor.
@@ -107,6 +113,9 @@ export class F2aAutoUpdater {
     releaseName: string;
     updateURL: string;
   }) {
+    // cache the release info for further checks
+    this._latestRelease = { name: releaseName, url: updateURL };
+
     // show a notification
     const message =
       process.platform === "darwin"
@@ -154,10 +163,20 @@ export class F2aAutoUpdater {
   }
 
   /**
-   * Check for updates.
+   * Check for updates. The auto-updater only emits the `update-downloaded` once, so we are caching
+   * the latest release info and showing the notification manually with the next cron job.
    */
   private async _checkForUpdates() {
     try {
+      // check cached release info
+      if (this._latestRelease) {
+        this._showUpdateNotification({
+          releaseName: this._latestRelease.name,
+          updateURL: this._latestRelease.url,
+        });
+        return;
+      }
+
       if (process.platform === "darwin") {
         autoUpdater.checkForUpdates();
       } else if (process.platform === "linux") {
