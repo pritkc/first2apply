@@ -47,7 +47,7 @@ export type Link = {
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
-export type JobStatus = "new" | "applied" | "archived";
+export type JobStatus = "new" | "applied" | "archived" | "deleted";
 export type Job = {
   id: number;
   user_id: string;
