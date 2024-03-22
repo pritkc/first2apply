@@ -3,6 +3,7 @@ import {
   CookieIcon,
   ListBulletIcon,
   ExternalLinkIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -21,6 +22,17 @@ import {
 } from "./ui/select";
 
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -33,12 +45,14 @@ export function JobSummary({
   job,
   onApply,
   onArchive,
+  onDelete,
   onUpdateLabels,
   onView,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onArchive: (job: Job) => void;
+  onDelete: (job: Job) => void;
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
   onView: (job: Job) => void;
 }) {
@@ -104,7 +118,7 @@ export function JobSummary({
         {job.status !== "archived" && (
           <Button
             // size="lg"
-            variant="outline"
+            variant="secondary"
             className="w-24 text-sm"
             onClick={() => {
               onArchive(job);
@@ -114,9 +128,38 @@ export function JobSummary({
           </Button>
         )}
 
-        <Button variant="secondary" onClick={() => onView(job)}>
-          <ExternalLinkIcon className="h-8"></ExternalLinkIcon>
+        <Button variant="outline" onClick={() => onView(job)}>
+          <ExternalLinkIcon className="h-8" />
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">
+              <TrashIcon className="h-8" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to delete this job?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                job and you won't be able to see it again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={() => onDelete(job)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="lg:ml-auto">
           <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
         </div>
