@@ -256,6 +256,21 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Change the status of all jobs with a certain status to another status.
+   */
+  async changeAllJobStatus({ from, to }: { from: JobStatus; to: JobStatus }) {
+    return this._supabaseApiCall(async () =>
+      this._supabase
+        .from("jobs")
+        .update({
+          status: to,
+          updated_at: luxon.DateTime.now().toUTC().toJSDate(),
+        })
+        .eq("status", from)
+    );
+  }
+
+  /**
    * Wrapper around a Supabase method that handles errors.
    */
   private async _supabaseApiCall<
