@@ -19,8 +19,11 @@ import { Textarea } from "../components/ui/textarea";
 import { toast } from "../components/ui/use-toast";
 import { useError } from "../hooks/error";
 import { useSession } from "../hooks/session";
-import { createReview, getUserReview } from "../lib/electronMainSdk";
+import { createReview, getOS, getUserReview } from "../lib/electronMainSdk";
 import { DefaultLayout } from "./defaultLayout";
+
+const MICROSOFT_APP_URL =
+  "https://apps.microsoft.com/detail/9nk18wv87sv2?hl=en-US&gl=US";
 
 const StarIcon = ({ filled = false }) => (
   <svg
@@ -48,7 +51,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function ReviewPage() {
-  const { isLoggedIn, user } = useSession();
+  const { isLoggedIn } = useSession();
   const { handleError } = useError();
 
   const [hoveredValue, setHoveredValue] = useState(0);
@@ -57,13 +60,15 @@ export function ReviewPage() {
   const [hasReviewed, setHasReviewed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [userOS, setUserOS] = useState<NodeJS.Platform | "">("");
+
   const fetchUserReview = async () => {
     try {
       if (!isLoggedIn) return;
-      console.log("userId", user?.id);
       const isReview = await getUserReview();
-      console.log("isReview", isReview);
       setHasReviewed(!!isReview.length);
+      const userOS = await getOS();
+      setUserOS(userOS);
       setIsLoading(false);
     } catch (error) {
       handleError({ error });
@@ -83,14 +88,9 @@ export function ReviewPage() {
     },
     mode: "onChange",
   });
-  const watchedValues = form.watch();
 
   const { setValue, watch } = form;
   const rating = watch("rating"); // This will update the rating based on the form's current value
-
-  useEffect(() => {
-    console.log(watchedValues);
-  }, [watchedValues]);
 
   const onSubmit = async (values: FormValues) => {
     const { title, description, rating } = values;
@@ -121,8 +121,21 @@ export function ReviewPage() {
           <Skeleton className="h-4 w-full mb-4" />
         ) : hasReviewed ? (
           <h1 className="text-2xl font-medium tracking-wide mb-2">
-            Thanks For Your Review!
+            Thank you for your feedback!
           </h1>
+        ) : userOS === "win32" ? (
+          <div>
+            Please leave a review on the Microsoft Store{" "}
+            <a
+              href={MICROSOFT_APP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline text-primary hover:text-primary-dark"
+            >
+              here
+            </a>
+            .
+          </div>
         ) : (
           <>
             <h1 className="text-2xl font-medium tracking-wide mb-2">

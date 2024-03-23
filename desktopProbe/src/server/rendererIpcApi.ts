@@ -5,6 +5,7 @@ import { JobScanner } from "./jobScanner";
 import fs from "fs";
 import { json2csv } from "json-2-csv";
 import { Job } from "../../../supabase/functions/_shared/types";
+import os from "os";
 
 /**
  * Helper methods used to centralize error handling.
@@ -30,6 +31,12 @@ export function initRendererIpcApi({
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
 }) {
+  ipcMain.handle("get-os-type", (event) =>
+    _apiCall(async () => {
+      return os.platform();
+    })
+  );
+
   ipcMain.handle("signup-with-email", async (event, { email, password }) =>
     _apiCall(() => supabaseApi.signupWithEmail({ email, password }))
   );
