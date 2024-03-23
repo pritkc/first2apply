@@ -1,31 +1,59 @@
+import {
+  ArchiveIcon,
+  DotsVerticalIcon,
+  TrashIcon,
+  UpdateIcon,
+  DownloadIcon,
+} from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ReloadIcon } from "@radix-ui/react-icons";
 
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
 
 import {
   listJobs,
-  updateJobStatus,
-  scanJob,
   openExternalUrl,
+  scanJob,
+  updateJobLabels,
+  updateJobStatus,
   getJobById,
+  changeAllJobsStatus,
+  exportJobsToCsv,
 } from "@/lib/electronMainSdk";
 
-import { DefaultLayout } from "./defaultLayout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
-import { Button } from "@/components/ui/button";
-import { JobsList } from "@/components/jobsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { JobDetails } from "@/components/jobDetails";
-
-import { Job, JobStatus } from "../../../supabase/functions/_shared/types";
+import { DefaultLayout } from "./defaultLayout";
+import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
+import { JobsList } from "@/components/jobsList";
 import { JobSummary } from "@/components/jobSummary";
+import { JobDetails } from "@/components/jobDetails";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { toast } from "@/components/ui/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { ReviewSuggestionPopup } from "@/components/reviewSuggestionPopup";
+import {
+  Job,
+  JobLabel,
+  JobStatus,
+} from "../../../supabase/functions/_shared/types";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -133,6 +161,42 @@ export function Home() {
     navigate(`?status=${tabValue}&r=${Math.random()}`);
   };
 
+  // archive all jobs from the current tab
+  const onArchiveAll = async (tab: JobStatus) => {
+    try {
+      await changeAllJobsStatus({ from: status, to: "archived" });
+
+      // refresh the tab
+      onTabChange(tab);
+
+      toast({
+        title: "All jobs archived",
+        description: `All your ${status} jobs have been archived, you can find them in the archived tab.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to archive all jobs" });
+    }
+  };
+
+  // delete all jobs from the current tab
+  const onDeleteAll = async (tab: JobStatus) => {
+    try {
+      await changeAllJobsStatus({ from: tab, to: "deleted" });
+
+      // refresh the tab
+      onTabChange(tab);
+
+      toast({
+        title: "All jobs deleted",
+        description: `All your ${status} jobs have been deleted.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to delete all jobs" });
+    }
+  };
+
   // update the status of a job and remove it from the list if necessary
   const updateListedJobStatus = async (jobId: number, newStatus: JobStatus) => {
     await updateJobStatus({ jobId, status: newStatus });
@@ -188,6 +252,18 @@ export function Home() {
       }
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
+    }
+  };
+
+  const onUpdateJobLabels = async (jobId: number, labels: JobLabel[]) => {
+    try {
+      const updatedJob = await updateJobLabels({ jobId, labels });
+      setListing((listing) => ({
+        ...listing,
+        jobs: listing.jobs.map((job) => (job.id === jobId ? updatedJob : job)),
+      }));
+    } catch (error) {
+      handleError({ error, title: "Failed to update job label" });
     }
   };
 
@@ -255,6 +331,22 @@ export function Home() {
     openExternalUrl(job.externalUrl);
   };
 
+  /**
+   * Download all jobs from the current tab as a CSV file.
+   */
+  const onCsvExport = async (tab: JobStatus) => {
+    try {
+      await exportJobsToCsv(tab);
+      toast({
+        title: "Jobs exported",
+        description: `All your ${tab} jobs have been exported to a CSV file.`,
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to export jobs" });
+    }
+  };
+
   if (isLoadingLinks) {
     return <Loading />;
   }
@@ -265,36 +357,61 @@ export function Home() {
 
   return (
     <DefaultLayout className="px-6 pt-6 md:px-10">
-      {/* <ReviewSuggestionPopup /> */}
-
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
         <TabsList className="w-full h-fit p-2">
-          <TabsTrigger value="new" className="px-6 py-2.5 flex-1">
-            <div className="w-full flex items-center pl-9">
-              <span className="flex-1">New Jobs {`(${listing.new})`}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`w-8 ${
-                  status === "new"
-                    ? "opacity-100 transition-all duration-300"
-                    : "opacity-0 pointer-events-none"
-                }`}
-                onClick={(evt) => {
-                  evt.preventDefault();
-                  evt.stopPropagation();
-                  onTabChange("new");
-                }}
-              >
-                <ReloadIcon className="h-4 w-auto shrink-0 text-muted-foreground transition-transform duration-200" />
-              </Button>
-            </div>
+          <TabsTrigger
+            value="new"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "new" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "new" && <span className="w-6" />}
+            New Jobs {`(${listing.new})`}
+            {status === "new" && (
+              <TabActions
+                tab="new"
+                onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="applied" className="px-6 py-4 flex-1">
+          <TabsTrigger
+            value="applied"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "applied" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "applied" && <span className="w-6" />}
             Applied {`(${listing.applied})`}
+            {status === "applied" && (
+              <TabActions
+                tab="applied"
+                onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="archived" className="px-6 py-4 flex-1">
+          <TabsTrigger
+            value="archived"
+            className={`px-6 py-3.5 flex-1 flex items-center ${
+              status === "archived" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "archived" && <span className="w-6" />}
             Archived {`(${listing.archived})`}
+            {status === "archived" && (
+              <TabActions
+                tab="archived"
+                onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -316,7 +433,6 @@ export function Home() {
                         selectedJobId={selectedJobId}
                         hasMore={listing.hasMore}
                         parentContainerId="jobsList"
-                        onUpdateJobStatus={onUpdateJobStatus}
                         onLoadMore={onLoadMore}
                         onSelect={(job) => scanJobAndSelect(job)}
                       />
@@ -334,6 +450,10 @@ export function Home() {
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
                             }}
+                            onDelete={(j) => {
+                              onUpdateJobStatus(j.id, "deleted");
+                            }}
+                            onUpdateLabels={onUpdateJobLabels}
                             onView={onViewJob}
                           />
                           <JobDetails
@@ -399,5 +519,132 @@ function NoLinks() {
         </Link>
       </div>
     </DefaultLayout>
+  );
+}
+
+/**
+ * Tab actions component.
+ */
+function TabActions({
+  tab,
+  onTabChange,
+  onCsvExport,
+  onArchiveAll,
+  onDeleteAll,
+}: {
+  tab: JobStatus;
+  onTabChange: (tab: JobStatus) => void;
+  onCsvExport: (tab: JobStatus) => Promise<void>;
+  onArchiveAll: (tab: JobStatus) => Promise<void>;
+  onDeleteAll: (tab: JobStatus) => Promise<void>;
+}) {
+  const [isArchiveAllDialogOpen, setIsArchiveAllDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="w-6 h-6 focus-visible:outline-none focus-visible:ring-0"
+          onClick={(evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+          }}
+        >
+          <DotsVerticalIcon className="h-5 hover:h-6 transition-all duration-200 ease-in-out m-auto w-auto text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" className="space-y-1">
+          <DropdownMenuItem
+            className="cursor-pointer focus:bg-[#809966]/20"
+            onClick={() => onTabChange(tab)}
+          >
+            <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+            Refresh
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer focus:bg-secondary/30"
+            onClick={() => onCsvExport(tab)}
+          >
+            <DownloadIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+            CSV export
+          </DropdownMenuItem>
+          {tab !== "archived" && (
+            <DropdownMenuItem
+              className="cursor-pointer focus:bg-secondary/30"
+              onClick={() => setIsArchiveAllDialogOpen(true)}
+            >
+              <ArchiveIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+              Archive all
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            className="cursor-pointer bg-destructive/5 focus:bg-destructive/20"
+            onClick={() => setIsDeleteAllDialogOpen(true)}
+          >
+            <TrashIcon className="h-5 w-5 -ml-0.5 mr-2 inline-block mb-0.5 text-destructive" />
+            Delete all
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* archive all jobs confirm dialog */}
+      <AlertDialog open={isArchiveAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to archive all {tab} jobs?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone and all jobs will be moved to the
+              archived tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsArchiveAllDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsArchiveAllDialogOpen(false);
+                onArchiveAll(tab);
+              }}
+            >
+              <ArchiveIcon className="h-4 w-4 mr-2 inline-block" />
+              Archive All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* delete all jobs confirm dialog */}
+      <AlertDialog open={isDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to delete all {tab} jobs?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone, you won't ever see these jobs again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteAllDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                setIsDeleteAllDialogOpen(false);
+                onDeleteAll(tab);
+              }}
+            >
+              <TrashIcon className="h-5 w-5 mr-2 inline-block" />
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

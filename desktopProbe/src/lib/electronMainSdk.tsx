@@ -2,6 +2,7 @@ import { User } from "@supabase/supabase-js";
 import { JobScannerSettings } from "./types";
 import {
   Job,
+  JobLabel,
   JobSite,
   JobStatus,
   Link,
@@ -178,6 +179,19 @@ export async function updateJobStatus({
 }
 
 /**
+ * Update the labels of a job.
+ */
+export async function updateJobLabels({
+  jobId,
+  labels,
+}: {
+  jobId: number;
+  labels: JobLabel[];
+}): Promise<Job> {
+  return await _mainProcessApiCall("update-job-labels", { jobId, labels });
+}
+
+/**
  * List all sites.
  */
 export async function listSites() {
@@ -258,4 +272,26 @@ export async function getJobById(jobId: number): Promise<Job> {
     jobId,
   });
   return job;
+}
+
+/**
+ * Export all jobs with the given status to a CSV file.
+ */
+export async function exportJobsToCsv(status: JobStatus): Promise<void> {
+  await _mainProcessApiCall<{ fileName: string }>("export-jobs-csv", {
+    status,
+  });
+}
+
+/**
+ * Change the status of all jobs from one status to another.
+ */
+export async function changeAllJobsStatus({
+  from,
+  to,
+}: {
+  from: JobStatus;
+  to: JobStatus;
+}): Promise<void> {
+  await _mainProcessApiCall("change-all-job-status", { from, to });
 }
