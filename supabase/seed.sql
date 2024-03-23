@@ -116,7 +116,7 @@ on public.reviews
 as permissive 
 for select 
 to authenticated 
-using (auth.uid() = user_id) 
+using (auth.uid() = user_id);
 
 create policy "enable all for users based on user_id" 
 on public.html_dumps 

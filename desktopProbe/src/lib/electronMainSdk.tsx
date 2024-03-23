@@ -21,6 +21,13 @@ async function _mainProcessApiCall<T>(
 }
 
 /**
+ * Get the currently used operating system.
+ */
+export async function getOS(): Promise<NodeJS.Platform> {
+  return await _mainProcessApiCall("get-os-type", {});
+}
+
+/**
  * Create a new account with email and password.
  */
 export async function signupWithEmail({
