@@ -15,6 +15,17 @@ export enum SiteProvider {
   robertHalf = "robertHalf",
 }
 
+export const JOB_LABELS = {
+  CONSIDERING: "Considering",
+  SUBMITTED: "Submitted",
+  INTERVIEWING: "Interviewing",
+  OFFER: "Offer",
+  REJECTED: "Rejected",
+  GHOSTED: "Ghosted",
+} as const;
+
+export type JobLabel = (typeof JOB_LABELS)[keyof typeof JOB_LABELS];
+
 export type JobSite = {
   id: number;
   provider: SiteProvider;
@@ -36,7 +47,7 @@ export type Link = {
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
-export type JobStatus = "new" | "applied" | "archived";
+export type JobStatus = "new" | "applied" | "archived" | "deleted";
 export type Job = {
   id: number;
   user_id: string;
@@ -58,6 +69,7 @@ export type Job = {
   description?: string;
 
   status: JobStatus;
+  labels: JobLabel[];
 
   created_at: Date;
   updated_at: Date;
@@ -111,7 +123,10 @@ export type DbSchema = {
           | "jobType"
           | "status"
         >;
-        Update: Pick<Job, "status"> | Pick<Job, "description">;
+        Update:
+          | Pick<Job, "status">
+          | Pick<Job, "description">
+          | Pick<Job, "labels">;
       };
       reviews: {
         Row: Review;

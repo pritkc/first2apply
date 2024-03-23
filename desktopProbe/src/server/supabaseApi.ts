@@ -7,6 +7,7 @@ import {
 import {
   DbSchema,
   Job,
+  JobLabel,
   JobStatus,
   Link,
   Review,
@@ -212,6 +213,31 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Update the labels of a job.
+   * @returns the updated job
+   */
+  async updateJobLabels({
+    jobId,
+    labels,
+  }: {
+    jobId: string;
+    labels: JobLabel[];
+  }) {
+    const [updatedJob] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("jobs")
+          .update({
+            labels,
+          })
+          .eq("id", jobId)
+          .select("*")
+    );
+
+    return updatedJob;
+  }
+
+  /**
    * List all sites.
    */
   listSites() {
@@ -228,6 +254,21 @@ export class F2aSupabaseApi {
       this._supabase.from("jobs").select("*").eq("id", jobId)
     );
     return job;
+  }
+
+  /**
+   * Change the status of all jobs with a certain status to another status.
+   */
+  async changeAllJobStatus({ from, to }: { from: JobStatus; to: JobStatus }) {
+    return this._supabaseApiCall(async () =>
+      this._supabase
+        .from("jobs")
+        .update({
+          status: to,
+          updated_at: luxon.DateTime.now().toUTC().toJSDate(),
+        })
+        .eq("status", from)
+    );
   }
 
   /**
