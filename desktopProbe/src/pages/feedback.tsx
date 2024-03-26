@@ -42,7 +42,7 @@ const MICROSOFT_APP_URL = "ms-windows-store://pdp/?productid=9NK18WV87SV2";
 const StarIcon = ({ filled = false }) => (
   <svg
     className={`h-6 w-6 ${
-      filled ? "text-primary" : "text-gray-400"
+      filled ? "text-primary" : "text-border"
     } transition-colors`}
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
@@ -168,20 +168,17 @@ export function FeedbackPage() {
     <DefaultLayout className="p-6 md:p-10 space-y-3">
       <h1 className="text-2xl font-medium tracking-wide pb-3">Feedback</h1>
 
-      <Card>
+      <Card className="rounded-lg">
         <CardHeader>
-          <CardTitle>Help us make First 2 Apply better</CardTitle>
-          {/* <CardDescription>Card Description</CardDescription> */}
-        </CardHeader>
-        <CardContent>
-          <p>
+          <h2 className="text-xl font-medium">
+            Help us make First 2 Apply better
+          </h2>
+          <p className="text-muted-foreground text-sm text-balance">
             Let us know what works, what doesn't or any ideas you might have
             that would make the app better suited to your job hunting needs.
           </p>
-        </CardContent>
-        <CardFooter>
           {userOS === "win32" && (
-            <p>
+            <p className="text-muted-foreground text-sm text-balance my-2">
               If you're enjoying First 2 Apply, please consider leaving a review
               on the{" "}
               <a
@@ -196,100 +193,101 @@ export function FeedbackPage() {
               .
             </p>
           )}
-        </CardFooter>
+        </CardHeader>
+
+        <CardContent className="py-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="rating"
+                render={() => (
+                  <FormItem className="w-full">
+                    <FormControl>
+                      <RadioGroup
+                        value={String(rating)}
+                        onValueChange={(value) =>
+                          setValue("rating", Number(value))
+                        }
+                        className="flex items-center"
+                      >
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const value = index + 1;
+                          return (
+                            <Item
+                              key={value}
+                              value={String(value)}
+                              onMouseEnter={() => setHoveredValue(value)}
+                              onMouseLeave={() => setHoveredValue(0)}
+                            >
+                              <label className="cursor-pointer">
+                                <StarIcon
+                                  filled={value <= (hoveredValue || rating)}
+                                />
+                              </label>
+                            </Item>
+                          );
+                        })}
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input id="title" type="title" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>
+                      Description <i>(Optional)</i>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="description"
+                        className="resize-none mb-4"
+                        rows={6}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                disabled={!form.formState.isValid || isSubmitting}
+                size="lg"
+                className="text-base"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Icons.spinner2 className="animate-spin h-4 w-4" />
+                    Submitting review...
+                  </>
+                ) : existingReview ? (
+                  "Update review"
+                ) : (
+                  "Submit review"
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
       </Card>
-
-      <section className="p-6 border border-[#809966]/30 rounded-lg">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="rating"
-              render={() => (
-                <FormItem className="w-full">
-                  <FormControl>
-                    <RadioGroup
-                      value={String(rating)}
-                      onValueChange={(value) =>
-                        setValue("rating", Number(value))
-                      }
-                      className="flex items-center "
-                    >
-                      {Array.from({ length: 5 }, (_, index) => {
-                        const value = index + 1;
-                        return (
-                          <Item
-                            key={value}
-                            value={String(value)}
-                            onMouseEnter={() => setHoveredValue(value)}
-                            onMouseLeave={() => setHoveredValue(0)}
-                          >
-                            <label className="cursor-pointer">
-                              <StarIcon
-                                filled={value <= (hoveredValue || rating)}
-                              />
-                            </label>
-                          </Item>
-                        );
-                      })}
-                    </RadioGroup>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem className="w-full mt-6">
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input id="title" type="title" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="w-full mt-6">
-                  <FormLabel>
-                    Description <i>(Optional)</i>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      id="description"
-                      className="resize-none mb-4"
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              disabled={!form.formState.isValid || isSubmitting}
-              className="flex justify-center items-center gap-2 mt-6"
-            >
-              {isSubmitting ? (
-                <>
-                  <Icons.spinner2 className="animate-spin h-4 w-4" />
-                  Submitting review...
-                </>
-              ) : existingReview ? (
-                "Update review"
-              ) : (
-                "Submit review"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </section>
     </DefaultLayout>
   );
 }
