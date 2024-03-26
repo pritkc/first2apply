@@ -103,10 +103,10 @@ export function JobSummary({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-6 lg:mt-10">
+      <div className="flex flex-wrap gap-2 mt-6 lg:mt-10">
         {job.status !== "applied" && (
           <Button
-            // size="lg"
+            size="lg"
             className="w-24 text-sm"
             onClick={() => {
               onApply(job);
@@ -117,7 +117,7 @@ export function JobSummary({
         )}
         {job.status !== "archived" && (
           <Button
-            // size="lg"
+            size="lg"
             variant="secondary"
             className="w-24 text-sm"
             onClick={() => {
@@ -128,14 +128,23 @@ export function JobSummary({
           </Button>
         )}
 
-        <Button variant="outline" onClick={() => onView(job)}>
-          <ExternalLinkIcon className="h-8" />
+        <Button
+          size="lg"
+          variant="secondary"
+          className="w-10 px-0 border-none bg-border hover:bg-foreground/20 focus:bg-foreground/20 transition-colors duration-200 ease-in-out"
+          onClick={() => onView(job)}
+        >
+          <ExternalLinkIcon className="h-4 w-auto" />
         </Button>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">
-              <TrashIcon className="h-8" />
+            <Button
+              size="lg"
+              variant="destructive"
+              className="w-10 px-0 bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
+            >
+              <TrashIcon className="h-5 w-auto text-destructive" />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
