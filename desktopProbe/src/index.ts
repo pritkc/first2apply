@@ -10,6 +10,7 @@ import {
 import path from "path";
 import { ENV } from "./env";
 import fs from "fs";
+import Storage from "electron-store";
 
 import { createClient } from "@supabase/supabase-js";
 import { DbSchema } from "../../supabase/functions/_shared/types";
@@ -36,6 +37,10 @@ if (require("electron-squirrel-startup")) {
 
 const APP_PROTOCOL = "first2apply";
 let appIsRunning = false;
+const storage = new Storage<{
+  width: number;
+  height: number;
+}>({ defaults: { width: 1024, height: 800 } });
 
 // register the custom protocol
 if (process.defaultApp) {
@@ -55,8 +60,8 @@ const createMainWindow = (): void => {
   if (mainWindow) return;
   const theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
   mainWindow = new BrowserWindow({
-    height: 800,
-    width: 1024,
+    width: storage.get("width"),
+    height: storage.get("height"),
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       additionalArguments: [theme],
@@ -346,6 +351,9 @@ async function quit() {
 
     autoUpdater.stop();
     logger.info(`stopped auto updater`);
+
+    storage.set("width", mainWindow?.getSize()[0] || 1024);
+    storage.set("height", mainWindow?.getSize()[1] || 800);
 
     mainWindow?.removeAllListeners();
     logger.info(`removed all main window listeners`);
