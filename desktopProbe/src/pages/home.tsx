@@ -555,7 +555,7 @@ function TabActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" className="space-y-1">
           <DropdownMenuItem
-            className="cursor-pointer focus:bg-[#809966]/20"
+            className="cursor-pointer focus:bg-secondary/40"
             onClick={() => onTabChange(tab)}
           >
             <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
@@ -563,7 +563,7 @@ function TabActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer focus:bg-secondary/30"
+            className="cursor-pointer focus:bg-secondary/40"
             onClick={() => onCsvExport(tab)}
           >
             <DownloadIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
@@ -571,7 +571,7 @@ function TabActions({
           </DropdownMenuItem>
           {tab !== "archived" && (
             <DropdownMenuItem
-              className="cursor-pointer focus:bg-secondary/30"
+              className="cursor-pointer focus:bg-secondary/40"
               onClick={() => setIsArchiveAllDialogOpen(true)}
             >
               <ArchiveIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
