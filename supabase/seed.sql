@@ -58,7 +58,7 @@ public.reviews (
   created_at timestamp with time zone not null default now(),
   user_id uuid not null default auth.uid (),
   title text not null,
-  description text not null,
+  description text null,
   rating integer not null,
   constraint reviews_pkey primary key (id),
   constraint reviews_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
@@ -111,6 +111,13 @@ as permissive
 for insert 
 to authenticated 
 with check (auth.uid() = user_id);
+
+create policy "enable update reviews for authenticated users only"
+on public.reviews
+as permissive
+for update
+to authenticated
+using (auth.uid() = user_id);
 
 create policy "enable select reviews for authenticated users only" 
 on public.reviews 

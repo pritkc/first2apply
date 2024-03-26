@@ -27,7 +27,7 @@ import { HelpPage } from "./pages/help";
 import { Toaster } from "./components/ui/toaster";
 import { ForgotPasswordPage } from "./pages/forgotPassword";
 import { ResetPasswordPage } from "./pages/resetPassword";
-import { ReviewPage } from "./pages/review";
+import { FeedbackPage } from "./pages/feedback";
 
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
@@ -60,8 +60,8 @@ const router = createMemoryRouter(
         element={<AuthGuardedComponent component={HelpPage} />}
       />
       <Route
-        path="/review"
-        element={<AuthGuardedComponent component={ReviewPage} />}
+        path="/feedback"
+        element={<AuthGuardedComponent component={FeedbackPage} />}
       />
 
       <Route path="/login" element={<LoginPage />} />
