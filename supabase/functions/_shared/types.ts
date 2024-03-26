@@ -75,6 +75,14 @@ export type Job = {
   updated_at: Date;
 };
 
+export type Review = {
+  id: number;
+  user_id: string;
+  title: string;
+  description?: string;
+  rating: number;
+  created_at: Date;
+};
 export type HtmlDump = {
   id: number;
   user_id: string;
@@ -119,6 +127,11 @@ export type DbSchema = {
           | Pick<Job, "status">
           | Pick<Job, "description">
           | Pick<Job, "labels">;
+      };
+      reviews: {
+        Row: Review;
+        Insert: Pick<Review, "title" | "description" | "rating">;
+        Update: Pick<Review, "title" | "description" | "rating">;
       };
       html_dumps: {
         Row: HtmlDump;
