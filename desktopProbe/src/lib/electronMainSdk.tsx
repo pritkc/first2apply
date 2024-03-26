@@ -6,6 +6,7 @@ import {
   JobSite,
   JobStatus,
   Link,
+  Review,
 } from "../../../supabase/functions/_shared/types";
 
 async function _mainProcessApiCall<T>(
@@ -17,6 +18,13 @@ async function _mainProcessApiCall<T>(
   if (error) throw new Error(error);
 
   return data;
+}
+
+/**
+ * Get the currently used operating system.
+ */
+export async function getOS(): Promise<NodeJS.Platform> {
+  return await _mainProcessApiCall("get-os-type", {});
 }
 
 /**
@@ -235,6 +243,54 @@ export async function scanJob(job: Job): Promise<Job> {
     { job }
   );
   return updatedJob;
+}
+
+/**
+ * Create a user review.
+ */
+export async function createReview({
+  title,
+  description,
+  rating,
+}: {
+  title: string;
+  description: string;
+  rating: number;
+}): Promise<Review> {
+  return await _mainProcessApiCall("create-user-review", {
+    title,
+    description,
+    rating,
+  });
+}
+
+/**
+ * Get a user review.
+ */
+export async function getUserReview(): Promise<Review | null> {
+  return await _mainProcessApiCall("get-user-review", {});
+}
+
+/**
+ * Update a user review.
+ */
+export async function updateReview({
+  id,
+  title,
+  description,
+  rating,
+}: {
+  id: number;
+  title: string;
+  description: string;
+  rating: number;
+}): Promise<Review> {
+  return await _mainProcessApiCall("update-user-review", {
+    id,
+    title,
+    description,
+    rating,
+  });
 }
 
 /**
