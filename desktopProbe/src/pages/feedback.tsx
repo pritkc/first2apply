@@ -180,7 +180,7 @@ export function FeedbackPage() {
           </p>
         </CardContent>
         <CardFooter>
-          {userOS !== "win32" && (
+          {userOS === "win32" && (
             <p>
               If you're enjoying First 2 Apply, please consider leaving a review
               on the{" "}
