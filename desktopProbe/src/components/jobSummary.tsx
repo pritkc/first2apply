@@ -131,7 +131,7 @@ export function JobSummary({
         <Button
           size="lg"
           variant="secondary"
-          className="w-10 px-0 border-none bg-border hover:bg-foreground/20 focus:bg-foreground/20 transition-colors duration-200 ease-in-out"
+          className="w-10 px-0 border-none bg-border hover:bg-foreground/15 focus:bg-foreground/15 transition-colors duration-200 ease-in-out"
           onClick={() => onView(job)}
         >
           <ExternalLinkIcon className="h-4 w-auto" />
