@@ -21,8 +21,12 @@ export const LinksListSkeleton: FC = () => {
               {/* Avatar */}
               <Skeleton className="w-12 h-12 rounded-full" />
 
-              {/* Title */}
-              <Skeleton className="h-5 w-64" />
+              <div>
+                {/* Site name */}
+                <Skeleton className="h-2 mb-1 w-32" />
+                {/* Title */}
+                <Skeleton className="h-5 w-64" />
+              </div>
             </div>
 
             {/* URL */}
