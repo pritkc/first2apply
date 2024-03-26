@@ -57,9 +57,11 @@ export function JobSummarySkeleton() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-6 lg:mt-10">
+      <div className="flex flex-wrap gap-2 mt-6 lg:mt-10">
         <Skeleton className="w-24 h-10" />
         <Skeleton className="w-24 h-10" />
+        <Skeleton className="w-10 h-10" />
+        <Skeleton className="w-10 h-10" />
         <Skeleton className="w-[148px] lg:ml-auto h-10" />
       </div>
     </div>
