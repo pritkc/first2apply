@@ -79,7 +79,7 @@ export type Review = {
   id: number;
   user_id: string;
   title: string;
-  description: string;
+  description?: string;
   rating: number;
   created_at: Date;
 };
@@ -130,6 +130,8 @@ export type DbSchema = {
       };
       reviews: {
         Row: Review;
+        Insert: Pick<Review, "title" | "description" | "rating">;
+        Update: Pick<Review, "title" | "description" | "rating">;
       };
       html_dumps: {
         Row: HtmlDump;

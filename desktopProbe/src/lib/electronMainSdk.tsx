@@ -256,8 +256,8 @@ export async function createReview({
   title: string;
   description: string;
   rating: number;
-}): Promise<void> {
-  await _mainProcessApiCall("create-review", {
+}): Promise<Review> {
+  return await _mainProcessApiCall("create-user-review", {
     title,
     description,
     rating,
@@ -267,8 +267,30 @@ export async function createReview({
 /**
  * Get a user review.
  */
-export async function getUserReview(): Promise<Review[]> {
+export async function getUserReview(): Promise<Review | null> {
   return await _mainProcessApiCall("get-user-review", {});
+}
+
+/**
+ * Update a user review.
+ */
+export async function updateReview({
+  id,
+  title,
+  description,
+  rating,
+}: {
+  id: number;
+  title: string;
+  description: string;
+  rating: number;
+}): Promise<Review> {
+  return await _mainProcessApiCall("update-user-review", {
+    id,
+    title,
+    description,
+    rating,
+  });
 }
 
 /**

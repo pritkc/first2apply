@@ -30,8 +30,8 @@ const navItems = [
     icon: <GearIcon className="w-7 h-7" />,
   },
   {
-    name: "Review",
-    path: "/review",
+    name: "Feedback",
+    path: "/feedback",
     icon: <ChatBubbleIcon className="w-7 h-7" />,
   },
   {

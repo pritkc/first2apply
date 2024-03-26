@@ -122,13 +122,21 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle(
-    "create-review",
+    "create-user-review",
     async (event, { title, description, rating }) =>
       _apiCall(() => supabaseApi.createReview({ title, description, rating }))
   );
 
   ipcMain.handle("get-user-review", async (event) =>
     _apiCall(async () => supabaseApi.getUserReview())
+  );
+
+  ipcMain.handle(
+    "update-user-review",
+    async (event, { id, title, description, rating }) =>
+      _apiCall(async () =>
+        supabaseApi.updateReview({ id, title, description, rating })
+      )
   );
 
   ipcMain.handle("get-job-by-id", async (event, { jobId }) =>

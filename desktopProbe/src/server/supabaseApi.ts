@@ -322,22 +322,59 @@ export class F2aSupabaseApi {
     description: string;
     rating: number;
   }) {
-    return this._supabaseApiCall(
+    const [createdReview] = await this._supabaseApiCall(
       async () =>
-        await this._supabase.from("reviews").insert({
-          title,
-          description,
-          rating,
-        })
+        await this._supabase
+          .from("reviews")
+          .insert({
+            title: title.trim(),
+            description: description.trim(),
+            rating,
+          })
+          .select("*")
     );
+
+    return createdReview;
   }
 
   /**
    * Get user's review.
    */
   async getUserReview() {
-    return this._supabaseApiCall(
+    const [review] = await this._supabaseApiCall(
       async () => await this._supabase.from("reviews").select("*")
     );
+
+    return review;
+  }
+
+  /**
+   * Update a user review.
+   */
+  async updateReview({
+    id,
+    title,
+    description,
+    rating,
+  }: {
+    id: number;
+    title: string;
+    description: string;
+    rating: number;
+  }) {
+    const [updatedReview] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("reviews")
+          .update({
+            title: title.trim(),
+            description: description.trim(),
+            rating,
+          })
+          .eq("id", id)
+          .select("*")
+    );
+
+    return updatedReview;
   }
 }
