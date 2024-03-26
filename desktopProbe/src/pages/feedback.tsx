@@ -23,6 +23,7 @@ import {
   createReview,
   getOS,
   getUserReview,
+  openExternalUrl,
   updateReview,
 } from "../lib/electronMainSdk";
 import { DefaultLayout } from "./defaultLayout";
@@ -36,8 +37,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const MICROSOFT_APP_URL =
-  "https://apps.microsoft.com/detail/9nk18wv87sv2?hl=en-US&gl=US";
+const MICROSOFT_APP_URL = "ms-windows-store://pdp/?productid=9NK18WV87SV2";
 
 const StarIcon = ({ filled = false }) => (
   <svg
@@ -149,6 +149,13 @@ export function FeedbackPage() {
     }
   };
 
+  /**
+   * Open the Windows Store page in the Store app.
+   */
+  const openWindowsStore = () => {
+    openExternalUrl(MICROSOFT_APP_URL);
+  };
+
   if (isLoading) {
     return (
       <DefaultLayout className="p-6 md:p-10 space-y-3">
@@ -177,9 +184,16 @@ export function FeedbackPage() {
             <p>
               If you're enjoying First 2 Apply, please consider leaving a review
               on the{" "}
-              <a href={MICROSOFT_APP_URL} target="_blank" rel="noreferrer">
+              <a
+                className="text-primary underline hover:no-underline hover:text-primary-dark hover:cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openWindowsStore();
+                }}
+              >
                 Microsoft Store
               </a>
+              .
             </p>
           )}
         </CardFooter>
