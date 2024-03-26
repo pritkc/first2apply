@@ -61,7 +61,7 @@ export function JobsList({
                     </p>
 
                     <div
-                      className={`text-xs leading-3 rounded-md px-2 py-1 bg-opacity-80 dark:bg-opacity-60 text-white ${
+                      className={`text-xs text-center leading-3 rounded-md w-[85px] py-1 bg-opacity-80 dark:bg-opacity-60 text-white ${
                         LABEL_COLOR_CLASSES[job.labels[0]]
                       }`}
                     >
