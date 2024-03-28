@@ -3,7 +3,7 @@ import Image from "next/image";
 import trackBlackImage from "../../public/assets/trackBlack.png";
 import trackWhiteImage from "../../public/assets/trackWhite.png";
 import screenshotLight from "../../public/assets/screenshotLight.png";
-import screenshotDark from "../../public/assets/screenshotDark.png";
+import screenshotDark from "../../public/assets/job-labels.png";
 import { Button } from "@/components/ui/button";
 import { QuoteIcon } from "@radix-ui/react-icons";
 
@@ -25,9 +25,9 @@ export default function Home() {
           </a>
         </div>
         <h1 className="z-50 text-5xl lg:text-6xl font-semibold text-nowrap">
-          Never miss a job
+          New job alerts from
           <br />
-          opportunity again.
+          10+ most popular sites.
         </h1>
 
         <Button className="w-full max-w-72 lg:max-w-96 h-12 lg:h-14 text-xl lg:text-2xl text-background">
@@ -37,21 +37,20 @@ export default function Home() {
 
       <section className="relative h-[50vh] bg-gradient-to-t from-muted dark:from-card/60 to-muted/40 dark:to-card/20">
         <div className="max-w-7xl mx-auto px-10 pt-4">
-          <p className="text-sm text-foreground/70 max-w-[500px] text-balance">
-            Let <span className="text-foreground">first 2 apply</span> transform
-            your job search. Track new openings from multiple platforms in one
-            place, and manage your applications effortlessly.
+          <p className="text-base text-foreground/70">
+            Stop waisting time manually browsing LinkedIn, Indeed, Dice or other
+            job boards.
           </p>
 
           <Image
             src={trackBlackImage}
             alt="paperfly track black"
-            className="z-50 dark:hidden absolute top-0 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-50 dark:hidden absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
           />
           <Image
             src={trackWhiteImage}
             alt="paperfly track white"
-            className="z-50 hidden dark:block absolute top-0 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-50 hidden dark:block absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
           />
         </div>
       </section>
