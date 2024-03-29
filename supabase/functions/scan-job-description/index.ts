@@ -55,17 +55,15 @@ Deno.serve(async (req) => {
     let updatedJob = job;
     const hasUpdates = Object.values(jd).some((v) => v !== undefined);
     if (hasUpdates) {
-      const { data, error: updateJobErr } = await supabaseClient
+      const { error: updateJobErr } = await supabaseClient
         .from("jobs")
         .update({ description: jd.content })
-        .eq("id", jobId)
-        .select("*");
+        .eq("id", jobId);
       if (updateJobErr) {
         throw updateJobErr;
       }
 
-      const updatedJobWithNewData = data?.[0];
-      updatedJob = updatedJobWithNewData;
+      updatedJob = { ...job, description: jd.content };
     } else {
       console.log(
         "no JD details extracted from the html, this could be a problem with the parser"
