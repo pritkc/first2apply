@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
 
 import { Job } from "../../../supabase/functions/_shared/types";
+import { useState } from "react";
+import { DeleteJobDialog } from "./deleteJobDialog";
 
 export function JobsList({
   jobs,
@@ -34,6 +36,8 @@ export function JobsList({
   onDelete: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
+
+  const [jobToDelete, setJobToDelete] = useState<Job | undefined>();
 
   return (
     <InfiniteScroll
@@ -87,8 +91,9 @@ export function JobsList({
                         <Button
                           variant="secondary"
                           className="w-[22px] h-[22px] px-0 bg-transparent"
-                          onClick={() => {
+                          onClick={(evt) => {
                             onArchive(job);
+                            evt.stopPropagation();
                           }}
                         >
                           <ArchiveIcon className="text-foreground w-fit min-h-4" />
@@ -97,7 +102,11 @@ export function JobsList({
                       <Button
                         variant="destructive"
                         className="w-[22px] h-[22px] px-0 bg-transparent hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
-                        onClick={() => onDelete(job)}
+                        onClick={(evt) => {
+                          // onDelete(job);
+                          setJobToDelete(job);
+                          evt.stopPropagation();
+                        }}
                       >
                         <TrashIcon className="h-5 w-auto text-destructive" />
                       </Button>
@@ -111,6 +120,14 @@ export function JobsList({
           );
         })}
       </ul>
+      {jobToDelete && (
+        <DeleteJobDialog
+          isOpen={!!jobToDelete}
+          job={jobToDelete}
+          onClose={() => setJobToDelete(undefined)}
+          onDelete={onDelete}
+        />
+      )}
     </InfiniteScroll>
   );
 }
