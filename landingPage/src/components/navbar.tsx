@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { scrollToSection } from "@/utils/scrollToSection";
+import { Button } from "./ui/button";
 import Image from "next/image";
 import logoBlack from "../../public/assets/logo-black.png";
-import { Button } from "./ui/button";
-import { scrollToSection } from "@/utils/scrollToSection";
 
 const menuItems = [
   { name: "Product", id: "product" },
@@ -13,6 +15,7 @@ const menuItems = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +30,17 @@ export function Navbar() {
     };
   }, []);
 
+  const handleMenuItemClick = (id: string, onNavigate?: () => void) => {
+    if (router.pathname === "/") {
+      scrollToSection(id);
+      if (onNavigate) {
+        onNavigate();
+      }
+    } else {
+      router.push(`/#${id}`);
+    }
+  };
+
   return (
     <>
       {/* Mobile menu */}
@@ -37,7 +51,7 @@ export function Navbar() {
       >
         <button
           className="flex items-center gap-3"
-          onClick={() => scrollToSection("product")}
+          onClick={() => handleMenuItemClick("product")}
         >
           <Image
             src={logoBlack}
@@ -91,22 +105,16 @@ export function Navbar() {
             <button
               key={item.id}
               className="text-xl font-medium"
-              onClick={() => {
-                scrollToSection(item.id);
-                setIsOpen(!isOpen);
-              }}
+              onClick={() =>
+                handleMenuItemClick(item.id, () => setIsOpen(false))
+              }
             >
               {item.name}
             </button>
           ))}
-          <Button
-            className="h-10 px-3 -ml-3 -mt-2 text-xl"
-            onClick={() => {
-              setIsOpen(!isOpen);
-            }}
-          >
-            Download
-          </Button>
+          <Link href="/download" passHref>
+            <Button className="h-10 px-3 -ml-3 -mt-2 text-xl">Download</Button>
+          </Link>
         </dialog>
       </nav>
 
@@ -119,7 +127,7 @@ export function Navbar() {
         <div className="flex items-center justify-between w-full max-w-7xl h-full mx-auto px-10">
           <button
             className="flex items-center gap-3"
-            onClick={() => scrollToSection("product")}
+            onClick={() => handleMenuItemClick("product")}
           >
             <Image
               src={logoBlack}
@@ -139,12 +147,14 @@ export function Navbar() {
               <button
                 key={item.id}
                 className="relative text-[17px] font-medium tracking-wide hover:text-primary after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1"
-                onClick={() => scrollToSection(item.id)}
+                onClick={() => handleMenuItemClick(item.id)}
               >
                 {item.name}
               </button>
             ))}
-            <Button className="h-10 px-3">Download</Button>
+            <Link href="/download" passHref>
+              <Button className="h-10 px-3">Download</Button>
+            </Link>
           </div>
         </div>
       </nav>

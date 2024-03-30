@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DefaultLayout } from "@/components/defaultLayout";
 import { Button } from "@/components/ui/button";
 import { QuoteIcon } from "@radix-ui/react-icons";
@@ -12,7 +13,7 @@ export default function Home() {
     <DefaultLayout>
       <section
         id="product"
-        className="max-w-7xl h-[calc(50vh-56px)] md:h-[calc(50vh-64px)] mx-auto px-6 sm:px-10 w-full flex flex-col md:flex-row items-start md:items-end justify-end md:justify-between md:gap-10 lg:gap-20"
+        className="w-full max-w-7xl h-[calc(50vh-56px)] md:h-[calc(50vh-64px)] mx-auto px-6 sm:px-10 flex flex-col md:flex-row items-start md:items-end justify-end md:justify-between md:gap-10 lg:gap-20"
       >
         <div id="embed02" className="absolute top-20 md:top-[calc(25vh-27px)]">
           <a
@@ -39,10 +40,13 @@ export default function Home() {
           job boards.
         </h2>
 
-        <Button className="w-full max-w-72 lg:max-w-96 h-12 lg:h-14 text-xl lg:text-2xl self-center md:self-end my-[calc(10vh-64px)] md:my-0">
-          Try it&nbsp;<span className="hidden lg:inline-block">now&nbsp;</span>
-          for free
-        </Button>
+        <Link href="/download" passHref className="self-center md:self-end">
+          <Button className="w-full max-w-72 lg:max-w-96 h-12 lg:h-14 text-xl lg:text-2xl my-[calc(10vh-64px)] md:my-0">
+            Try it&nbsp;
+            <span className="md:hidden lg:inline-block">now&nbsp;</span>
+            for free
+          </Button>
+        </Link>
       </section>
 
       <section className="hidden md:block relative h-[50vh] bg-gradient-to-t from-muted dark:from-card/60 to-background">
@@ -65,7 +69,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="md:relative md:-top-[20vh] max-w-5xl mx-auto rounded-2xl">
+      <section
+        id="help"
+        className="md:relative md:-top-[20vh] max-w-5xl mx-auto rounded-2xl"
+      >
         <Image
           src={screenshotLight}
           alt="app homepage light"
@@ -85,12 +92,12 @@ export default function Home() {
       </section>
 
       <section className="bg-muted dark:bg-card/60">
-        <div className="max-w-5xl mx-auto pt-40 pb-24">
-          <QuoteIcon className="w-16 h-16 text-foreground/80" />
-          <p className="text-xl px-16 text-balance">
+        <div className="max-w-7xl mx-auto pt-20 sm:pt-40 pb-10 sm:pb-24 px-1 md:px-10">
+          <QuoteIcon className="w-10 h-10 sm:w-16 sm:h-16 text-foreground/80" />
+          <p className="px-10 sm:px-16 text-2xl sm:text-3xl font-medium text-balance">
             Helped me find a job within a few days of installing!
-            <br />
-            <br />
+          </p>
+          <p className="px-10 sm:px-16 pt-4 text-xl sm:text-2xl text-pretty">
             After being able to only send out about 5-10 applications a day,
             which usually took me about 3 hours of parsing through a bunch of
             suggestions that simply weren't relevant to me, this app immensely
@@ -101,9 +108,9 @@ export default function Home() {
             within the first 5) to a particular job, which I am sure was
             instrumental in me then landing that position!
           </p>
-          <QuoteIcon className="w-16 h-16 text-foreground/80 ml-auto" />
+          <QuoteIcon className="w-10 h-10 sm:w-16 sm:h-16 text-foreground/80 ml-auto" />
 
-          <p className="mt-12 text-right font-semibold text-base leading-5">
+          <p className="mt-5 sm:mt-12 text-base leading-5 text-right font-medium pr-10 sm:pr-16">
             Source: MS Store Reviews
           </p>
         </div>
