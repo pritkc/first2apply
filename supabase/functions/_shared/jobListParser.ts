@@ -273,6 +273,7 @@ export function parseLinkedInJobs({
       companyName,
       companyLogo,
       location,
+      labels: [],
     };
   });
 
@@ -379,6 +380,7 @@ export function parseRemoteOkJobs({
       location,
       salary,
       tags,
+      labels: [],
     };
   });
 
@@ -481,6 +483,7 @@ export function parseWeWorkRemotelyJobs({
       companyLogo,
       jobType: "remote",
       location,
+      labels: [],
     };
   });
 
@@ -579,6 +582,7 @@ export function parseGlassDoorJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -696,6 +700,7 @@ export function parseIndeedJobs({
       jobType,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -778,6 +783,7 @@ export function parseDiceJobs({
       companyName,
       companyLogo,
       location,
+      labels: [],
     };
   });
 
@@ -856,6 +862,7 @@ export function parseFlexjobsJobs({
       location,
       jobType,
       description,
+      labels: [],
     };
   });
 
@@ -943,6 +950,7 @@ export function parseBestjobsJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -1031,6 +1039,7 @@ export function parseEchojobsJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -1121,6 +1130,7 @@ export function parseRemotiveJobs({
       companyLogo,
       jobType: "remote",
       location,
+      labels: [],
     };
   });
 
@@ -1220,6 +1230,7 @@ export function parseRemoteioJobs({
       jobType: "remote",
       location,
       tags,
+      labels: [],
     };
   });
 
@@ -1307,6 +1318,7 @@ export function parseBuiltinJobs({
       companyLogo,
       // jobType,
       location,
+      labels: [],
     };
   });
 
@@ -1378,6 +1390,7 @@ export function parseNaukriJobs({
       companyName,
       location,
       tags,
+      labels: [],
     };
   });
 
@@ -1470,6 +1483,7 @@ export function parseRobertHalfJobs({
       jobType,
       description,
       tags,
+      labels: [],
     };
   });
 
