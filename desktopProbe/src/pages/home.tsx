@@ -435,6 +435,12 @@ export function Home() {
                         parentContainerId="jobsList"
                         onLoadMore={onLoadMore}
                         onSelect={(job) => scanJobAndSelect(job)}
+                        onArchive={(j) => {
+                          onUpdateJobStatus(j.id, "archived");
+                        }}
+                        onDelete={(j) => {
+                          onUpdateJobStatus(j.id, "deleted");
+                        }}
                       />
                     </div>
 

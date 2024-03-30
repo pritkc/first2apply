@@ -5,6 +5,9 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Icons } from "@/components/icons";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+
+import { ArchiveIcon, TrashIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
@@ -18,6 +21,8 @@ export function JobsList({
   parentContainerId,
   onLoadMore,
   onSelect,
+  onArchive,
+  onDelete,
 }: {
   jobs: Job[];
   selectedJobId?: number;
@@ -25,6 +30,8 @@ export function JobsList({
   parentContainerId: string;
   onLoadMore: () => void;
   onSelect: (job: Job) => void;
+  onArchive: (job: Job) => void;
+  onDelete: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
 
@@ -68,12 +75,33 @@ export function JobsList({
                       {job.labels[0]}
                     </div>
                   </div>
-                  <p className="leading-5 tracking-wide">{job.title}</p>
+                  <p className="leading-5 tracking-wide mt-0.5">{job.title}</p>
 
                   <div className="flex items-center gap-1.5 mt-3 flex-wrap">
                     {job.location && <Badge>{job.location}</Badge>}
                     {job.jobType && <Badge>{job.jobType}</Badge>}
                     {job.salary && <Badge>{job.salary}</Badge>}
+
+                    <div className="ml-auto flex items-center gap-2">
+                      {job.status !== "archived" && (
+                        <Button
+                          variant="secondary"
+                          className="w-[22px] h-[22px] px-0 bg-transparent"
+                          onClick={() => {
+                            onArchive(job);
+                          }}
+                        >
+                          <ArchiveIcon className="text-foreground w-fit min-h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="destructive"
+                        className="w-[22px] h-[22px] px-0 bg-transparent hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
+                        onClick={() => onDelete(job)}
+                      >
+                        <TrashIcon className="h-5 w-auto text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
