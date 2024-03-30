@@ -1,6 +1,7 @@
 import { app, autoUpdater, Notification, shell } from "electron";
 
 import { schedule, ScheduledTask } from "node-cron";
+import * as semver from "semver";
 
 import { getExceptionMessage } from "../lib/error";
 import { IAnalyticsClient } from "@/lib/analytics";
@@ -47,10 +48,8 @@ export class F2aAutoUpdater {
     private _onQuit: () => Promise<void>,
     private _analytics: IAnalyticsClient
   ) {
-    // only enable auto-updates in packaged apps and not for windows
-    this._canAutoUpdate =
-      app.isPackaged &&
-      (process.platform === "darwin" || process.platform === "linux");
+    // only enable auto-updates in packaged apps
+    this._canAutoUpdate = app.isPackaged;
     this._feedUrl = `${S3_BUCKET}/${process.platform}/${process.arch}/RELEASES.json`;
   }
 
@@ -144,9 +143,9 @@ export class F2aAutoUpdater {
           release_name: releaseName,
         });
 
-        // on linux we can't apply the update automatically, so just open the download page
+        // on linux/win32 we can't apply the update automatically, so just open the download page
         // and let the user install it manually
-        if (process.platform === "linux") {
+        if (process.platform !== "darwin") {
           shell.openExternal(updateURL);
           return;
         }
@@ -179,7 +178,8 @@ export class F2aAutoUpdater {
 
       if (process.platform === "darwin") {
         autoUpdater.checkForUpdates();
-      } else if (process.platform === "linux") {
+      } else {
+        // manually check for updates on other platforms
         await this._checkForUpdatesManually();
       }
     } catch (error) {
@@ -208,7 +208,7 @@ export class F2aAutoUpdater {
     // check if the current version is the latest
     const currentVersion = app.getVersion();
     const latestVersion = releasesJson.currentRelease;
-    if (latestVersion !== currentVersion) {
+    if (semver.gt(latestVersion, currentVersion)) {
       this._logger.info(`new version available: ${latestVersion}`);
 
       // find the release metadata the latest version
