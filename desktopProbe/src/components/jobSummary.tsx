@@ -22,17 +22,9 @@ import {
 } from "./ui/select";
 
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "./ui/alert-dialog";
+
+import { DeleteJobDialog } from "./deleteJobDialog";
+import React from "react";
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -56,6 +48,8 @@ export function JobSummary({
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
   onView: (job: Job) => void;
 }) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
   return (
     <div className="border border-muted rounded-lg p-4 lg:p-6">
       <div className="flex justify-between items-start gap-4 lg:gap-6">
@@ -137,37 +131,20 @@ export function JobSummary({
           <ExternalLinkIcon className="h-4 w-auto" />
         </Button>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              size="lg"
-              variant="destructive"
-              className="w-10 px-0 bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
-            >
-              <TrashIcon className="h-5 w-auto text-destructive" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Are you sure you want to delete this job?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete this
-                job and you won't be able to see it again.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/90"
-                onClick={() => onDelete(job)}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          size="lg"
+          variant="destructive"
+          className="w-10 px-0 bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
+          onClick={() => setIsDeleteDialogOpen(true)}
+        >
+          <TrashIcon className="h-5 w-auto text-destructive" />
+        </Button>
+        <DeleteJobDialog
+          isOpen={isDeleteDialogOpen}
+          job={job}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          onDelete={onDelete}
+        />
 
         <div className="lg:ml-auto">
           <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
