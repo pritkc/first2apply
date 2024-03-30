@@ -90,9 +90,11 @@ export class JobScanner {
             .loadUrl(link.url, 5)
             .catch((error) => {
               const errorMessage = getExceptionMessage(error);
-              this._logger.error(`failed to download html: ${errorMessage}`, {
-                linkId: link.id,
-              });
+
+              if (this._isRunning)
+                this._logger.error(`failed to download html: ${errorMessage}`, {
+                  linkId: link.id,
+                });
               return `<html><body class="f2a-error">${errorMessage}<body><html>`;
             });
 
@@ -169,11 +171,13 @@ export class JobScanner {
 
               return updatedJob;
             } catch (error) {
+              if (this._isRunning)
+                this._logger.error(getExceptionMessage(error), {
+                  jobId: job.id,
+                });
+
               // intetionally return initial job if there is an error
               // in order to continue scanning the rest of the jobs
-              this._logger.error(getExceptionMessage(error), {
-                jobId: job.id,
-              });
               return job;
             }
           })

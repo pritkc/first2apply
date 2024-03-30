@@ -23,7 +23,7 @@ export class HtmlDownloader {
    * Initialize the headless window.
    */
   init() {
-    this._pool = new BrowserWindowPool(5);
+    this._pool = new BrowserWindowPool(2);
     this._isRunning = true;
   }
 
@@ -94,6 +94,7 @@ export class HtmlDownloader {
         }
       },
       {
+        jitter: "full",
         numOfAttempts: 20,
         maxDelay: 5_000,
         retry: () => {
