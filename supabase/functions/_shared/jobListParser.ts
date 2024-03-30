@@ -604,9 +604,9 @@ export function parseIndeedJobs({
   if (!document) throw new Error("Could not parse html");
 
   // check if the list is empty first
-  const noResultsNode = document.querySelector(
-    ".jobsearch-NoResult-messageContainer"
-  );
+  const noResultsNode =
+    document.querySelector(".jobsearch-NoResult-messageContainer") ||
+    document.querySelector(".css-1z0pyms.e1wnkr790"); // this is from the individual company page
   if (noResultsNode) {
     return {
       jobs: [],
