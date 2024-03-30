@@ -1,17 +1,20 @@
 import { DefaultLayout } from "@/components/defaultLayout";
-import Image from "next/image";
-import trackBlackImage from "../../public/assets/trackBlack.png";
-import trackWhiteImage from "../../public/assets/trackWhite.png";
-import screenshotLight from "../../public/assets/screenshotLight.png";
-import screenshotDark from "../../public/assets/job-labels.png";
 import { Button } from "@/components/ui/button";
 import { QuoteIcon } from "@radix-ui/react-icons";
+import Image from "next/image";
+import trackBlackImage from "../../public/assets/track-black.png";
+import trackWhiteImage from "../../public/assets/track-white.png";
+import screenshotLight from "../../public/assets/screenshot-light.png";
+import screenshotDark from "../../public/assets/screenshot-dark.png";
 
 export default function Home() {
   return (
     <DefaultLayout>
-      <section className="max-w-7xl h-[50vh] mx-auto px-10 w-full flex items-end justify-between gap-20 pt-[calc(50vh-96px)] lg:pt-[calc(50vh-120px)]">
-        <div id="embed02" className="absolute top-10">
+      <section
+        id="product"
+        className="max-w-7xl h-[calc(50vh-56px)] md:h-[calc(50vh-64px)] mx-auto px-6 sm:px-10 w-full flex flex-col md:flex-row items-start md:items-end justify-end md:justify-between md:gap-10 lg:gap-20"
+      >
+        <div id="embed02" className="absolute top-20 md:top-[calc(25vh-27px)]">
           <a
             href="https://www.producthunt.com/posts/first-2-apply?utm_source=badge-featured&amp;utm_medium=badge&amp;utm_souce=badge-first-2-apply"
             target="_blank"
@@ -24,38 +27,45 @@ export default function Home() {
             />
           </a>
         </div>
-        <h1 className="z-50 text-5xl lg:text-6xl font-semibold text-nowrap">
-          New job alerts from
-          <br />
+
+        <h1 className="z-10 text-3xl sm:text-5xl lg:text-6xl font-semibold md:text-nowrap">
+          New job alerts from&nbsp;
+          <br className="hidden md:inline-block" />
           10+ most popular sites.
         </h1>
 
-        <Button className="w-full max-w-72 lg:max-w-96 h-12 lg:h-14 text-xl lg:text-2xl text-background">
-          Try it now for free
+        <h2 className="md:hidden text-sm text-foreground/70 mt-2">
+          Stop waisting time manually browsing LinkedIn, Indeed, Dice or other
+          job boards.
+        </h2>
+
+        <Button className="w-full max-w-72 lg:max-w-96 h-12 lg:h-14 text-xl lg:text-2xl self-center md:self-end my-[calc(10vh-64px)] md:my-0">
+          Try it&nbsp;<span className="hidden lg:inline-block">now&nbsp;</span>
+          for free
         </Button>
       </section>
 
-      <section className="relative h-[50vh] bg-gradient-to-t from-muted dark:from-card/60 to-muted/40 dark:to-card/20">
-        <div className="max-w-7xl mx-auto px-10 pt-4">
-          <p className="text-base text-foreground/70">
+      <section className="hidden md:block relative h-[50vh] bg-gradient-to-t from-muted dark:from-card/60 to-background">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 pt-3">
+          <h2 className="text-sm lg:text-base text-foreground/70">
             Stop waisting time manually browsing LinkedIn, Indeed, Dice or other
             job boards.
-          </p>
+          </h2>
 
           <Image
             src={trackBlackImage}
             alt="paperfly track black"
-            className="z-50 dark:hidden absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-10 dark:hidden absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
           />
           <Image
             src={trackWhiteImage}
             alt="paperfly track white"
-            className="z-50 hidden dark:block absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-10 hidden dark:block absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
           />
         </div>
       </section>
 
-      <section className="relative -top-[20vh] max-w-5xl mx-auto rounded-2xl">
+      <section className="md:relative md:-top-[20vh] max-w-5xl mx-auto rounded-2xl">
         <Image
           src={screenshotLight}
           alt="app homepage light"
@@ -68,7 +78,7 @@ export default function Home() {
         />
       </section>
 
-      <section className="max-w-7xl mx-auto px-10 min-h-screen">
+      <section className="max-w-7xl mx-auto px-6 sm:px-10 min-h-screen">
         <h2 className="text-4xl font-semibold text-center">
           Stay Ahead of the Competition with First 2 Apply
         </h2>
