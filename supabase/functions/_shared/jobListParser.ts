@@ -619,7 +619,9 @@ export function parseIndeedJobs({
     };
   }
 
-  const jobsList = document.querySelector("#mosaic-jobResults ul");
+  const jobsList =
+    document.querySelector("#mosaic-jobResults ul") ||
+    document.querySelector("#mosaic-provider-jobcards ul");
   if (!jobsList) {
     return {
       jobs: [],
