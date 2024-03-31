@@ -191,7 +191,9 @@ function parseIndeedJobDescription({ html }: { html: string }): JobDescription {
     //   .replace(/<b>/gi, "<strong>")
     //   .replace(/<\/b>/gi, "</strong>");
 
-    description = turndownService.turndown(descriptionContainer.innerHTML);
+    description = turndownService
+      .turndown(descriptionContainer.innerHTML)
+      .replace(/\*\s\s\n/gi, "*");
   }
 
   return {

@@ -641,15 +641,20 @@ export function parseIndeedJobs({
 
     const externalHref = jobLinkEl?.getAttribute("href")?.trim();
     if (!externalHref) return null;
-    const externalUrl = `https://www.indeed.com${externalHref}`;
+
+    let externalUrl = `https://www.indeed.com${externalHref}`;
+    if (externalHref === "#") {
+      const jk = jobLinkEl?.getAttribute("data-jk")?.trim();
+      externalUrl = `https://www.indeed.com/viewjob?jk=${jk}`;
+    }
 
     const title = jobLinkEl?.querySelector("span")?.textContent?.trim() || "";
     if (!title) return null;
 
     const companyEl = el.querySelector(".company_location");
-    const companyName = companyEl
-      ?.querySelector(":scope > div > span")
-      ?.textContent?.trim();
+    const companyName =
+      companyEl?.querySelector(":scope > div > span")?.textContent?.trim() ||
+      document.querySelector(".css-19rjr9w.e1wnkr790")?.textContent?.trim();
     if (!companyName) return null;
 
     let location = companyEl
