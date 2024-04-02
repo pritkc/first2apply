@@ -815,7 +815,7 @@ export function parseFlexjobsJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector(".sc-14nyru2-1.bcguRu");
+  const jobsList = document.querySelector(".sc-14nyru2-1.gfTJgV");
   if (!jobsList)
     return {
       jobs: [],
@@ -824,14 +824,14 @@ export function parseFlexjobsJobs({
     };
 
   const jobElements = Array.from(
-    jobsList.querySelectorAll("div.sc-jv5lm6-0.kSiIaQ")
+    jobsList.querySelectorAll("div.sc-jv5lm6-0.eTfIRI")
   ) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el?.getAttribute("id")?.trim();
     if (!externalId) return null;
 
-    const externalUrlEl = el.querySelector("a.sc-jv5lm6-11.jTLbwZ");
+    const externalUrlEl = el.querySelector(`a#job-name-${externalId}`);
     if (!externalUrlEl) return null;
     const externalUrl = `https://www.flexjobs.com${externalUrlEl
       .getAttribute("href")
