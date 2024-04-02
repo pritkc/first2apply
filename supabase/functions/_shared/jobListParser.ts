@@ -654,7 +654,9 @@ export function parseIndeedJobs({
     const companyEl = el.querySelector(".company_location");
     const companyName =
       companyEl?.querySelector(":scope > div > span")?.textContent?.trim() ||
-      document.querySelector(".css-19rjr9w.e1wnkr790")?.textContent?.trim();
+      document
+        .querySelector("h1[data-testid=PageHeader-title-jobs]")
+        ?.textContent?.trim();
     if (!companyName) return null;
 
     let location = companyEl
