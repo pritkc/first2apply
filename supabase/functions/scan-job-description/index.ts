@@ -36,6 +36,14 @@ Deno.serve(async (req) => {
     if (!job) {
       throw new Error(`Job not found: ${jobId}`);
     }
+
+    // return the job if the description is already set
+    if (job.description) {
+      return new Response(JSON.stringify({ job }), {
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
+    }
+
     const { data: site, error: findSiteErr } = await supabaseClient
       .from("sites")
       .select("*")
