@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="w-full h-fit px-6 sm:px-10 py-20 bg-secondary dark:bg-card">
+    <footer className="w-full h-fit px-6 sm:px-10 pt-20 pb-8 bg-secondary dark:bg-card">
       <div className="max-w-7xl h-fit mx-auto">
         <div className="w-fit mx-auto flex items-center gap-4 xs:gap-6">
           <a href="https://twitter.com/first2apply">
@@ -256,7 +256,7 @@ export function Footer() {
           </Link>
         </div>
 
-        <p className="mt-10 text-center text-muted-foreground">
+        <p className="mt-7 text-sm text-center text-muted-foreground">
           © {new Date().getFullYear()} First 2 Apply. All Rights Reserved.
         </p>
       </div>

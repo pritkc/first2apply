@@ -1,19 +1,10 @@
 import { DefaultLayout } from "@/components/defaultLayout";
 import { Button } from "@/components/ui/button";
-import { GlobeIcon } from "@radix-ui/react-icons";
-import Image from "next/image";
-import logoBlack from "../../public/assets/logo-black.png";
 
 export default function Download() {
   return (
     <DefaultLayout>
       <section className="w-full max-w-7xl min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)] mx-auto px-6 sm:px-10 pb-14 md:pb-16 flex flex-col items-center justify-center">
-        {/* <Image src={logoBlack} alt="logo" className="w-auto h-28 dark:hidden" /> */}
-        {/* <Image
-              src={logoWhite}
-              alt="logo"
-              className="w-auto h-7 hidden dark:block"
-            /> */}
         <h1 className="w-full text-3xl sm:text-5xl lg:text-6xl font-semibold sm:text-center text-balance">
           Download First 2 Apply
         </h1>
