@@ -237,21 +237,40 @@ export function Home() {
     });
   };
 
+  // select the next job in the list
+  const selectNextJob = (jobId: number) => {
+    const currentJobIndex = listing.jobs.findIndex((job) => job.id === jobId);
+    const nextJob =
+      listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
+    if (nextJob) {
+      scanJobAndSelect(nextJob);
+    } else {
+      setSelectedJobId(null);
+    }
+  };
+
   const onUpdateJobStatus = async (jobId: number, newStatus: JobStatus) => {
     try {
       await updateListedJobStatus(jobId, newStatus);
-
-      // select the next job in the list
-      const currentJobIndex = listing.jobs.findIndex((job) => job.id === jobId);
-      const nextJob =
-        listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
-      if (nextJob) {
-        scanJobAndSelect(nextJob);
-      } else {
-        setSelectedJobId(null);
-      }
+      selectNextJob(jobId);
     } catch (error) {
       handleError({ error, title: "Failed to update job status" });
+    }
+  };
+
+  const onApplyToJob = async (job: Job) => {
+    try {
+      await openExternalUrl(job.externalUrl);
+      await updateJobLabels({ jobId: job.id, labels: ["Submitted"] });
+      await updateListedJobStatus(job.id, "applied");
+      selectNextJob(job.id);
+      toast({
+        title: "Job applied",
+        description: "The job has been automatically marked as applied.",
+        variant: "success",
+      });
+    } catch (error) {
+      handleError({ error, title: "Failed to apply to job" });
     }
   };
 
@@ -451,7 +470,7 @@ export function Home() {
                           <JobSummary
                             job={selectedJob}
                             onApply={(j) => {
-                              onUpdateJobStatus(j.id, "applied");
+                              onApplyToJob(j);
                             }}
                             onArchive={(j) => {
                               onUpdateJobStatus(j.id, "archived");
