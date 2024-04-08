@@ -117,27 +117,52 @@ export class F2aSupabaseApi {
   /**
    * Scan a list of htmls for new jobs.
    */
-  scanHtmls(htmls: { linkId: number; content: string }[]) {
+  scanHtmls(
+    htmls: {
+      linkId: number;
+      content: string;
+      maxRetries: number;
+      retryCount: number;
+    }[]
+  ) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ newJobs: Job[] }>("scan-urls", {
-        body: {
-          htmls,
-        },
-      })
+      this._supabase.functions.invoke<{ newJobs: Job[]; parseFailed: boolean }>(
+        "scan-urls",
+        {
+          body: {
+            htmls,
+          },
+        }
+      )
     );
   }
 
   /**
    * Scan HTML for a job description.
    */
-  scanJobDescription({ jobId, html }: { jobId: number; html: string }) {
+  scanJobDescription({
+    jobId,
+    html,
+    maxRetries,
+    retryCount,
+  }: {
+    jobId: number;
+    html: string;
+    maxRetries: number;
+    retryCount: number;
+  }) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ job: Job }>("scan-job-description", {
-        body: {
-          jobId,
-          html,
-        },
-      })
+      this._supabase.functions.invoke<{ job: Job; parseFailed: boolean }>(
+        "scan-job-description",
+        {
+          body: {
+            jobId,
+            html,
+            maxRetries,
+            retryCount,
+          },
+        }
+      )
     );
   }
 

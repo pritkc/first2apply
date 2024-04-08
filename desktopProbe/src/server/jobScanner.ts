@@ -86,32 +86,43 @@ export class JobScanner {
 
       const newJobs = await Promise.all(
         links.map(async (link) => {
-          const html = await this._htmlDownloader
-            .loadUrl(link.url, 5)
-            .catch((error) => {
+          const newJobs = await this._htmlDownloader
+            .loadUrl({
+              url: link.url,
+              scrollTimes: 5,
+              callback: async ({ html, maxRetries, retryCount }) => {
+                if (!this._isRunning) return []; // stop if the scanner is closed
+
+                const { newJobs, parseFailed } =
+                  await this._supabaseApi.scanHtmls([
+                    { linkId: link.id, content: html, maxRetries, retryCount },
+                  ]);
+
+                if (parseFailed) {
+                  this._logger.debug(
+                    `failed to parse html for link ${link.title}`,
+                    {
+                      linkId: link.id,
+                    }
+                  );
+
+                  throw new Error(`failed to parse html for link ${link.id}`);
+                }
+
+                return newJobs;
+              },
+            })
+            .catch((error): Job[] => {
               const errorMessage = getExceptionMessage(error);
 
               if (this._isRunning)
-                this._logger.error(`failed to download html: ${errorMessage}`, {
+                this._logger.error(`failed to scan link: ${errorMessage}`, {
                   linkId: link.id,
                 });
-              return `<html><body class="f2a-error">${errorMessage}<body><html>`;
-            });
 
-          if (!this._isRunning) return []; // stop if the scanner is closed
-
-          const { newJobs } = await this._supabaseApi
-            .scanHtmls([{ linkId: link.id, content: html }])
-            .catch((error) => {
               // intetionally return an empty array if there is an error
               // in order to continue scanning the rest of the links
-              this._logger.error(
-                `failed to scan html: ${getExceptionMessage(error)}`,
-                {
-                  linkId: link.id,
-                }
-              );
-              return { newJobs: [] };
+              return [];
             });
 
           return newJobs;
@@ -152,29 +163,51 @@ export class JobScanner {
         return Promise.all(
           chunkOfJobs.map(async (job) => {
             try {
-              const html = await this._htmlDownloader.loadUrl(
-                job.externalUrl,
-                1
-              );
-              this._logger.info(`downloaded html for ${job.title}`, {
-                jobId: job.id,
+              return await this._htmlDownloader.loadUrl({
+                url: job.externalUrl,
+                scrollTimes: 1,
+                callback: async ({ html, maxRetries, retryCount }) => {
+                  this._logger.info(`downloaded html for ${job.title}`, {
+                    jobId: job.id,
+                  });
+
+                  // stop if the scanner is closed
+                  if (!this._isRunning) return job;
+
+                  const { job: updatedJob, parseFailed } =
+                    await this._supabaseApi.scanJobDescription({
+                      jobId: job.id,
+                      html,
+                      maxRetries,
+                      retryCount,
+                    });
+
+                  if (parseFailed) {
+                    this._logger.debug(
+                      `failed to parse job description: ${job.title}`,
+                      {
+                        jobId: job.id,
+                      }
+                    );
+
+                    throw new Error(
+                      `failed to parse job description for ${job.id}`
+                    );
+                  }
+
+                  return updatedJob;
+                },
               });
-
-              // stop if the scanner is closed
-              if (!this._isRunning) return job;
-
-              const { job: updatedJob } =
-                await this._supabaseApi.scanJobDescription({
-                  jobId: job.id,
-                  html,
-                });
-
-              return updatedJob;
             } catch (error) {
               if (this._isRunning)
-                this._logger.error(getExceptionMessage(error), {
-                  jobId: job.id,
-                });
+                this._logger.error(
+                  `failed to scan job description: ${getExceptionMessage(
+                    error
+                  )}`,
+                  {
+                    jobId: job.id,
+                  }
+                );
 
               // intetionally return initial job if there is an error
               // in order to continue scanning the rest of the jobs
