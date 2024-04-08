@@ -29,13 +29,50 @@ export class HtmlDownloader {
 
   /**
    * Load the HTML of a given URL with concurrency support.
+   *
+   * Takes in a callback that will be called with the HTML content. Will be retried if it fails
+   * with a new version of the window's HTML. Using a callback instead of returning the HTML directly
+   * because we need to keep the window aquired until the callback is finished.
    */
-  async loadUrl(url: string, scrollTimes = 3) {
+  async loadUrl<T>({
+    url,
+    scrollTimes = 3,
+    callback,
+  }: {
+    url: string;
+    scrollTimes?: number;
+    callback: (_: {
+      html: string;
+      maxRetries: number;
+      retryCount: number;
+    }) => Promise<T>;
+  }): Promise<T> {
     if (!this._pool) throw new Error("Pool not initialized");
 
-    return this._pool.useBrowserWindow((window) =>
-      this._downloadHtml(window, url, scrollTimes)
-    );
+    return this._pool.useBrowserWindow(async (window) => {
+      await this._loadUrl(window, url, scrollTimes);
+
+      const maxRetries = 1;
+      let retryCount = 0;
+      return backOff(
+        async () => {
+          const html: string = await window.webContents.executeJavaScript(
+            "document.documentElement.innerHTML"
+          );
+          return callback({ html, maxRetries, retryCount: retryCount++ });
+        },
+        {
+          jitter: "full",
+          numOfAttempts: 1 + maxRetries,
+          maxDelay: 5_000,
+          startingDelay: 1_000,
+          retry: () => {
+            // perform retries only if the window is still running
+            return this._isRunning;
+          },
+        }
+      );
+    });
   }
 
   /**
@@ -47,16 +84,16 @@ export class HtmlDownloader {
   }
 
   /**
-   * Download the HTML of a given URL.
+   * Load an URL and make sure to wait for the page to load.
    */
-  private async _downloadHtml(
+  private async _loadUrl(
     window: BrowserWindow,
     url: string,
     scrollTimes: number
   ) {
     if (!this._isRunning) return "<html></html>";
 
-    this._logger.info(`downloading url: ${url} ...`);
+    this._logger.info(`loading url: ${url} ...`);
     await backOff(
       async () => {
         let statusCode: number | undefined;
@@ -88,7 +125,6 @@ export class HtmlDownloader {
             KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))
           ) {
             this._logger.debug(`authwall detected: ${finalUrl}`);
-            // await window.webContents.session.clearStorageData({});
             throw new Error("authwall");
           }
         }
@@ -104,13 +140,7 @@ export class HtmlDownloader {
       }
     );
 
-    const html: string = await window.webContents.executeJavaScript(
-      "document.documentElement.innerHTML"
-    );
-
-    this._logger.info(`finished downloading url: ${url}`);
-
-    return html;
+    this._logger.info(`finished loading url: ${url}`);
   }
 }
 

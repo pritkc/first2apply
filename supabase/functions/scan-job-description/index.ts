@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
       updatedJob = { ...job, description: jd.content };
     } else {
-      console.log(
+      console.error(
         "no JD details extracted from the html, this could be a problem with the parser"
       );
     }
