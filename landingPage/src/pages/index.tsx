@@ -14,11 +14,11 @@ export default function Home() {
     <DefaultLayout>
       <ProductSection />
       <ExplainerSection />
+      <FeedbackSection />
       <BenefitsSection />
       <AlertsSection />
       <OrganizationSection />
       <AdvancedMatchingSection />
-      <FeedbackSection />
       <PricingSection />
       <Faqs />
     </DefaultLayout>

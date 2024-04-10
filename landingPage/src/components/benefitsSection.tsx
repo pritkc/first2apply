@@ -29,7 +29,7 @@ export function BenefitsSection() {
     >
       <div className="w-full md:w-1/2">
         <h2 className="text-2xl font-semibold sm:text-4xl text-balance">
-          All Your Favorite Job Sites in One Place
+          More jobs, less hassle
         </h2>
 
         <p className="mt-2 sm:mt-4 text-balance">
@@ -37,17 +37,17 @@ export function BenefitsSection() {
           searching across multiple platforms can be overwhelming... Let First 2
           Apply automate the process, fetching roles from{" "}
           {showAllPlatforms
-            ? sites.join(", ")
+            ? `${sites.join(", ")}.`
             : `${sites.slice(0, 3).join(", ")}, and `}
           {!showAllPlatforms && (
             <button
               onClick={() => setShowAllPlatforms(true)}
               className="text-blue-500"
             >
-              {sites.length - 3} other job platforms
+              {sites.length - 3} other job platforms.
             </button>
-          )}
-          . Just sit back, relax and let us curate the perfect job list for you.
+          )}{" "}
+          Just sit back, relax and let us curate the perfect job list for you.
         </p>
       </div>
 
