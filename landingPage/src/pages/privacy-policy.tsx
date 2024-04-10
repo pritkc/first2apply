@@ -15,8 +15,8 @@ export default function PrivacyPolicy() {
           Introduction:
         </h3>
         <p>
-          Welcome to First 2 Apply's Privacy Policy. This policy outlines our
-          practices regarding the collection, use, and protection of your
+          Welcome to First 2 Apply&apos;s Privacy Policy. This policy outlines
+          our practices regarding the collection, use, and protection of your
           personal information. Understanding our approach to data privacy is
           crucial for you to make informed decisions about using our services.
           We are committed to maintaining your trust by handling your personal

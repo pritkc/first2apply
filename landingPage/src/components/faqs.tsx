@@ -41,7 +41,7 @@ export function Faqs() {
 
         <AccordionItem value="item-3" className="border-b-0 sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
-            Can it filter out jobs that I'm not interested in?
+            Can it filter out jobs that I&apos;m not interested in?
           </AccordionTrigger>
           <AccordionContent className="text-base font-light">
             Yes! LinkedIn can sometimes show you jobs that are not relevant to
@@ -59,26 +59,28 @@ export function Faqs() {
             If you close your computer, the app will temporarily pause its job
             search operations. It will automatically reactivate and continue
             searching for new jobs once you power on your computer again. For
-            uninterrupted service, we've included a setting in the app that can
-            keep your computer awake while the app is in use.
+            uninterrupted service, we&apos;ve included a setting in the app that
+            can keep your computer awake while the app is in use.
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="item-5" className="border-b-0 sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
-            How will I see new job alerts when I'm not in front on my computer?
+            How will I see new job alerts when I&apos;m not in front on my
+            computer?
           </AccordionTrigger>
           <AccordionContent className="text-base font-light">
             Currently, the app delivers real-time desktop notifications to alert
             you about new job postings. We understand the importance of staying
             informed while away from your computer, and we are actively
             developing an email notification feature. This forthcoming update
-            will ensure you receive timely job alerts, even when you're mobile.
+            will ensure you receive timely job alerts, even when you&apos;re
+            mobile.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
 
       <div className="mt-6 sm:mt-[10vh] flex justify-center items-center gap-4">
-        <p className="text-base">Didn't find what you need?</p>
+        <p className="text-base">Didn&apos;t find what you need?</p>
 
         <a
           href="mailto:dragos@first2apply.com"
