@@ -13,7 +13,7 @@ export function OrganizationSection() {
           Manage applications like a pro
         </h2>
 
-        <p className="mt-2 sm:mt-4 text-balance">
+        <p className="mt-2 sm:mt-4 text-balance sm:text-lg">
           Ditch the spreadsheets. First 2 Apply brings seamless organization to
           your job search, with intuitive labeling and tracking at each
           application stage, right within the app.

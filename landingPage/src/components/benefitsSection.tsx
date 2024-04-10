@@ -32,7 +32,7 @@ export function BenefitsSection() {
           More jobs, less hassle
         </h2>
 
-        <p className="mt-2 sm:mt-4 text-balance">
+        <p className="mt-2 sm:mt-4 text-balance sm:text-lg">
           Venture beyond LinkedIn to seize every opportunity. But manual
           searching across multiple platforms can be overwhelming... Let First 2
           Apply automate the process, fetching roles from{" "}
