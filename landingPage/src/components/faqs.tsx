@@ -27,7 +27,32 @@ export function Faqs() {
             servers for this task.
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem value="item-2" className="sm:py-2">
+
+        <AccordionItem value="item-2" className="border-b-0 sm:py-2">
+          <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
+            Does the app automatically apply to jobs for me?
+          </AccordionTrigger>
+          <AccordionContent className="text-base font-light">
+            No - the app does not apply to jobs on your behalf ... yet. We are
+            planning to add this feature in the future, but for now, the app is
+            designed to help you find more job opportunities.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-3" className="border-b-0 sm:py-2">
+          <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
+            Can it filter out jobs that I'm not interested in?
+          </AccordionTrigger>
+          <AccordionContent className="text-base font-light">
+            Yes! LinkedIn can sometimes show you jobs that are not relevant to
+            your search (even with the filters you set). With{" "}
+            <b>Advanced Filtering</b> the app allows you to filter out jobs
+            based on keywords in job titles, companies or even the job
+            description.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-4" className="sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
             What happens if I close my computer?
           </AccordionTrigger>
@@ -39,7 +64,7 @@ export function Faqs() {
             keep your computer awake while the app is in use.
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem value="item-3" className="border-b-0 sm:py-2">
+        <AccordionItem value="item-5" className="border-b-0 sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
             How will I see new job alerts when I'm not in front on my computer?
           </AccordionTrigger>
