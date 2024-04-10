@@ -31,7 +31,10 @@ export function ProductSection() {
         </h1>
 
         <h2 className="md:hidden text-sm text-foreground/70 mt-2">
-          Stop waisting time manually browsing LinkedIn, Indeed, Dice or other
+          Land more interviews by being the first to know when new jobs are
+          posted.
+          <br />
+          Stop wasting time manually browsing LinkedIn, Indeed, Dice or other
           job boards.
         </h2>
 
@@ -46,8 +49,11 @@ export function ProductSection() {
 
       <div className="hidden md:block relative h-[50vh] bg-gradient-to-t from-muted dark:from-card/60 to-background">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 pt-3">
-          <h2 className="text-sm lg:text-base text-foreground/70">
-            Stop waisting time manually browsing LinkedIn, Indeed, Dice or other
+          <h2 className="text-md lg:text-lg text-foreground/70">
+            Land more interviews by being the first to know when new jobs are
+            posted.
+            <br />
+            Stop wasting time manually browsing LinkedIn, Indeed, Dice or other
             job boards.
           </h2>
 
