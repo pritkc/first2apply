@@ -3,13 +3,11 @@ import Link from "next/link";
 import Image from "next/image";
 import trackBlackImage from "../../public/assets/track-black.png";
 import trackWhiteImage from "../../public/assets/track-white.png";
-import homepageLight from "../../public/assets/homepage-light.png";
-import homepageDark from "../../public/assets/homepage-dark.png";
 
 export function ProductSection() {
   return (
     <section id="product">
-      <div className="w-full max-w-7xl h-[calc(50vh-56px)] md:h-[calc(50vh-64px)] mx-auto px-6 sm:px-10 flex flex-col md:flex-row items-start md:items-end justify-end md:justify-between md:gap-10 lg:gap-20">
+      <div className="w-full max-w-7xl h-[calc(55vh-56px)] md:h-[calc(50vh-64px)] mx-auto px-6 sm:px-10 flex flex-col md:flex-row items-start md:items-end justify-end md:justify-between md:gap-10 lg:gap-20">
         <div id="embed02" className="absolute top-20 md:top-[calc(25vh-27px)]">
           <a
             href="https://www.producthunt.com/posts/first-2-apply?utm_source=badge-featured&amp;utm_medium=badge&amp;utm_souce=badge-first-2-apply"
@@ -32,8 +30,8 @@ export function ProductSection() {
 
         <h2 className="md:hidden text-sm text-foreground/70 mt-2">
           Land more interviews by being the first to know when new jobs are
-          posted.
-          <br />
+          posted.&nbsp;
+          <br className="hidden sm:inline-block" />
           Stop wasting time manually browsing LinkedIn, Indeed, Dice or other
           job boards.
         </h2>
@@ -72,19 +70,16 @@ export function ProductSection() {
         </div>
       </div>
 
-      <div className="md:relative md:-top-[20vh] max-w-5xl mx-auto rounded-2xl">
-        <Image
-          src={homepageLight}
-          alt="app homepage light"
-          priority={true}
-          className="dark:hidden w-full h-auto"
-        />
-        <Image
-          src={homepageDark}
-          alt="app homepage dark"
-          priority={true}
-          className="hidden dark:block w-full h-auto"
-        />
+      <div className="md:relative md:-top-[20vh] mx-auto max-w-5xl min-h-fit overflow-hidden px-6 md:px-10">
+        <iframe
+          className="h-[250px] xs:h-[350px] sm:h-[500px] md:h-[550px] lg:h-[662px] rounded-2xl shadow-lg"
+          width="100%"
+          height="720"
+          src="https://www.youtube.com/embed/hllcJSWBLA4?si=fncyozEeydbHb_zq"
+          title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        ></iframe>
       </div>
     </section>
   );
