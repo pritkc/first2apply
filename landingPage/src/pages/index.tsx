@@ -8,6 +8,7 @@ import { AdvancedMatchingSection } from "@/components/advancedMatchingSection";
 import { FeedbackSection } from "@/components/feedbackSection";
 import { PricingSection } from "@/components/pricingSection";
 import { Faqs } from "@/components/faqs";
+import { BottomCta } from "@/components/bottomCta";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
       <OrganizationSection />
       <AdvancedMatchingSection />
       <PricingSection />
+      <BottomCta />
       <Faqs />
     </DefaultLayout>
   );
