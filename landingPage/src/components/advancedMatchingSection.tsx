@@ -14,8 +14,8 @@ export function AdvancedMatchingSection() {
         </h2>
         <p className="mt-2 sm:mt-4 text-balance md:text-right sm:text-lg">
           Fed up with irrelevant listings? Set your preferences to exclude
-          specific tech stacks or companies. First 2 Apply's refined filtering
-          means you only see the jobs that truly match your criteria.
+          specific tech stacks or companies. First 2 Apply&apos;s refined
+          filtering means you only see the jobs that truly match your criteria.
         </p>
       </div>
 

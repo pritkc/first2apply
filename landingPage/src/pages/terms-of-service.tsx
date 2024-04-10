@@ -79,14 +79,14 @@ export default function TermsOfService() {
 
         <h3 className="mt-[5vh] text-lg font-medium">Service Availability:</h3>
         <p>
-          First 2 Apply's service is primarily available through our desktop
-          application. Users should note that job alerts are operational when
-          the application is running and the computer is on. We strive to ensure
-          reliable service but cannot guarantee uninterrupted availability due
-          to factors like software updates, maintenance, or user's computer
-          settings. We are constantly working to enhance service reliability and
-          may introduce additional features, like email notifications, to
-          improve the user experience.
+          First 2 Apply&apos;s service is primarily available through our
+          desktop application. Users should note that job alerts are operational
+          when the application is running and the computer is on. We strive to
+          ensure reliable service but cannot guarantee uninterrupted
+          availability due to factors like software updates, maintenance, or
+          user&apos;s computer settings. We are constantly working to enhance
+          service reliability and may introduce additional features, like email
+          notifications, to improve the user experience.
         </p>
 
         <h3 className="mt-[5vh] text-lg font-medium">Changes and Updates:</h3>
@@ -106,12 +106,13 @@ export default function TermsOfService() {
         </h3>
         <p>
           First 2 Apply does not guarantee employment, job placement, or job
-          availability. The service is provided 'as-is', and while we strive to
-          maintain accurate and timely job alerts, we do not warrant the
-          completeness or accuracy of the information provided. First 2 Apply
-          shall not be liable for any decisions, actions, or inactions taken
-          based on the information provided by our service. Users are advised to
-          conduct their due diligence and verify job details independently.
+          availability. The service is provided &apos;as-is&apos;, and while we
+          strive to maintain accurate and timely job alerts, we do not warrant
+          the completeness or accuracy of the information provided. First 2
+          Apply shall not be liable for any decisions, actions, or inactions
+          taken based on the information provided by our service. Users are
+          advised to conduct their due diligence and verify job details
+          independently.
         </p>
       </section>
     </DefaultLayout>
