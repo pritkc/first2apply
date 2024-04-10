@@ -161,8 +161,8 @@ export function PricingSection() {
       </Tabs>
 
       <p className="mt-[5vh] text-xl sm:text-2xl font-medium text-center text-balance">
-        Since we haven't implemented payments yet, feel free to use the app free
-        of charge for now :)
+        Since we haven&apos;t implemented payments yet, feel free to use the app
+        free of charge for now :)
       </p>
     </section>
   );
