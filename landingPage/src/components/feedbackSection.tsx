@@ -45,7 +45,7 @@ export function FeedbackSection() {
         <p className="px-10 sm:px-16 text-2xl sm:text-3xl font-medium text-balance">
           {currentReview.title}
         </p>
-        <p className="px-10 sm:px-16 pt-4 text-base sm:text-lg text-justify">
+        <p className="px-10 sm:px-16 pt-4 text-base sm:text-lg sm:text-justify">
           {currentReview.details}
         </p>
         <QuoteIcon className="ml-auto w-10 sm:w-16 h-10 sm:h-16 text-foreground/80" />
