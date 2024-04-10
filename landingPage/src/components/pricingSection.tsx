@@ -69,7 +69,7 @@ export function PricingSection() {
       <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold md:text-center">
         Pricing Plans
       </h2>
-      <p className="md:text-center text-xs mt-1">
+      <p className="mt-1 text-xs tracking-wide md:text-center">
         7 day trial included (no credit card required)
       </p>
       <p className="mt-[3vh] sm:mt-[5vh] mb-3 text-center">Billing Period</p>
