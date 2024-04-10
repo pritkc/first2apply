@@ -46,9 +46,8 @@ export function Faqs() {
           <AccordionContent className="text-base font-light">
             Yes! LinkedIn can sometimes show you jobs that are not relevant to
             your search (even with the filters you set). With{" "}
-            <b>Advanced Filtering</b> the app allows you to filter out jobs
-            based on keywords in job titles, companies or even the job
-            description.
+            <b>Advanced Matching</b> the app allows you to filter out jobs based
+            on keywords in job titles, companies or even the job description.
           </AccordionContent>
         </AccordionItem>
 
