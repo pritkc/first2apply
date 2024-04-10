@@ -69,6 +69,9 @@ export function PricingSection() {
       <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold md:text-center">
         Pricing Plans
       </h2>
+      <p className="md:text-center text-xs mt-1">
+        7 day trial included (no credit card required)
+      </p>
       <p className="mt-[3vh] sm:mt-[5vh] mb-3 text-center">Billing Period</p>
       <Tabs defaultValue={tabs[0]} className="flex flex-col items-center">
         <TabsList className="w-fit">
@@ -78,6 +81,7 @@ export function PricingSection() {
               value={tab}
               onClick={() => {
                 setSelectedTab(tab);
+                console.log(tab);
               }}
             >
               {tab}
@@ -92,52 +96,48 @@ export function PricingSection() {
                 <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
               <CardContent className="md:p-8 md:pt-2">
-                <TabsContent value={selectedTab}>
-                  <p>
-                    <span className="text-2xl md:text-3xl font-semibold">
-                      $
-                    </span>
-                    <span className="text-4xl md:text-5xl font-bold">
+                <p>
+                  <span className="text-2xl md:text-3xl font-semibold">$</span>
+                  <span className="text-4xl md:text-5xl font-bold">
+                    {
+                      (
+                        plan[
+                          selectedTab.toLowerCase() as keyof PricingPlan
+                        ] as PriceDetail
+                      ).pricePerMonth
+                    }
+                  </span>
+                  <span className="text-sm"> /month</span>
+                  {selectedTab !== "Monthly" && (
+                    <div className="ml-4 inline-block relative">
+                      <span className="text-2xl md:text-3xl text-muted-foreground/30 font-semibold">
+                        $
+                      </span>
+                      <span className="text-4xl md:text-5xl text-muted-foreground/30 font-bold">
+                        {plan.monthly.pricePerMonth}
+                      </span>
+                      <span className="text-sm text-muted-foreground/30">
+                        /month
+                      </span>
+                      <div className="absolute top-5 md:top-7 w-full border border-t-1 border-muted-foreground/30 dark:border-muted-foreground/60 rotate-12"></div>
+                    </div>
+                  )}
+                </p>
+                <p className="mt-1 sm:mt-2 h-6 text-muted-foreground">
+                  {selectedTab !== "Monthly" && (
+                    <>
+                      Pay $
                       {
                         (
                           plan[
                             selectedTab.toLowerCase() as keyof PricingPlan
                           ] as PriceDetail
-                        ).pricePerMonth
-                      }
-                    </span>
-                    <span className="text-sm"> /month</span>
-                    {selectedTab !== "Monthly" && (
-                      <div className="ml-4 inline-block relative">
-                        <span className="text-2xl md:text-3xl text-muted-foreground/30 font-semibold">
-                          $
-                        </span>
-                        <span className="text-4xl md:text-5xl text-muted-foreground/30 font-bold">
-                          {plan.monthly.pricePerMonth}
-                        </span>
-                        <span className="text-sm text-muted-foreground/30">
-                          /month
-                        </span>
-                        <div className="absolute top-5 md:top-7 w-full border border-t-1 border-muted-foreground/30 dark:border-muted-foreground/60 rotate-12"></div>
-                      </div>
-                    )}
-                  </p>
-                  <p className="mt-1 sm:mt-2 h-6 text-muted-foreground">
-                    {selectedTab !== "Monthly" && (
-                      <>
-                        Pay $
-                        {
-                          (
-                            plan[
-                              selectedTab.toLowerCase() as keyof PricingPlan
-                            ] as PriceDetail
-                          ).total
-                        }{" "}
-                        {selectedTab.toLowerCase()}
-                      </>
-                    )}
-                  </p>
-                </TabsContent>
+                        ).total
+                      }{" "}
+                      {selectedTab.toLowerCase()}
+                    </>
+                  )}
+                </p>
               </CardContent>
               <CardFooter className="md:p-8 md:pt-0">
                 <ul>
