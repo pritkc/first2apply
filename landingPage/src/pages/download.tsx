@@ -83,6 +83,7 @@ export default function Download() {
           </h2>
 
           <div className="mt-12 w-full xs:max-w-[500px] flex flex-col xs:flex-row xs:flex-wrap xs:items-center xs:justify-center gap-4">
+            {/* macos apple silicon */}
             <a
               href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-1.3.2-arm64.dmg"
               onClick={() =>
@@ -113,6 +114,8 @@ export default function Download() {
                 MacOS Apple Silicon
               </Button>
             </a>
+
+            {/* windows */}
             <a
               href="ms-windows-store://pdp/?productid=9NK18WV87SV2"
               onClick={() =>
@@ -176,9 +179,9 @@ export default function Download() {
               </Button>
             </a>
 
+            {/* linux */}
             <a
               href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_1.3.2_amd64.deb"
-              className="hidden xs:block"
               onClick={() =>
                 sendGAEvent({
                   event: "file_download",
