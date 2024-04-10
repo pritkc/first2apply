@@ -261,11 +261,6 @@ async function bootstrap() {
         if (session?.user?.id) {
           // set the user id for logging and analytics
           analytics.setUserId(session.user.id);
-
-          // perform an initial scan
-          jobScanner.scanAllLinks().catch((error) => {
-            logger.error(getExceptionMessage(error));
-          });
         }
 
         // clear the session from disk if it's being removed
@@ -308,6 +303,11 @@ async function bootstrap() {
       logger.info(`finished loading session from disk`);
       const { error } = await supabase.auth.setSession(session);
       if (error) throw error;
+
+      // perform an initial scan
+      jobScanner.scanAllLinks().catch((error) => {
+        logger.error(getExceptionMessage(error));
+      });
     } else {
       logger.info(`no session found on disk`);
     }

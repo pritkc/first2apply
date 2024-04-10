@@ -36,6 +36,14 @@ Deno.serve(async (req) => {
     if (!job) {
       throw new Error(`Job not found: ${jobId}`);
     }
+
+    // return the job if the description is already set
+    if (job.description) {
+      return new Response(JSON.stringify({ job }), {
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
+    }
+
     const { data: site, error: findSiteErr } = await supabaseClient
       .from("sites")
       .select("*")
@@ -55,19 +63,17 @@ Deno.serve(async (req) => {
     let updatedJob = job;
     const hasUpdates = Object.values(jd).some((v) => v !== undefined);
     if (hasUpdates) {
-      const { data, error: updateJobErr } = await supabaseClient
+      const { error: updateJobErr } = await supabaseClient
         .from("jobs")
         .update({ description: jd.content })
-        .eq("id", jobId)
-        .select("*");
+        .eq("id", jobId);
       if (updateJobErr) {
         throw updateJobErr;
       }
 
-      const updatedJobWithNewData = data?.[0];
-      updatedJob = updatedJobWithNewData;
+      updatedJob = { ...job, description: jd.content };
     } else {
-      console.log(
+      console.error(
         "no JD details extracted from the html, this could be a problem with the parser"
       );
     }

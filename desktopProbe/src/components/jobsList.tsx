@@ -5,11 +5,16 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Icons } from "@/components/icons";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+
+import { ArchiveIcon, TrashIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
 
 import { Job } from "../../../supabase/functions/_shared/types";
+import { useState } from "react";
+import { DeleteJobDialog } from "./deleteJobDialog";
 
 export function JobsList({
   jobs,
@@ -18,6 +23,8 @@ export function JobsList({
   parentContainerId,
   onLoadMore,
   onSelect,
+  onArchive,
+  onDelete,
 }: {
   jobs: Job[];
   selectedJobId?: number;
@@ -25,8 +32,12 @@ export function JobsList({
   parentContainerId: string;
   onLoadMore: () => void;
   onSelect: (job: Job) => void;
+  onArchive: (job: Job) => void;
+  onDelete: (job: Job) => void;
 }) {
   const { siteLogos } = useSites();
+
+  const [jobToDelete, setJobToDelete] = useState<Job | undefined>();
 
   return (
     <InfiniteScroll
@@ -68,12 +79,38 @@ export function JobsList({
                       {job.labels[0]}
                     </div>
                   </div>
-                  <p className="leading-5 tracking-wide">{job.title}</p>
+                  <p className="leading-5 tracking-wide mt-0.5">{job.title}</p>
 
                   <div className="flex items-center gap-1.5 mt-3 flex-wrap">
                     {job.location && <Badge>{job.location}</Badge>}
                     {job.jobType && <Badge>{job.jobType}</Badge>}
                     {job.salary && <Badge>{job.salary}</Badge>}
+
+                    <div className="ml-auto flex items-center gap-2">
+                      {job.status !== "archived" && (
+                        <Button
+                          variant="secondary"
+                          className="w-[22px] h-[22px] px-0 bg-transparent"
+                          onClick={(evt) => {
+                            onArchive(job);
+                            evt.stopPropagation();
+                          }}
+                        >
+                          <ArchiveIcon className="text-foreground w-fit min-h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="destructive"
+                        className="w-[22px] h-[22px] px-0 bg-transparent hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
+                        onClick={(evt) => {
+                          // onDelete(job);
+                          setJobToDelete(job);
+                          evt.stopPropagation();
+                        }}
+                      >
+                        <TrashIcon className="h-5 w-auto text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -83,6 +120,14 @@ export function JobsList({
           );
         })}
       </ul>
+      {jobToDelete && (
+        <DeleteJobDialog
+          isOpen={!!jobToDelete}
+          job={jobToDelete}
+          onClose={() => setJobToDelete(undefined)}
+          onDelete={onDelete}
+        />
+      )}
     </InfiniteScroll>
   );
 }
