@@ -79,14 +79,14 @@ export function Faqs() {
         </AccordionItem>
       </Accordion>
 
-      <div className="mt-6 sm:mt-[10vh] flex justify-center items-center gap-4">
+      <div className="mt-6 sm:mt-[10vh] flex flex-wrap justify-center items-center gap-2">
         <p className="text-base">Didn&apos;t find what you need?</p>
 
-        <a
-          href="mailto:dragos@first2apply.com"
-          className="inline-flex w-fit items-center text-base justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-foreground shadow hover:bg-[#809966]/90 h-10 rounded-lg px-6"
-        >
-          Email us
+        <a href="mailto:dragos@first2apply.com" className="text-foreground">
+          Email us at&nbsp;
+          <span className="underline hover:text-primary">
+            dragos@first2apply.com
+          </span>
         </a>
       </div>
     </section>
