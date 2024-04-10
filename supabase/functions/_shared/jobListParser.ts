@@ -273,6 +273,7 @@ export function parseLinkedInJobs({
       companyName,
       companyLogo,
       location,
+      labels: [],
     };
   });
 
@@ -379,6 +380,7 @@ export function parseRemoteOkJobs({
       location,
       salary,
       tags,
+      labels: [],
     };
   });
 
@@ -481,6 +483,7 @@ export function parseWeWorkRemotelyJobs({
       companyLogo,
       jobType: "remote",
       location,
+      labels: [],
     };
   });
 
@@ -579,6 +582,7 @@ export function parseGlassDoorJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -604,9 +608,9 @@ export function parseIndeedJobs({
   if (!document) throw new Error("Could not parse html");
 
   // check if the list is empty first
-  const noResultsNode = document.querySelector(
-    ".jobsearch-NoResult-messageContainer"
-  );
+  const noResultsNode =
+    document.querySelector(".jobsearch-NoResult-messageContainer") ||
+    document.querySelector(".css-1z0pyms.e1wnkr790"); // this is from the individual company page
   if (noResultsNode) {
     return {
       jobs: [],
@@ -615,7 +619,9 @@ export function parseIndeedJobs({
     };
   }
 
-  const jobsList = document.querySelector("#mosaic-jobResults ul");
+  const jobsList =
+    document.querySelector("#mosaic-jobResults ul") ||
+    document.querySelector("#mosaic-provider-jobcards ul");
   if (!jobsList) {
     return {
       jobs: [],
@@ -635,15 +641,22 @@ export function parseIndeedJobs({
 
     const externalHref = jobLinkEl?.getAttribute("href")?.trim();
     if (!externalHref) return null;
-    const externalUrl = `https://www.indeed.com${externalHref}`;
+
+    let externalUrl = `https://www.indeed.com${externalHref}`;
+    if (externalHref === "#") {
+      const jk = jobLinkEl?.getAttribute("data-jk")?.trim();
+      externalUrl = `https://www.indeed.com/viewjob?jk=${jk}`;
+    }
 
     const title = jobLinkEl?.querySelector("span")?.textContent?.trim() || "";
     if (!title) return null;
 
     const companyEl = el.querySelector(".company_location");
-    const companyName = companyEl
-      ?.querySelector(":scope > div > span")
-      ?.textContent?.trim();
+    const companyName =
+      companyEl?.querySelector(":scope > div > span")?.textContent?.trim() ||
+      document
+        .querySelector("h1[data-testid=PageHeader-title-jobs]")
+        ?.textContent?.trim();
     if (!companyName) return null;
 
     let location = companyEl
@@ -696,6 +709,7 @@ export function parseIndeedJobs({
       jobType,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -778,6 +792,7 @@ export function parseDiceJobs({
       companyName,
       companyLogo,
       location,
+      labels: [],
     };
   });
 
@@ -802,7 +817,7 @@ export function parseFlexjobsJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector(".sc-14nyru2-1.bcguRu");
+  const jobsList = document.querySelector(".sc-14nyru2-1.gfTJgV");
   if (!jobsList)
     return {
       jobs: [],
@@ -811,14 +826,14 @@ export function parseFlexjobsJobs({
     };
 
   const jobElements = Array.from(
-    jobsList.querySelectorAll("div.sc-jv5lm6-0.kSiIaQ")
+    jobsList.querySelectorAll("div.sc-jv5lm6-0.eTfIRI")
   ) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el?.getAttribute("id")?.trim();
     if (!externalId) return null;
 
-    const externalUrlEl = el.querySelector("a.sc-jv5lm6-11.jTLbwZ");
+    const externalUrlEl = el.querySelector(`a#job-name-${externalId}`);
     if (!externalUrlEl) return null;
     const externalUrl = `https://www.flexjobs.com${externalUrlEl
       .getAttribute("href")
@@ -856,6 +871,7 @@ export function parseFlexjobsJobs({
       location,
       jobType,
       description,
+      labels: [],
     };
   });
 
@@ -943,6 +959,7 @@ export function parseBestjobsJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -1031,6 +1048,7 @@ export function parseEchojobsJobs({
       companyLogo,
       location,
       salary,
+      labels: [],
     };
   });
 
@@ -1121,6 +1139,7 @@ export function parseRemotiveJobs({
       companyLogo,
       jobType: "remote",
       location,
+      labels: [],
     };
   });
 
@@ -1220,6 +1239,7 @@ export function parseRemoteioJobs({
       jobType: "remote",
       location,
       tags,
+      labels: [],
     };
   });
 
@@ -1307,6 +1327,7 @@ export function parseBuiltinJobs({
       companyLogo,
       // jobType,
       location,
+      labels: [],
     };
   });
 
@@ -1378,6 +1399,7 @@ export function parseNaukriJobs({
       companyName,
       location,
       tags,
+      labels: [],
     };
   });
 
@@ -1470,6 +1492,7 @@ export function parseRobertHalfJobs({
       jobType,
       description,
       tags,
+      labels: [],
     };
   });
 

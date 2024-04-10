@@ -38,7 +38,7 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: [".job-description"],
   },
   [SiteProvider.echojobs]: {
-    description: [".job-detail"],
+    description: ["#jobDescriptionText"],
   },
   [SiteProvider.remotive]: {
     description: ["section div.tw-mt-8 > div.left > div"],
@@ -191,7 +191,9 @@ function parseIndeedJobDescription({ html }: { html: string }): JobDescription {
     //   .replace(/<b>/gi, "<strong>")
     //   .replace(/<\/b>/gi, "</strong>");
 
-    description = turndownService.turndown(descriptionContainer.innerHTML);
+    description = turndownService
+      .turndown(descriptionContainer.innerHTML)
+      .replace(/\*\s\s\n/gi, "*");
   }
 
   return {

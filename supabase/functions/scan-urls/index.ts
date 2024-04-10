@@ -21,7 +21,12 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const htmls: Array<{ linkId: number; content: string }> = body.htmls;
+    const htmls: Array<{
+      linkId: number;
+      content: string;
+      maxRetries?: number;
+      retryCount?: number;
+    }> = body.htmls;
     if (htmls.length === 0) {
       return new Response(JSON.stringify({ newJobs: [] }), {
         headers: { "Content-Type": "application/json", ...CORS_HEADERS },
@@ -44,6 +49,10 @@ Deno.serve(async (req) => {
     const allJobSites = data ?? [];
 
     // parse htmls and match them with links
+    let parseFailed = false;
+    const isLastRetry = htmls.every(
+      (html) => html.retryCount === html.maxRetries
+    );
     const parsedJobs = await Promise.all(
       htmls.map(async (html) => {
         const link = links?.find((link) => link.id === html.linkId);
@@ -52,7 +61,11 @@ Deno.serve(async (req) => {
           console.error(`link not found: ${html.linkId}`);
           return [];
         }
-        const { jobs, site, parseFailed } = await parseJobsListUrl({
+        const {
+          jobs,
+          site,
+          parseFailed: currentUrlParseFailed,
+        } = await parseJobsListUrl({
           allJobSites,
           url: link.url,
           html: html.content,
@@ -61,7 +74,8 @@ Deno.serve(async (req) => {
         console.log(`[${site.provider}] found ${jobs.length} jobs`);
 
         // if the parsing failed, save the html dump for debugging
-        if (parseFailed) {
+        parseFailed = currentUrlParseFailed;
+        if (currentUrlParseFailed && isLastRetry) {
           await supabaseClient
             .from("html_dumps")
             .insert([{ url: link.url, html: html.content }]);
@@ -83,7 +97,7 @@ Deno.serve(async (req) => {
     const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
     console.log(`found ${newJobs.length} new jobs`);
 
-    return new Response(JSON.stringify({ newJobs }), {
+    return new Response(JSON.stringify({ newJobs, parseFailed }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {

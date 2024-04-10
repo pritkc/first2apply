@@ -13,12 +13,17 @@ export function JobsListSkeleton() {
               {/* Company Name */}
               <Skeleton className="h-4 w-full max-w-20" />
               {/* Job Title */}
-              <Skeleton className="h-5 w-full max-w-60" />
+              <Skeleton className="h-5 w-full max-w-60 mt-0.5" />
 
               {/* Location, JobType & Salary */}
               <div className="flex items-center gap-1.5 pt-2">
                 <Skeleton className="h-5 w-full max-w-32" />
                 <Skeleton className="h-5 w-full max-w-20" />
+
+                <div className="ml-auto flex gap-2">
+                  <Skeleton className="h-5 w-5" />
+                  <Skeleton className="h-5 w-5" />
+                </div>
               </div>
             </div>
           </div>
