@@ -5,7 +5,7 @@ export function BottomCta() {
   return (
     <section
       id="bottom-cta"
-      className="max-w-7xl mx-auto px-6 sm:px-10 md:pt-[20vh]"
+      className="max-w-7xl mx-auto px-6 sm:px-10 py-[10vh] md:pt-[20vh]"
     >
       <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold md:text-center">
         Ready to get started?
