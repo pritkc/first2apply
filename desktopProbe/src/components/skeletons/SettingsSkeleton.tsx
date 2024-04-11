@@ -32,6 +32,18 @@ export const SettingsSkeleton: FC = () => {
         ))}
       </div>
 
+      {/* Subscription skeleton */}
+      <div className="animate-pulse h-[102px] flex flex-row items-center justify-between rounded-lg border p-6">
+        <div className="space-y-1">
+          {/* Setting title */}
+          <Skeleton className="h-6 w-[250px] rounded-md" />
+          {/* Setting description */}
+          <Skeleton className="h-3 w-[450px] rounded-md" />
+        </div>
+        {/* Select */}
+        <Skeleton className="h-9 w-[190px]" />
+      </div>
+
       {/* Logout button skeleton */}
       <div className="flex justify-end pt-4">
         <Skeleton className="h-9 w-[84px] rounded-md" />
