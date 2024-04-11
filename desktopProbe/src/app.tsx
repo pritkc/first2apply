@@ -23,6 +23,7 @@ import { SignupPage } from "./pages/signup";
 import { SettingsPage } from "./pages/settings";
 import { LinksPage } from "./pages/links";
 import { HelpPage } from "./pages/help";
+import { Subscription } from "./pages/subscription";
 
 import { Toaster } from "./components/ui/toaster";
 import { ForgotPasswordPage } from "./pages/forgotPassword";
@@ -63,6 +64,10 @@ const router = createMemoryRouter(
         path="/feedback"
         element={<AuthGuardedComponent component={FeedbackPage} />}
       />
+      <Route
+        path="/subscription"
+        element={<AuthGuardedComponent component={Subscription} />}
+      ></Route>
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
