@@ -111,6 +111,17 @@ export function SettingsPage() {
         <Switch disabled value={""} />
       </div>
 
+      {/* subscription */}
+      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+        <div className="space-y-1">
+          <h2 className="text-lg">Manage your subscription</h2>
+          <p className="text-sm font-light">
+            Your plan includes ... Make adjustments to your subscription
+          </p>
+        </div>
+        <Button variant="secondary">Manage Subscription</Button>
+      </div>
+
       <div className="flex justify-end pt-4">
         <Button className="w-fit" variant="destructive" onClick={onLogout}>
           Logout
