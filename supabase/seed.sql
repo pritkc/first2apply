@@ -146,6 +146,7 @@ public.profiles (
   is_trial boolean not null default true,
   constraint profiles_pkey primary key (id),
   constraint profiles_user_id_key unique (user_id)
+  constraint profiles_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
 ) tablespace pg_default;
 
 alter table public.profiles enable row level security;

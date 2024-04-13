@@ -1,4 +1,5 @@
 import { JobScannerSettings } from "@/lib/types";
+import * as luxon from "luxon";
 
 import { useError } from "@/hooks/error";
 import { useSession } from "@/hooks/session";
@@ -10,12 +11,46 @@ import { CronSchedule } from "@/components/cronSchedule";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
-import { logout } from "@/lib/electronMainSdk";
+import {
+  getProfile,
+  getStripeConfig,
+  logout,
+  openExternalUrl,
+} from "@/lib/electronMainSdk";
+import { useEffect, useState } from "react";
+import {
+  Profile,
+  StripeConfig,
+} from "../../../supabase/functions/_shared/types";
 
 export function SettingsPage() {
   const { handleError } = useError();
   const { logout: resetUser, user } = useSession();
-  const { isLoading, settings, updateSettings } = useSettings();
+  const {
+    isLoading: isLoadingSettings,
+    settings,
+    updateSettings,
+  } = useSettings();
+
+  const [profile, setProfile] = useState<Profile | undefined>();
+  const [stripeConfig, setStripeConfig] = useState<StripeConfig | undefined>();
+  const isLoading = !profile || !stripeConfig || isLoadingSettings;
+
+  /**
+   * Fetch the user's profile when the component mounts.
+   */
+  useEffect(() => {
+    const asyncLoad = async () => {
+      try {
+        setProfile(await getProfile());
+        setStripeConfig(await getStripeConfig());
+      } catch (error) {
+        handleError({ error, title: "Failed to load profile" });
+      }
+    };
+
+    asyncLoad();
+  }, []);
 
   // Update settings
   const onUpdatedSettings = async (newSettings: JobScannerSettings) => {
@@ -114,12 +149,31 @@ export function SettingsPage() {
       {/* subscription */}
       <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
         <div className="space-y-1">
-          <h2 className="text-lg">Manage your subscription</h2>
+          <h2 className="text-lg">
+            {profile.subscription_tier.toUpperCase()} subscription
+            {profile.is_trial && " (Trial)"}
+          </h2>
           <p className="text-sm font-light">
-            Your plan includes ... Make adjustments to your subscription
+            Your subscription ends on{" "}
+            <span className="underline">
+              {luxon.DateTime.fromISO(profile.subscription_end_date).toFormat(
+                "dd LLLL yyyy"
+              )}
+            </span>
+            .
+            {!profile.is_trial &&
+              " You can cancel or upgrade your subscription at any time."}
           </p>
         </div>
-        <Button variant="secondary">Manage Subscription</Button>
+        {!profile.is_trial && (
+          <Button
+            className="w-fit"
+            variant="secondary"
+            onClick={() => openExternalUrl(stripeConfig.customerPortalLink)}
+          >
+            Manage Subscription
+          </Button>
+        )}
       </div>
 
       <div className="flex justify-end pt-4">
