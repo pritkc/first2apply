@@ -54,6 +54,7 @@ import {
   JobLabel,
   JobStatus,
 } from "../../../supabase/functions/_shared/types";
+import { useSession } from "@/hooks/session";
 
 const JOB_BATCH_SIZE = 30;
 const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
@@ -80,6 +81,7 @@ export function Home() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSubscriptionExpired } = useSession();
 
   const { links, isLoading: isLoadingLinks } = useLinks();
 
@@ -104,6 +106,12 @@ export function Home() {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        // check subscription status
+        if (isSubscriptionExpired) {
+          navigate("/subscription");
+          return;
+        }
+
         setListing((listing) => ({ ...listing, isLoading: true }));
         const result = await listJobs({ status, limit: JOB_BATCH_SIZE });
 

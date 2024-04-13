@@ -1,17 +1,11 @@
 import { PricingOptions } from "@/components/pricingOptions";
 import {
-  Profile,
   StripeBillingPlan,
-  StripeConfig,
   SubscriptionTier,
 } from "../../../supabase/functions/_shared/types";
-import { useEffect, useState } from "react";
+
 import { useError } from "@/hooks/error";
-import {
-  getProfile,
-  getStripeConfig,
-  openExternalUrl,
-} from "@/lib/electronMainSdk";
+import { openExternalUrl } from "@/lib/electronMainSdk";
 import {
   Card,
   CardContent,
@@ -21,29 +15,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/hooks/session";
+import { useEffect } from "react";
 
 export function SubscriptionPage() {
   const { handleError } = useError();
-
-  const [profile, setProfile] = useState<Profile | undefined>();
-  const [stripeConfig, setStripeConfig] = useState<StripeConfig | undefined>();
-  const loading = !profile || !stripeConfig;
+  const {
+    isLoading: isLoadingSession,
+    profile,
+    stripeConfig,
+    refreshProfile,
+  } = useSession();
+  const isLoading = isLoadingSession || !profile || !stripeConfig;
 
   /**
-   * Fetch the user's profile when the component mounts.
+   * Refresh the user profile every 5 seconds to check for subscription changes.
    */
   useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        setProfile(await getProfile());
-        setStripeConfig(await getStripeConfig());
-      } catch (error) {
-        handleError({ error, title: "Failed to load profile" });
-      }
-    };
+    const interval = setInterval(() => {
+      refreshProfile();
+    }, 5000);
 
-    asyncLoad();
-  }, []);
+    return () => clearInterval(interval);
+  }, [refreshProfile]);
 
   /**
    * Open the checkout page for the selected plan.
@@ -77,7 +71,7 @@ export function SubscriptionPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 

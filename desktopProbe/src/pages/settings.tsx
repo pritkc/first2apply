@@ -25,32 +25,21 @@ import {
 
 export function SettingsPage() {
   const { handleError } = useError();
-  const { logout: resetUser, user } = useSession();
+  const {
+    isLoading: isLoadingSession,
+    logout: resetUser,
+    user,
+    profile,
+    stripeConfig,
+  } = useSession();
   const {
     isLoading: isLoadingSettings,
     settings,
     updateSettings,
   } = useSettings();
 
-  const [profile, setProfile] = useState<Profile | undefined>();
-  const [stripeConfig, setStripeConfig] = useState<StripeConfig | undefined>();
-  const isLoading = !profile || !stripeConfig || isLoadingSettings;
-
-  /**
-   * Fetch the user's profile when the component mounts.
-   */
-  useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        setProfile(await getProfile());
-        setStripeConfig(await getStripeConfig());
-      } catch (error) {
-        handleError({ error, title: "Failed to load profile" });
-      }
-    };
-
-    asyncLoad();
-  }, []);
+  const isLoading =
+    !profile || !stripeConfig || isLoadingSettings || isLoadingSession;
 
   // Update settings
   const onUpdatedSettings = async (newSettings: JobScannerSettings) => {
