@@ -402,4 +402,15 @@ export class F2aSupabaseApi {
 
     return updatedReview;
   }
+
+  /**
+   * Get the profile of the current user.
+   */
+  async getProfile() {
+    const [profile] = await this._supabaseApiCall(
+      async () => await this._supabase.from("profiles").select("*")
+    );
+
+    return profile;
+  }
 }

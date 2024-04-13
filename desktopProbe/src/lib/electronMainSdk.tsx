@@ -6,7 +6,9 @@ import {
   JobSite,
   JobStatus,
   Link,
+  Profile,
   Review,
+  StripeConfig,
 } from "../../../supabase/functions/_shared/types";
 
 async function _mainProcessApiCall<T>(
@@ -323,4 +325,26 @@ export async function changeAllJobsStatus({
   to: JobStatus;
 }): Promise<void> {
   await _mainProcessApiCall("change-all-job-status", { from, to });
+}
+
+/**
+ * Get the profile of the current user.
+ */
+export async function getProfile(): Promise<Profile> {
+  const { profile } = await _mainProcessApiCall<{ profile: Profile }>(
+    "get-profile",
+    {}
+  );
+  return profile;
+}
+
+/**
+ * Get Stripe config.
+ */
+export async function getStripeConfig(): Promise<StripeConfig> {
+  const { config } = await _mainProcessApiCall<{ config: StripeConfig }>(
+    "get-stripe-config",
+    {}
+  );
+  return config;
 }
