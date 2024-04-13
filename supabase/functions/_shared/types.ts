@@ -97,7 +97,7 @@ export type Profile = {
   user_id: string;
   stripe_customer_id?: string;
   subscription_id?: string;
-  subscription_end_date: Date;
+  subscription_end_date: string;
   subscription_tier: SubscriptionTier;
   is_trial: boolean;
 };
