@@ -5,7 +5,7 @@ import {
   UpdateIcon,
   DownloadIcon,
 } from "@radix-ui/react-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useError } from "@/hooks/error";
@@ -82,6 +82,8 @@ export function Home() {
   const location = useLocation();
 
   const { links, isLoading: isLoadingLinks } = useLinks();
+
+  const jobDescriptionRef = useRef<HTMLDivElement>(null);
 
   // Parse the query parameters to determine the active tab
   const status = (new URLSearchParams(location.search).get("status") ||
@@ -366,6 +368,15 @@ export function Home() {
     }
   };
 
+  /**
+   * Scroll to the top of the job description panel when the selected job changes.
+   */
+  useEffect(() => {
+    if (jobDescriptionRef.current) {
+      jobDescriptionRef.current.scrollTop = 0;
+    }
+  }, [selectedJobId]);
+
   if (isLoadingLinks) {
     return <Loading />;
   }
@@ -464,7 +475,10 @@ export function Home() {
                     </div>
 
                     {/* JD side panel */}
-                    <div className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5">
+                    <div
+                      ref={jobDescriptionRef}
+                      className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5"
+                    >
                       {selectedJob && (
                         <>
                           <JobSummary
