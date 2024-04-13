@@ -66,6 +66,34 @@ export function JobsList({
     [selectedIndex, jobs]
   );
 
+  useHotkeys(
+    "meta+a, ctrl+a",
+    () => {
+      if (selectedJobId) {
+        const jobToArchive = jobs.find((job) => job.id === selectedJobId);
+        if (jobToArchive && jobToArchive.status !== "archived") {
+          onArchive(jobToArchive);
+        }
+      }
+    },
+    [selectedJobId, jobs, onArchive],
+    { preventDefault: true }
+  );
+
+  useHotkeys(
+    "meta+d, ctrl+d",
+    () => {
+      if (selectedJobId) {
+        const jobToDelete = jobs.find((job) => job.id === selectedJobId);
+        if (jobToDelete) {
+          onDelete(jobToDelete);
+        }
+      }
+    },
+    [selectedJobId, jobs, onDelete],
+    { preventDefault: true }
+  );
+
   return (
     <InfiniteScroll
       dataLength={jobs.length}
