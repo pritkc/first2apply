@@ -1,21 +1,34 @@
-import { getUser } from "@/lib/electronMainSdk";
-import { getExceptionMessage } from "@/lib/error";
+import { getProfile, getStripeConfig, getUser } from "@/lib/electronMainSdk";
+
 import { User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  Profile,
+  StripeConfig,
+} from "../../../supabase/functions/_shared/types";
+import { useError } from "./error";
 
 // Create a context for the session manager
 const SessionContext = createContext<{
   isLoading: boolean;
   user: User | null;
+  profile: Profile | null;
+  stripeConfig: StripeConfig | null;
   isLoggedIn: boolean;
+  isSubscriptionExpired: boolean;
   login: (user: User) => void;
   logout: () => void;
+  refreshProfile: () => void;
 }>({
   isLoading: true,
   user: null,
+  profile: null,
+  stripeConfig: null,
   isLoggedIn: false,
+  isSubscriptionExpired: false,
   login: async (user: User) => {},
   logout: async () => {},
+  refreshProfile: async () => {},
 });
 
 /**
@@ -31,32 +44,97 @@ export const useSession = () => {
 
 // Create a provider for the session
 export const SessionProvider = ({ children }: React.PropsWithChildren) => {
+  const { handleError } = useError();
+
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [stripeConfig, setStripeConfig] = useState<StripeConfig | null>(null);
+  const [isSubscriptionExpired, setIsSubscriptionExpired] = useState(false);
 
   // Load the user on mount
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        setStripeConfig(await getStripeConfig());
+
         const currentUser = await getUser();
         setUser(currentUser);
-        setIsLoading(false);
       } catch (error) {
-        console.error(getExceptionMessage(error));
+        handleError({ error, title: "Failed to load profile" });
       }
     };
 
     asyncLoad();
   }, []);
 
+  // load the user profile when the user changes
+  const loadProfile = async () => {
+    const userProfile = await getProfile();
+    const now = new Date();
+    setIsSubscriptionExpired(
+      userProfile?.subscription_end_date &&
+        new Date(userProfile.subscription_end_date) < now
+    );
+    setProfile(userProfile);
+  };
+  useEffect(() => {
+    const asyncLoad = async () => {
+      try {
+        if (user) {
+          setIsLoading(true);
+          await loadProfile();
+          setIsLoading(false);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        handleError({ error, title: "Failed to load profile" });
+      }
+    };
+
+    if (user) {
+      asyncLoad();
+    }
+  }, [user]);
+
+  /**
+   * Handle user logout.
+   */
+  const handleLogout = async () => {
+    try {
+      setUser(null);
+      setProfile(null);
+    } catch (error) {
+      handleError({ error });
+    }
+  };
+
+  /**
+   * Refresh the user profile.
+   */
+  const refreshProfile = async () => {
+    try {
+      if (user) {
+        await loadProfile();
+      }
+    } catch (error) {
+      handleError({ error, title: "Failed to load profile" });
+    }
+  };
+
   return (
     <SessionContext.Provider
       value={{
         isLoading,
         user,
+        profile,
+        stripeConfig,
         isLoggedIn: !!user,
-        logout: () => setUser(null),
+        isSubscriptionExpired,
+        logout: () => handleLogout(),
         login: async (user: User) => setUser(user),
+        refreshProfile,
       }}
     >
       {children}
