@@ -91,6 +91,30 @@ export type HtmlDump = {
   created_at: Date;
 };
 
+export type SubscriptionTier = "basic" | "pro";
+export type Profile = {
+  id: number;
+  user_id: string;
+  stripe_customer_id?: string;
+  subscription_id?: string;
+  subscription_end_date: Date;
+  subscription_tier: SubscriptionTier;
+  is_trial: boolean;
+};
+
+export type StripeBillingPlan = {
+  tier: SubscriptionTier;
+  monthlyCheckoutLink: string;
+  quarterlyCheckoutLink: string;
+  biannuallyCheckoutLink: string;
+  yearlyCheckoutLink: string;
+};
+
+export type StripeConfig = {
+  customerPortalLink: string;
+  plans: StripeBillingPlan[];
+};
+
 /**
  * Supabase database schema.
  */
@@ -136,6 +160,11 @@ export type DbSchema = {
       html_dumps: {
         Row: HtmlDump;
         Insert: Pick<HtmlDump, "url" | "html">;
+        Update: never;
+      };
+      profiles: {
+        Row: Profile;
+        Insert: never;
         Update: never;
       };
     };

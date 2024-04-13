@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
+import { SubscriptionTier } from "../../../supabase/functions/_shared/types";
 
 const tabs = ["Monthly", "Quarterly", "Biannually", "Yearly"];
 
@@ -59,7 +60,11 @@ const pricingPlans: PricingPlan[] = [
   },
 ];
 
-export function PricingOptions() {
+export function PricingOptions({
+  onSelectPlan,
+}: {
+  onSelectPlan: (_: { tier: SubscriptionTier; billingCycle: string }) => void;
+}) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
 
   return (
@@ -143,7 +148,13 @@ export function PricingOptions() {
               <Button
                 size="lg"
                 className="mt-10 w-40 self-center"
-                disabled={plan.name === "Pro"}
+                // disabled={plan.name === "Pro"}
+                onClick={() =>
+                  onSelectPlan({
+                    tier: plan.name.toLowerCase() as SubscriptionTier,
+                    billingCycle: selectedTab.toLowerCase(),
+                  })
+                }
               >
                 Select
               </Button>

@@ -238,7 +238,7 @@ async function bootstrap() {
     );
 
     // init the renderer IPC API
-    initRendererIpcApi({ supabaseApi, jobScanner });
+    initRendererIpcApi({ supabaseApi, jobScanner, nodeEnv: ENV.nodeEnv });
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });

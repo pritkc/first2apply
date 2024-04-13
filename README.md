@@ -15,4 +15,9 @@ To stop containers
 Forge supports automatically uploading the packaged app to S3, but unfortunatelly the download link is broken because we have whitespaces in the app name. So make sure to edit the generated `REALEASES.json` file with the actual link from S3 and upload it again
 
 ### Windows
-Updates are handled via the Microsoft store so just build a new AppX and submit it there.
+Updates are handled via the Microsoft store so just build a new AppX and submit it there. The auto-updater only checks the `RELEASES.json` to display a notification that a new version is available
+
+### Linux
+We have to manually upload the `.deb` file to S3 and also manually update the `RELEASES.json` file with the new version.
+
+## Payments (Stripe)

@@ -6,6 +6,7 @@ import fs from "fs";
 import { json2csv } from "json-2-csv";
 import { Job } from "../../../supabase/functions/_shared/types";
 import os from "os";
+import { getStripeConfig } from "./stripeConfig";
 
 /**
  * Helper methods used to centralize error handling.
@@ -27,9 +28,11 @@ async function _apiCall<T>(method: () => Promise<T>) {
 export function initRendererIpcApi({
   supabaseApi,
   jobScanner,
+  nodeEnv,
 }: {
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
+  nodeEnv: string;
 }) {
   ipcMain.handle("get-os-type", (event) =>
     _apiCall(async () => {
@@ -189,6 +192,20 @@ export function initRendererIpcApi({
     _apiCall(async () => {
       const job = await supabaseApi.changeAllJobStatus({ from, to });
       return { job };
+    })
+  );
+
+  ipcMain.handle("get-profile", async (event, {}) =>
+    _apiCall(async () => {
+      const profile = await supabaseApi.getProfile();
+      return { profile };
+    })
+  );
+
+  ipcMain.handle("get-stripe-config", async (event, {}) =>
+    _apiCall(async () => {
+      const config = await getStripeConfig(nodeEnv);
+      return { config };
     })
   );
 }
