@@ -67,9 +67,3 @@
     @apply list-disc pl-6;
   }
 }
-
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-}
