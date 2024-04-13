@@ -11,6 +11,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
 
+import { useHotkeys } from "react-hotkeys-hook";
+
 import {
   listJobs,
   openExternalUrl,
@@ -97,6 +99,19 @@ export function Home() {
   });
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
+
+  const statusIndex = ALL_JOB_STATUSES.indexOf(status);
+
+  useHotkeys("left", () => {
+    const nextIndex =
+      (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
+    navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
+  });
+
+  useHotkeys("right", () => {
+    const nextIndex = (statusIndex + 1) % ALL_JOB_STATUSES.length;
+    navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
+  });
 
   // reload jobs when location changes
   useEffect(() => {
@@ -398,7 +413,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="applied"
-            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "applied" ? "justify-between" : "justify-center"
             }`}
           >
@@ -416,7 +431,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="archived"
-            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "archived" ? "justify-between" : "justify-center"
             }`}
           >
