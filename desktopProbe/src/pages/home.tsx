@@ -380,7 +380,7 @@ export function Home() {
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger
             value="new"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "new" ? "justify-between" : "justify-center"
             }`}
           >
@@ -398,7 +398,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="applied"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0${
               status === "applied" ? "justify-between" : "justify-center"
             }`}
           >
@@ -416,7 +416,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="archived"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0${
               status === "archived" ? "justify-between" : "justify-center"
             }`}
           >
@@ -437,7 +437,11 @@ export function Home() {
         {listing.jobs.length > 0 ? (
           ALL_JOB_STATUSES.map((statusItem) => {
             return (
-              <TabsContent key={statusItem} value={statusItem}>
+              <TabsContent
+                key={statusItem}
+                value={statusItem}
+                className="focus-visible:ring-0"
+              >
                 {listing.isLoading || statusItem !== status ? (
                   <JobsSkeleton />
                 ) : (
