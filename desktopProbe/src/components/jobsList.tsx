@@ -1,4 +1,5 @@
 import { useSites } from "@/hooks/sites";
+import { useHotkeys } from "react-hotkeys-hook";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 
@@ -38,6 +39,32 @@ export function JobsList({
   const { siteLogos } = useSites();
 
   const [jobToDelete, setJobToDelete] = useState<Job | undefined>();
+
+  const selectedIndex = jobs.findIndex((job) => job.id === selectedJobId);
+
+  useHotkeys(
+    "down",
+    () => {
+      if (selectedIndex < jobs.length - 1) {
+        // Check if not last job
+        const nextIndex = selectedIndex + 1;
+        onSelect(jobs[nextIndex]);
+      }
+    },
+    [selectedIndex, jobs]
+  );
+
+  useHotkeys(
+    "up",
+    () => {
+      if (selectedIndex > 0) {
+        // Check if not first job
+        const prevIndex = selectedIndex - 1;
+        onSelect(jobs[prevIndex]);
+      }
+    },
+    [selectedIndex, jobs]
+  );
 
   return (
     <InfiniteScroll
