@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { LABEL_COLOR_CLASSES } from "@/lib/labels";
 
 import { Job } from "../../../supabase/functions/_shared/types";
-import { useState } from "react";
+import { createRef, useEffect, useMemo, useState } from "react";
 import { DeleteJobDialog } from "./deleteJobDialog";
 
 export function JobsList({
@@ -39,8 +39,30 @@ export function JobsList({
   const { siteLogos } = useSites();
 
   const [jobToDelete, setJobToDelete] = useState<Job | undefined>();
-
+  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>();
+  const itemRefs = useMemo(
+    () => jobs.map(() => createRef<HTMLLIElement>()),
+    [jobs]
+  );
   const selectedIndex = jobs.findIndex((job) => job.id === selectedJobId);
+
+  useEffect(() => {
+    if (scrollToIndex === undefined) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const selectedRef = itemRefs[scrollToIndex];
+      if (selectedRef.current) {
+        selectedRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        setScrollToIndex(undefined);
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [scrollToIndex, itemRefs]);
 
   useHotkeys(
     "down",
@@ -49,6 +71,7 @@ export function JobsList({
         // Check if not last job
         const nextIndex = selectedIndex + 1;
         onSelect(jobs[nextIndex]);
+        setScrollToIndex(nextIndex);
       }
     },
     [selectedIndex, jobs]
@@ -61,6 +84,7 @@ export function JobsList({
         // Check if not first job
         const prevIndex = selectedIndex - 1;
         onSelect(jobs[prevIndex]);
+        setScrollToIndex(prevIndex);
       }
     },
     [selectedIndex, jobs]
@@ -104,7 +128,7 @@ export function JobsList({
       scrollableTarget={parentContainerId}
     >
       <ul>
-        {jobs.map((job) => {
+        {jobs.map((job, index) => {
           return (
             <li
               key={job.id}
@@ -112,6 +136,7 @@ export function JobsList({
                 "pt-6 px-2 xl:px-4 -mt-[1px]",
                 selectedJobId === job.id && "bg-muted"
               )}
+              ref={itemRefs[index]}
               onClick={() => onSelect(job)}
             >
               <div className="flex items-center gap-4 mb-6">
