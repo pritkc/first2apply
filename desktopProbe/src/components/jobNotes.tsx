@@ -307,7 +307,7 @@ function JobNote({
           </TooltipProvider> */}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-5">
         <Markdown
           remarkPlugins={[remarkGfm]}
           className="job-description-md px-6 py-2"
