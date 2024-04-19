@@ -86,7 +86,7 @@ export function JobsList({
       if (selectedJobId) {
         const jobToDelete = jobs.find((job) => job.id === selectedJobId);
         if (jobToDelete) {
-          onDelete(jobToDelete);
+          setJobToDelete(jobToDelete);
         }
       }
     },
