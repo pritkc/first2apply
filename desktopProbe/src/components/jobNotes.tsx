@@ -382,10 +382,10 @@ function EditJobNote({
       <CardContent>
         <TextareaAutosize
           value={text}
-          autoFocus={note.id === 0}
+          autoFocus={isNew}
           onChange={(e) => setText(e.target.value)}
           className={`mb-2.5 w-full px-6 py-2 resize-none rounded-md text-base focus:outline-none focus:ring-2 ring-ring ${
-            note.id === 0 && "ring-2"
+            isNew && "ring-2"
           }`}
         />
         <p className="italic text-sm">Hint: Markdown syntax is supported</p>
