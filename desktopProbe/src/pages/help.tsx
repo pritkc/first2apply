@@ -64,7 +64,7 @@ export function HelpPage() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="item-5" className="border-b-0 py-2">
+        <AccordionItem value="item-5" className="py-2">
           <AccordionTrigger className="text-lg font-normal hover:no-underline hover:text-primary">
             How will I see new job alerts when I'm not in front on my computer?
           </AccordionTrigger>
@@ -74,6 +74,32 @@ export function HelpPage() {
             informed while away from your computer, and we are actively
             developing an email notification feature. This forthcoming update
             will ensure you receive timely job alerts, even when you're mobile.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-6" className="border-b-0 py-2">
+          <AccordionTrigger className="text-lg font-normal hover:no-underline hover:text-primary">
+            Can I navigate the app using my keyboard?
+          </AccordionTrigger>
+          <AccordionContent className="text-base font-light">
+            Yes! The app is designed to be fully accessible using your keyboard.
+            <ul
+              className="mt-1 pl-6 text-sm"
+              style={{ listStyleType: "initial" }}
+            >
+              <li>
+                <b>Left/Right arrows</b>: switch between job tabs
+              </li>
+              <li>
+                <b>Up/Down arrows</b>: navigate through job listings
+              </li>
+              <li>
+                <b>Cmd+a / Ctrl+a</b>: archive selected job
+              </li>
+              <li>
+                <b>Cmd+d / Ctrl+d</b>: delete selected job
+              </li>
+            </ul>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
