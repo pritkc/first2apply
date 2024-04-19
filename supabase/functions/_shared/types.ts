@@ -96,7 +96,7 @@ export type Profile = {
   id: number;
   user_id: string;
   stripe_customer_id?: string;
-  subscription_id?: string;
+  stripe_subscription_id?: string;
   subscription_end_date: string;
   subscription_tier: SubscriptionTier;
   is_trial: boolean;
@@ -165,10 +165,22 @@ export type DbSchema = {
       profiles: {
         Row: Profile;
         Insert: never;
-        Update: never;
+        Update: Pick<
+          Profile,
+          | "stripe_customer_id"
+          | "stripe_subscription_id"
+          | "subscription_end_date"
+          | "subscription_tier"
+          | "is_trial"
+        >;
       };
     };
     Views: {};
-    Functions: {};
+    Functions: {
+      get_user_id_by_email: {
+        Params: { email: string };
+        Returns: { id: string };
+      };
+    };
   };
 };
