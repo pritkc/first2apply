@@ -90,6 +90,14 @@ export type HtmlDump = {
   html: string;
   created_at: Date;
 };
+export type Note = {
+  id: number;
+  created_at: Date;
+  user_id: string;
+  job_id: number;
+  text: string;
+  files: string[];
+};
 
 /**
  * Supabase database schema.
@@ -137,6 +145,11 @@ export type DbSchema = {
         Row: HtmlDump;
         Insert: Pick<HtmlDump, "url" | "html">;
         Update: never;
+      };
+      notes: {
+        Row: Note;
+        Insert: Pick<Note, "job_id" | "text" | "files">;
+        Update: Partial<Pick<Note, "text" | "files">>;
       };
     };
     Views: {};

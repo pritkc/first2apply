@@ -191,4 +191,24 @@ export function initRendererIpcApi({
       return { job };
     })
   );
+
+  ipcMain.handle("create-note", async (event, { job_id, text, files }) =>
+    _apiCall(() => supabaseApi.createNote({ job_id, text, files }))
+  );
+
+  ipcMain.handle("list-notes", async (event, { job_id }) =>
+    _apiCall(() => supabaseApi.listNotes(job_id))
+  );
+
+  ipcMain.handle("update-note", async (event, { noteId, text }) =>
+    _apiCall(() => supabaseApi.updateNote({ noteId, text }))
+  );
+
+  ipcMain.handle("add-file-to-note", async (event, { noteId, file }) =>
+    _apiCall(() => supabaseApi.addFileToNote({ noteId, file }))
+  );
+
+  ipcMain.handle("delete-note", async (event, { noteId }) =>
+    _apiCall(() => supabaseApi.deleteNote(noteId))
+  );
 }

@@ -402,4 +402,90 @@ export class F2aSupabaseApi {
 
     return updatedReview;
   }
+
+  /**
+   * Create a new note for the current user.
+   */
+  async createNote({
+    job_id,
+    text,
+    files,
+  }: {
+    job_id: number;
+    text: string;
+    files?: string[];
+  }) {
+    const [createdNote] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from("notes")
+          .insert({ job_id, text, files })
+          .select("*")
+    );
+
+    return createdNote;
+  }
+
+  /**
+   * Fetch all notes for the current user for a job.
+   */
+  async listNotes(job_id: number) {
+    return this._supabaseApiCall(async () =>
+      this._supabase
+        .from("notes")
+        .select("*")
+        .eq("job_id", job_id)
+        .order("created_at", { ascending: false })
+    );
+  }
+
+  /**
+   * Update an existing note by ID.
+   */
+  async updateNote({ noteId, text }: { noteId: number; text: string }) {
+    return this._supabaseApiCall(async () =>
+      this._supabase
+        .from("notes")
+        .update({ text })
+        .eq("id", noteId)
+        .select("*")
+        .single()
+    );
+  }
+
+  /**
+   * Add a file to a note.
+   */
+  async addFileToNote({ noteId, file }: { noteId: number; file: string }) {
+    const result = await this._supabase
+      .from("notes")
+      .select("files")
+      .eq("id", noteId)
+      .single();
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const updatedFiles = result.data.files
+      ? [...result.data.files, file]
+      : [file];
+
+    return this._supabaseApiCall(async () =>
+      this._supabase
+        .from("notes")
+        .update({ files: updatedFiles })
+        .eq("id", noteId)
+        .single()
+    );
+  }
+
+  /**
+   * Delete a specific note by ID.
+   */
+  async deleteNote(noteId: number) {
+    return this._supabaseApiCall(async () =>
+      this._supabase.from("notes").delete().eq("id", noteId)
+    );
+  }
 }

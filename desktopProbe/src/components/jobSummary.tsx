@@ -166,7 +166,6 @@ function JobLabelSelector({
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
 }) {
   const label = job.labels[0] ?? "";
-  console.log("label", label ?? "none");
 
   const LabelOptionWithColor = ({
     jobLabel,

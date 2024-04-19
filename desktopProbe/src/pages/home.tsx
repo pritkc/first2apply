@@ -36,6 +36,7 @@ import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
 import { JobsList } from "@/components/jobsList";
 import { JobSummary } from "@/components/jobSummary";
 import { JobDetails } from "@/components/jobDetails";
+import { JobNotes } from "@/components/jobNotes";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -499,6 +500,7 @@ export function Home() {
                             job={selectedJob}
                             isScrapingDescription={!!selectedJob.isLoadingJD}
                           ></JobDetails>
+                          <JobNotes jobId={selectedJobId} />
                         </>
                       )}
                     </div>
