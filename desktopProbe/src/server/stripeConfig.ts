@@ -21,8 +21,25 @@ const devConfig: StripeConfig = {
   ],
 };
 
-// @ts-ignore
-const prodConfig: StripeConfig = {};
+const prodConfig: StripeConfig = {
+  customerPortalLink: "https://billing.stripe.com/p/login/9AQ01k3mt1h8aaI5kk",
+  plans: [
+    {
+      tier: "basic",
+      monthlyCheckoutLink: "https://buy.stripe.com/4gw5mv9vadTL5q0cMN",
+      quarterlyCheckoutLink: "https://buy.stripe.com/4gw6qz36MaHzbOofZ0",
+      biannuallyCheckoutLink: "https://buy.stripe.com/4gw4ir8r63f7bOo3cf",
+      yearlyCheckoutLink: "https://buy.stripe.com/28oaGP7n24jb9Gg7sw",
+    },
+    {
+      tier: "pro",
+      monthlyCheckoutLink: "https://buy.stripe.com/bIY16fgXC6rjg4E149",
+      quarterlyCheckoutLink: "https://buy.stripe.com/fZe7uD7n2dTLf0A6ou",
+      biannuallyCheckoutLink: "https://buy.stripe.com/8wM02bcHm16Z6u43cj",
+      yearlyCheckoutLink: "https://buy.stripe.com/14k6qz36M2b319KbIQ",
+    },
+  ],
+};
 
 export function getStripeConfig(nodeEnv: string) {
   return nodeEnv === "production" ? prodConfig : devConfig;
