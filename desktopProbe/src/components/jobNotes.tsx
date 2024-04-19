@@ -187,24 +187,28 @@ export function JobNotes({ jobId }: { jobId: number }) {
           />
         )}
 
-        {notes.map((note) =>
-          editingNoteId === note.id ? (
-            <EditJobNote
-              key={note.id}
-              note={note}
-              onCreate={handleCreateNote}
-              onUpdate={handleUpdateNote}
-              onAddFile={handleAddFileToNote}
-              onEndEditing={() => setEditingNoteId(null)}
-            />
-          ) : (
-            <JobNote
-              key={note.id}
-              note={note}
-              onDelete={handleDeleteNote}
-              onAddFile={handleAddFileToNote}
-              onStartEditing={() => setEditingNoteId(note.id)}
-            />
+        {notes.length === 0 ? (
+          <p className="py-10 text-center">No notes available</p>
+        ) : (
+          notes.map((note) =>
+            editingNoteId === note.id ? (
+              <EditJobNote
+                key={note.id}
+                note={note}
+                onCreate={handleCreateNote}
+                onUpdate={handleUpdateNote}
+                onAddFile={handleAddFileToNote}
+                onEndEditing={() => setEditingNoteId(null)}
+              />
+            ) : (
+              <JobNote
+                key={note.id}
+                note={note}
+                onDelete={handleDeleteNote}
+                onAddFile={handleAddFileToNote}
+                onStartEditing={() => setEditingNoteId(note.id)}
+              />
+            )
           )
         )}
       </div>
@@ -266,7 +270,7 @@ function JobNote({
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider delayDuration={500}>
+          {/* <TooltipProvider delayDuration={500}>
             <Tooltip>
               <TooltipTrigger className="relative cursor-pointer">
                 <Button
@@ -286,7 +290,7 @@ function JobNote({
                 Attach file
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> */}
         </div>
       </CardHeader>
       <CardContent>
@@ -298,7 +302,7 @@ function JobNote({
         </Markdown>
       </CardContent>
       <CardFooter>
-        {note.files.length > 0 && (
+        {/* {note.files.length > 0 && (
           <div className="mt-4 flex gap-2 items-center">
             <span className="text-sm text-muted-foreground">Uploads:</span>
             {note.files.map((file) => (
@@ -307,7 +311,7 @@ function JobNote({
               </Badge>
             ))}
           </div>
-        )}
+        )} */}
       </CardFooter>
     </Card>
   );
@@ -414,7 +418,7 @@ function EditJobNote({
         />
       </CardContent>
       <CardFooter>
-        {note.files.length > 0 && (
+        {/* {note.files.length > 0 && (
           <div className="mt-4 flex gap-2 items-center">
             <span className="text-sm text-muted-foreground">Uploads:</span>
             {note.files.map((file) => (
@@ -423,7 +427,7 @@ function EditJobNote({
               </Badge>
             ))}
           </div>
-        )}
+        )} */}
       </CardFooter>
     </Card>
   );
