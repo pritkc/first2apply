@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useError } from "@/hooks/error";
 import { useToast } from "@/components/ui/use-toast";
+import { PlusIcon } from "@radix-ui/react-icons";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -33,6 +34,15 @@ import {
 } from "./ui/tooltip";
 
 import { Pencil2Icon, TrashIcon, UploadIcon } from "@radix-ui/react-icons";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertDialogFooter, AlertDialogHeader } from "./ui/alert-dialog";
 
 export function JobNotes({ jobId }: { jobId: number }) {
   const { handleError } = useError();
@@ -42,6 +52,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [newNote, setNewNote] = useState<Note | undefined>();
+  const [noteToDelete, setNoteToDelete] = useState<Note | undefined>();
 
   // Fetch notes for the job
   useEffect(() => {
@@ -66,14 +77,10 @@ export function JobNotes({ jobId }: { jobId: number }) {
   ) => {
     try {
       const newNote = await createNote({ job_id, text, files });
+      setNewNote(undefined);
       setNotes((prevNotes) => [newNote, ...prevNotes]);
-      toast({
-        title: "Success",
-        description: "A new note has been successfully added.",
-        variant: "success",
-      });
     } catch (error) {
-      handleError({ error });
+      handleError({ error, title: "Failed to create note" });
     }
   };
 
@@ -92,18 +99,14 @@ export function JobNotes({ jobId }: { jobId: number }) {
         noteId,
         text,
       });
+      setEditingNoteId(null);
       setNotes(
         notes.map((note) =>
           note.id === noteId ? { ...note, ...updatedNote } : note
         )
       );
-      toast({
-        title: "Success",
-        description: "Note has been successfully updated.",
-        variant: "success",
-      });
     } catch (error) {
-      handleError({ error });
+      handleError({ error, title: "Failed to update note" });
     }
   };
 
@@ -112,13 +115,8 @@ export function JobNotes({ jobId }: { jobId: number }) {
     try {
       await deleteNote(noteId);
       setNotes(notes.filter((note) => note.id !== noteId));
-      toast({
-        title: "Success",
-        description: "Note has been successfully deleted.",
-        variant: "success",
-      });
     } catch (error) {
-      handleError({ error });
+      handleError({ error, title: "Failed to delete note" });
     }
   };
 
@@ -148,7 +146,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
   const handleNewNote = async () => {
     try {
       setNewNote({
-        id: 0,
+        id: -1,
         created_at: new Date(),
         user_id: "",
         job_id: jobId,
@@ -163,16 +161,17 @@ export function JobNotes({ jobId }: { jobId: number }) {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="py-5 ml-[25px]">
-      <div className="flex justify-between items-center">
+    <div className="pb-10 ml-[25px]">
+      <div className="flex items-center">
         <h3 className="text-2xl">Your notes</h3>
 
         <Button
-          size="sm"
+          size="xs"
+          className="ml-2 rounded-full px-1"
           onClick={handleNewNote}
           disabled={newNote !== undefined}
         >
-          Add note
+          <PlusIcon className="w-4 h-4" />
         </Button>
       </div>
 
@@ -180,6 +179,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
         {newNote && (
           <EditJobNote
             note={newNote}
+            isNew={true}
             onCreate={handleCreateNote}
             onUpdate={handleUpdateNote}
             onAddFile={handleAddFileToNote}
@@ -187,7 +187,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
           />
         )}
 
-        {notes.length === 0 ? (
+        {!newNote && notes.length === 0 ? (
           <p className="py-10 text-center">No notes available</p>
         ) : (
           notes.map((note) =>
@@ -195,6 +195,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
               <EditJobNote
                 key={note.id}
                 note={note}
+                isNew={false}
                 onCreate={handleCreateNote}
                 onUpdate={handleUpdateNote}
                 onAddFile={handleAddFileToNote}
@@ -204,7 +205,9 @@ export function JobNotes({ jobId }: { jobId: number }) {
               <JobNote
                 key={note.id}
                 note={note}
-                onDelete={handleDeleteNote}
+                onDelete={(noteId) =>
+                  setNoteToDelete(notes.find((note) => note.id === noteId))
+                }
                 onAddFile={handleAddFileToNote}
                 onStartEditing={() => setEditingNoteId(note.id)}
               />
@@ -212,6 +215,17 @@ export function JobNotes({ jobId }: { jobId: number }) {
           )
         )}
       </div>
+
+      {noteToDelete && (
+        <DeleteNoteDialog
+          isOpen={!!noteToDelete}
+          note={noteToDelete}
+          onClose={() => setNoteToDelete(undefined)}
+          onDelete={(note) => {
+            handleDeleteNote(note.id);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -223,7 +237,7 @@ function JobNote({
   onStartEditing,
 }: {
   note: Note;
-  onDelete: (noteId: number) => Promise<void>;
+  onDelete: (noteId: number) => void;
   onAddFile: (noteId: number, file: string) => Promise<void>;
   onStartEditing: (noteId: number) => void;
 }) {
@@ -319,12 +333,14 @@ function JobNote({
 
 function EditJobNote({
   note,
+  isNew,
   onCreate,
   onUpdate,
   onAddFile,
   onEndEditing,
 }: {
   note: Note;
+  isNew: boolean;
   onCreate: (job_id: number, text: string, files: string[]) => Promise<void>;
   onUpdate: (noteId: number, text: string) => Promise<void>;
   onAddFile: (noteId: number, file: string) => Promise<void>;
@@ -333,45 +349,6 @@ function EditJobNote({
   const { toast } = useToast();
 
   const [text, setText] = useState(note.text);
-
-  // Handle text change in textarea
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
-  };
-
-  // Handle the save/create action for new note
-  const handleCreate = async () => {
-    if (text.trim() === "") {
-      toast({
-        title: "Error",
-        description: "Note text cannot be empty.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      await onCreate(note.job_id, text, []);
-      onEndEditing();
-    } catch (error) {
-      console.error("Failed to create note:", error);
-    }
-  };
-
-  // Handle the save/update action for existing note
-  const handleUpdate = async () => {
-    try {
-      await onUpdate(note.id, text);
-      onEndEditing();
-    } catch (error) {
-      console.error("Failed to update note:", error);
-    }
-  };
-
-  // Handle the cancel action
-  const handleCancel = () => {
-    setText(note.text);
-    onEndEditing();
-  };
 
   return (
     <Card>
@@ -383,25 +360,20 @@ function EditJobNote({
           <Button
             variant="outline"
             size="sm"
-            onClick={
-              note.id === 0 ? () => handleCreate() : () => handleUpdate()
-            }
+            onClick={() => {
+              isNew ? onCreate(note.job_id, text, []) : onUpdate(note.id, text);
+            }}
+            disabled={text.trim() === ""}
           >
             Save
           </Button>
 
-          {note.id === 0 ? (
+          {isNew ? (
             <Button variant="outline" size="sm" onClick={onEndEditing}>
               Discard
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                handleCancel();
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={onEndEditing}>
               Cancel
             </Button>
           )}
@@ -411,11 +383,12 @@ function EditJobNote({
         <TextareaAutosize
           value={text}
           autoFocus={note.id === 0}
-          onChange={handleTextChange}
+          onChange={(e) => setText(e.target.value)}
           className={`mb-2.5 w-full px-6 py-2 resize-none rounded-md text-base focus:outline-none focus:ring-2 ring-ring ${
             note.id === 0 && "ring-2"
           }`}
         />
+        <p className="italic text-sm">Hint: Markdown syntax is supported</p>
       </CardContent>
       <CardFooter>
         {/* {note.files.length > 0 && (
@@ -430,5 +403,51 @@ function EditJobNote({
         )} */}
       </CardFooter>
     </Card>
+  );
+}
+
+/**
+ * Component used to render a delete note confirmation dialog.
+ */
+export function DeleteNoteDialog({
+  isOpen,
+  onClose,
+  onDelete,
+  note,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onDelete: (note: Note) => void;
+  note: Note;
+}) {
+  return (
+    <AlertDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Are you sure you want to delete this note?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the note.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive hover:bg-destructive/90"
+            onClick={() => onDelete(note)}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

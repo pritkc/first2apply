@@ -519,6 +519,7 @@ export function Home() {
                             job={selectedJob}
                             isScrapingDescription={!!selectedJob.isLoadingJD}
                           ></JobDetails>
+                          <hr className="border-t border-muted" />
                           <JobNotes jobId={selectedJobId} />
                         </>
                       )}
