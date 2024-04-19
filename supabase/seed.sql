@@ -184,6 +184,16 @@ begin
 end; $$
 language plpgsql;
 
+
+create or replace function get_user_id_by_email(email text)
+returns table (id uuid)
+security definer
+as $$
+begin
+  return query select au.id from auth.users au where au.email = $1;
+end;
+$$ language plpgsql;
+
 -- trigger used to automatically create public.profiles for new users
 create function public.handle_new_user()
 returns trigger
