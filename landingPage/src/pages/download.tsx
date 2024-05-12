@@ -85,10 +85,10 @@ export default function Download() {
           <div className="mt-12 w-full xs:max-w-[500px] flex flex-col xs:flex-row xs:flex-wrap xs:items-center xs:justify-center gap-4">
             {/* macos apple silicon */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-1.3.2-arm64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-1.4.0-arm64.dmg"
               onClick={() =>
                 sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.3.2-arm64",
+                  file_name: "First 2 Apply-1.4.0-arm64",
                   file_extension: "dmg",
                   link_domain: "first2apply.com",
                 })
@@ -119,7 +119,7 @@ export default function Download() {
               href="ms-windows-store://pdp/?productid=9NK18WV87SV2"
               onClick={() =>
                 sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.3.2",
+                  file_name: "First 2 Apply-1.4.0",
                   file_extension: "exe",
                   link_domain: "first2apply.com",
                 })
@@ -147,10 +147,10 @@ export default function Download() {
 
             {/* macos x64 */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-1.3.2-x64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-1.4.0-x64.dmg"
               onClick={() =>
                 sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.3.2-x64",
+                  file_name: "First 2 Apply-1.4.0-x64",
                   file_extension: "dmg",
                   link_domain: "first2apply.com",
                 })
@@ -178,10 +178,10 @@ export default function Download() {
 
             {/* linux */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_1.3.2_amd64.deb"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_1.4.0_amd64.deb"
               onClick={() =>
                 sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.3.2-amd64",
+                  file_name: "First 2 Apply-1.4.0-amd64",
                   file_extension: "deb",
                   link_domain: "first2apply.com",
                 })

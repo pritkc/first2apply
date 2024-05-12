@@ -7,6 +7,7 @@ import {
   JobStatus,
   Link,
   Profile,
+  Note,
   Review,
   StripeConfig,
 } from "../../../supabase/functions/_shared/types";
@@ -347,4 +348,70 @@ export async function getStripeConfig(): Promise<StripeConfig> {
     {}
   );
   return config;
+}
+
+/**
+ * Create a new note.
+ */
+export async function createNote({
+  job_id,
+  text,
+  files,
+}: {
+  job_id: number;
+  text: string;
+  files: string[];
+}): Promise<Note> {
+  return await _mainProcessApiCall("create-note", {
+    job_id,
+    text,
+    files,
+  });
+}
+
+/**
+ * List all notes for a job.
+ */
+export async function listNotes(job_id: number): Promise<Note[]> {
+  const notes = await _mainProcessApiCall<Note[]>("list-notes", { job_id });
+  return notes;
+}
+
+/**
+ * Update a note.
+ */
+export async function updateNote({
+  noteId,
+  text,
+}: {
+  noteId: number;
+  text: string;
+}): Promise<Note> {
+  return await _mainProcessApiCall("update-note", {
+    noteId,
+    text,
+  });
+}
+
+/**
+ * Add a file to a note.
+ */
+export async function addFileToNote({
+  noteId,
+  file,
+}: {
+  noteId: number;
+  file: string;
+}): Promise<Note> {
+  return await _mainProcessApiCall("add-file-to-note", {
+    noteId,
+    file,
+  });
+}
+
+/**
+ * Delete a note.
+ */
+export async function deleteNote(noteId: number): Promise<void> {
+  await _mainProcessApiCall("delete-note", { noteId });
 }
