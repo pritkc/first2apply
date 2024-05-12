@@ -90,6 +90,14 @@ export type HtmlDump = {
   html: string;
   created_at: Date;
 };
+export type Note = {
+  id: number;
+  created_at: Date;
+  user_id: string;
+  job_id: number;
+  text: string;
+  files: string[];
+};
 
 export type SubscriptionTier = "basic" | "pro";
 export type Profile = {
@@ -173,6 +181,11 @@ export type DbSchema = {
           | "subscription_tier"
           | "is_trial"
         >;
+      };
+      notes: {
+        Row: Note;
+        Insert: Pick<Note, "job_id" | "text" | "files">;
+        Update: Partial<Pick<Note, "text" | "files">>;
       };
     };
     Views: {};

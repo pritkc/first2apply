@@ -11,6 +11,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useError } from "@/hooks/error";
 import { useLinks } from "@/hooks/links";
 
+import { useHotkeys } from "react-hotkeys-hook";
+
 import {
   listJobs,
   openExternalUrl,
@@ -36,6 +38,7 @@ import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
 import { JobsList } from "@/components/jobsList";
 import { JobSummary } from "@/components/jobSummary";
 import { JobDetails } from "@/components/jobDetails";
+import { JobNotes } from "@/components/jobNotes";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -101,6 +104,19 @@ export function Home() {
   });
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
+
+  const statusIndex = ALL_JOB_STATUSES.indexOf(status);
+
+  useHotkeys("left", () => {
+    const nextIndex =
+      (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
+    navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
+  });
+
+  useHotkeys("right", () => {
+    const nextIndex = (statusIndex + 1) % ALL_JOB_STATUSES.length;
+    navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
+  });
 
   // reload jobs when location changes
   useEffect(() => {
@@ -399,7 +415,7 @@ export function Home() {
         <TabsList className="w-full h-fit p-2">
           <TabsTrigger
             value="new"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "new" ? "justify-between" : "justify-center"
             }`}
           >
@@ -417,7 +433,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="applied"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "applied" ? "justify-between" : "justify-center"
             }`}
           >
@@ -435,7 +451,7 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="archived"
-            className={`px-6 py-3.5 flex-1 flex items-center ${
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
               status === "archived" ? "justify-between" : "justify-center"
             }`}
           >
@@ -456,7 +472,11 @@ export function Home() {
         {listing.jobs.length > 0 ? (
           ALL_JOB_STATUSES.map((statusItem) => {
             return (
-              <TabsContent key={statusItem} value={statusItem}>
+              <TabsContent
+                key={statusItem}
+                value={statusItem}
+                className="focus-visible:ring-0"
+              >
                 {listing.isLoading || statusItem !== status ? (
                   <JobsSkeleton />
                 ) : (
@@ -507,6 +527,8 @@ export function Home() {
                             job={selectedJob}
                             isScrapingDescription={!!selectedJob.isLoadingJD}
                           ></JobDetails>
+                          <hr className="border-t border-muted" />
+                          <JobNotes jobId={selectedJobId} />
                         </>
                       )}
                     </div>
