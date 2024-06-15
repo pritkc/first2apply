@@ -1,0 +1,14 @@
+{
+  "name": "first2apply",
+  "version": "1.4.0",
+  "description": "## Init project `npx supabase init`",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "supabase": "1.161.0"
+  }
+}
