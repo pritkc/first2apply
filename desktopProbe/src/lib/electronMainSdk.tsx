@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js';
 
 import {
+  AdvancedMatchingConfig,
   Job,
   JobLabel,
   JobSite,
@@ -322,4 +323,22 @@ export async function addFileToNote({ noteId, file }: { noteId: number; file: st
  */
 export async function deleteNote(noteId: number): Promise<void> {
   await _mainProcessApiCall('delete-note', { noteId });
+}
+
+/**
+ * Get the advanced matching configuration for the current user.
+ */
+export async function getAdvancedMatchingConfig(): Promise<AdvancedMatchingConfig | null> {
+  return await _mainProcessApiCall('get-advanced-matching-config', {});
+}
+
+/**
+ * Update the advanced matching configuration for the current user.
+ */
+export async function updateAdvancedMatchingConfig(
+  config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>,
+) {
+  return await _mainProcessApiCall<AdvancedMatchingConfig>('update-advanced-matching-config', {
+    config,
+  });
 }
