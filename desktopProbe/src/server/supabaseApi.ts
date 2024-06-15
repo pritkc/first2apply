@@ -2,7 +2,14 @@ import { FunctionsHttpError, PostgrestError, SupabaseClient, User } from '@supab
 import { backOff } from 'exponential-backoff';
 import * as luxon from 'luxon';
 
-import { DbSchema, Job, JobLabel, JobStatus, Link, Review } from '../../../supabase/functions/_shared/types';
+import {
+  AdvancedMatchingConfig,
+  DbSchema,
+  Job,
+  JobLabel,
+  JobStatus,
+  Link,
+} from '../../../supabase/functions/_shared/types';
 
 /**
  * Class used to interact with our Supabase API.
@@ -403,5 +410,33 @@ export class F2aSupabaseApi {
    */
   async deleteNote(noteId: number) {
     return this._supabaseApiCall(async () => this._supabase.from('notes').delete().eq('id', noteId));
+  }
+
+  /**
+   * Get the advanced matching configuration for the current user.
+   */
+  async getAdvancedMatchingConfig() {
+    const [config] = await this._supabaseApiCall(
+      async () => await this._supabase.from('advanced_matching').select('*'),
+    );
+
+    return config;
+  }
+
+  /**
+   * Update the advanced matching configuration for the current user.
+   */
+  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>) {
+    const [updatedConfig] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from('advanced_matching')
+          .upsert(config, {
+            onConflict: 'user_id',
+          })
+          .select('*'),
+    );
+
+    return updatedConfig;
   }
 }

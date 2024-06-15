@@ -203,4 +203,12 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle('delete-note', async (event, { noteId }) => _apiCall(() => supabaseApi.deleteNote(noteId)));
+
+  ipcMain.handle('get-advanced-matching-config', async (event, {}) =>
+    _apiCall(() => supabaseApi.getAdvancedMatchingConfig()),
+  );
+
+  ipcMain.handle('update-advanced-matching-config', async (event, { config }) =>
+    _apiCall(() => supabaseApi.updateAdvancedMatchingConfig(config)),
+  );
 }
