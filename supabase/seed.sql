@@ -42,13 +42,13 @@ public.jobs (
   salary text null,
   tags text[] null,
   "jobType" text null,
-  status public.Job Status not null default 'new'::"Job Status",
+  status public."Job Status" not null default 'new'::"Job Status",
   description text null,
   labels text[] not null default '{}'::text[],
   constraint jobs_pkey primary key (id),
   constraint jobs_user_id_externalid_key unique (user_id, "externalId"),
-  constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
-  constraint jobs_siteid_fkey foreign key ("siteId") references sites (id) on update restrict on delete restrict,
+  constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,
+  constraint jobs_siteid_fkey foreign key ("siteId") references sites (id) on update restrict on delete restrict
 ) tablespace pg_default;
 create index jobs_user_id_updated_at_id_status_idx on public.jobs (user_id, updated_at desc, id desc, status);
 
@@ -167,7 +167,7 @@ public.profiles (
   subscription_tier text not null default 'pro'::text,
   is_trial boolean not null default true,
   constraint profiles_pkey primary key (id),
-  constraint profiles_user_id_key unique (user_id)
+  constraint profiles_user_id_key unique (user_id),
   constraint profiles_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict
 ) tablespace pg_default;
 
