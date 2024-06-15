@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     const { data: upsertedJobs, error: insertError } = await supabaseClient
       .from("jobs")
       .upsert(
-        parsedJobs.map((job) => ({ ...job, status: "new" as const })),
+        parsedJobs.map((job) => ({ ...job, status: "processing" as const })),
         { onConflict: "user_id, externalId", ignoreDuplicates: true }
       )
       .select("*");

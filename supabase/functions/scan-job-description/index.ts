@@ -2,8 +2,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 
 import { DbSchema } from "../_shared/types.ts";
-import { getExceptionMessage } from "../_shared/errorUtils.ts";
+import { getExceptionMessage, throwError } from "../_shared/errorUtils.ts";
 import { parseJobDescription } from "../_shared/jobDescriptionParser.ts";
+import { applyAdvancedMatchingFilters } from "../_shared/advancedMatching.ts";
+import { Job } from "../_shared/types.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -57,25 +59,34 @@ Deno.serve(async (req) => {
     console.log(
       `[${site.provider}] parsing job description for ${job.title} ...`
     );
-    const jd = parseJobDescription({ site, job, html });
 
     // update the job with the description
-    let updatedJob = job;
-    const hasUpdates = Object.values(jd).some((v) => v !== undefined);
-    if (hasUpdates) {
-      const { error: updateJobErr } = await supabaseClient
-        .from("jobs")
-        .update({ description: jd.content })
-        .eq("id", jobId);
-      if (updateJobErr) {
-        throw updateJobErr;
-      }
-
-      updatedJob = { ...job, description: jd.content };
-    } else {
+    const jd = parseJobDescription({ site, job, html });
+    if (!jd.content) {
       console.error(
         "no JD details extracted from the html, this could be a problem with the parser"
       );
+    }
+    let updatedJob: Job = { ...job, description: jd.content, status: "new" };
+
+    const filteredJobStatus = await applyAdvancedMatchingFilters({
+      job: updatedJob,
+      supabaseClient,
+      openAiApiKey:
+        Deno.env.get("OPENAI_API_KEY") ?? throwError("missing OPENAI_API_KEY"),
+    });
+    console.log(`[${site.provider}] ${filteredJobStatus} ${job.title}`);
+    updatedJob = { ...updatedJob, status: filteredJobStatus };
+
+    const { error: updateJobErr } = await supabaseClient
+      .from("jobs")
+      .update({
+        description: updatedJob.description,
+        status: updatedJob.status,
+      })
+      .eq("id", jobId);
+    if (updateJobErr) {
+      throw updateJobErr;
     }
 
     console.log(

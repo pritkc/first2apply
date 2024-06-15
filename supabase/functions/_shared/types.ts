@@ -47,7 +47,13 @@ export type Link = {
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
-export type JobStatus = "new" | "applied" | "archived" | "deleted";
+export type JobStatus =
+  | "new"
+  | "applied"
+  | "archived"
+  | "deleted"
+  | "processing"
+  | "excluded_by_advanced_matching";
 export type Job = {
   id: number;
   user_id: string;
@@ -123,6 +129,16 @@ export type StripeConfig = {
   plans: StripeBillingPlan[];
 };
 
+export type AdvancedMatchingConfig = {
+  id: number;
+  user_id: string;
+  blacklisted_companies: string[];
+  chatgpt_prompt: string;
+  ai_api_cost: number;
+  ai_api_input_tokens_used: number;
+  ai_api_output_tokens_used: number;
+};
+
 /**
  * Supabase database schema.
  */
@@ -187,12 +203,34 @@ export type DbSchema = {
         Insert: Pick<Note, "job_id" | "text" | "files">;
         Update: Partial<Pick<Note, "text" | "files">>;
       };
+      advanced_matching: {
+        Row: AdvancedMatchingConfig;
+        Insert: Pick<
+          AdvancedMatchingConfig,
+          "blacklisted_companies" | "chatgpt_prompt"
+        >;
+        Update: Partial<
+          Pick<
+            AdvancedMatchingConfig,
+            "blacklisted_companies" | "chatgpt_prompt"
+          >
+        >;
+      };
     };
     Views: {};
     Functions: {
       get_user_id_by_email: {
         Params: { email: string };
         Returns: { id: string };
+      };
+      count_chatgpt_usage: {
+        Params: {
+          user_id: number;
+          cost_increment: number;
+          input_tokens_increment: number;
+          output_tokens_increment: number;
+        };
+        Returns: {};
       };
     };
   };
