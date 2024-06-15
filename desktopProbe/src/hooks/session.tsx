@@ -75,21 +75,15 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        if (user) {
-          setIsLoading(true);
-          await loadProfile();
-          setIsLoading(false);
-        } else {
-          setProfile(null);
-        }
+        setIsLoading(true);
+        await loadProfile();
+        setIsLoading(false);
       } catch (error) {
         handleError({ error, title: 'Failed to load profile' });
       }
     };
 
-    if (user) {
-      asyncLoad();
-    }
+    asyncLoad();
   }, [user]);
 
   /**
@@ -98,7 +92,6 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
   const handleLogout = async () => {
     try {
       setUser(null);
-      setProfile(null);
     } catch (error) {
       handleError({ error });
     }
