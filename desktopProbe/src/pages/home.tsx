@@ -60,7 +60,12 @@ import {
 import { useSession } from "@/hooks/session";
 
 const JOB_BATCH_SIZE = 30;
-const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
+const ALL_JOB_STATUSES: JobStatus[] = [
+  "new",
+  "applied",
+  "archived",
+  "excluded_by_advanced_matching",
+];
 
 type JobListing = {
   isLoading: boolean;
@@ -460,6 +465,26 @@ export function Home() {
             {status === "archived" && (
               <TabActions
                 tab="archived"
+                onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="excluded_by_advanced_matching"
+            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
+              status === "archived" ? "justify-between" : "justify-center"
+            }`}
+          >
+            {status === "excluded_by_advanced_matching" && (
+              <span className="w-6" />
+            )}
+            Filtered {`(${0})`}
+            {status === "excluded_by_advanced_matching" && (
+              <TabActions
+                tab="excluded_by_advanced_matching"
                 onTabChange={onTabChange}
                 onCsvExport={onCsvExport}
                 onArchiveAll={onArchiveAll}
