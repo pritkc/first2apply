@@ -19,7 +19,7 @@ export function LoginPage() {
     try {
       setIsSubmitting(true);
       const user = await loginWithEmail({ email, password });
-      login(user);
+      await login(user);
       navigate('/');
     } catch (error) {
       handleError({ error });

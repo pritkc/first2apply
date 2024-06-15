@@ -13,7 +13,7 @@ const SessionContext = createContext<{
   stripeConfig: StripeConfig | null;
   isLoggedIn: boolean;
   isSubscriptionExpired: boolean;
-  login: (user: User) => void;
+  login: (user: User) => Promise<void>;
   logout: () => void;
   refreshProfile: () => void;
 }>({
@@ -56,7 +56,9 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
         setStripeConfig(await getStripeConfig());
 
         const currentUser = await getUser();
+        await loadProfile(currentUser);
         setUser(currentUser);
+        setIsLoading(false);
       } catch (error) {
         handleError({ error, title: 'Failed to load profile' });
       }
@@ -65,26 +67,18 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
     asyncLoad();
   }, []);
 
-  // load the user profile when the user changes
-  const loadProfile = async () => {
+  const loadProfile = async (user: User | null) => {
+    if (!user) {
+      setProfile(null);
+      setIsSubscriptionExpired(false);
+      return;
+    }
+
     const userProfile = await getProfile();
     const now = new Date();
     setIsSubscriptionExpired(userProfile?.subscription_end_date && new Date(userProfile.subscription_end_date) < now);
     setProfile(userProfile);
   };
-  useEffect(() => {
-    const asyncLoad = async () => {
-      try {
-        setIsLoading(true);
-        await loadProfile();
-        setIsLoading(false);
-      } catch (error) {
-        handleError({ error, title: 'Failed to load profile' });
-      }
-    };
-
-    asyncLoad();
-  }, [user]);
 
   /**
    * Handle user logout.
@@ -92,6 +86,7 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
   const handleLogout = async () => {
     try {
       setUser(null);
+      await loadProfile(null);
     } catch (error) {
       handleError({ error });
     }
@@ -102,11 +97,21 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
    */
   const refreshProfile = async () => {
     try {
-      if (user) {
-        await loadProfile();
-      }
+      await loadProfile(user);
     } catch (error) {
       handleError({ error, title: 'Failed to load profile' });
+    }
+  };
+
+  /**
+   * Handle user login.
+   */
+  const handleLogin = async (user: User) => {
+    try {
+      await loadProfile(user);
+      setUser(user);
+    } catch (error) {
+      handleError({ error });
     }
   };
 
@@ -119,8 +124,8 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
         stripeConfig,
         isLoggedIn: !!user,
         isSubscriptionExpired,
-        logout: () => handleLogout(),
-        login: async (user: User) => setUser(user),
+        logout: handleLogout,
+        login: handleLogin,
         refreshProfile,
       }}
     >
