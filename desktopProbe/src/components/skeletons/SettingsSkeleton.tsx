@@ -1,6 +1,7 @@
-import { FC } from "react";
-import { Skeleton } from "../ui/skeleton";
-import { CronScheduleSkeleton } from "@/components/skeletons/CronScheduleSkeleton";
+import { CronScheduleSkeleton } from '@/components/skeletons/CronScheduleSkeleton';
+import { FC } from 'react';
+
+import { Skeleton } from '../ui/skeleton';
 
 export const SettingsSkeleton: FC = () => {
   return (
@@ -18,7 +19,7 @@ export const SettingsSkeleton: FC = () => {
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className="animate-pulse h-[102px] flex flex-row items-center justify-between rounded-lg border p-6"
+            className="flex h-[102px] animate-pulse flex-row items-center justify-between rounded-lg border p-6"
           >
             <div className="space-y-2">
               {/* Setting title */}
@@ -33,7 +34,7 @@ export const SettingsSkeleton: FC = () => {
       </div>
 
       {/* Subscription skeleton */}
-      <div className="animate-pulse h-[102px] flex flex-row items-center justify-between rounded-lg border p-6">
+      <div className="flex h-[102px] animate-pulse flex-row items-center justify-between rounded-lg border p-6">
         <div className="space-y-1">
           {/* Setting title */}
           <Skeleton className="h-6 w-[250px] rounded-md" />

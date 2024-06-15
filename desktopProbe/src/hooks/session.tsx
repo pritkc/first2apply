@@ -1,12 +1,9 @@
-import { getProfile, getStripeConfig, getUser } from "@/lib/electronMainSdk";
+import { getProfile, getStripeConfig, getUser } from '@/lib/electronMainSdk';
+import { User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { User } from "@supabase/supabase-js";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  Profile,
-  StripeConfig,
-} from "../../../supabase/functions/_shared/types";
-import { useError } from "./error";
+import { Profile, StripeConfig } from '../../../supabase/functions/_shared/types';
+import { useError } from './error';
 
 // Create a context for the session manager
 const SessionContext = createContext<{
@@ -37,7 +34,7 @@ const SessionContext = createContext<{
 export const useSession = () => {
   const sessionManager = useContext(SessionContext);
   if (sessionManager === undefined) {
-    throw new Error("useSession must be used within a SessionProvider");
+    throw new Error('useSession must be used within a SessionProvider');
   }
   return sessionManager;
 };
@@ -61,7 +58,7 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
         const currentUser = await getUser();
         setUser(currentUser);
       } catch (error) {
-        handleError({ error, title: "Failed to load profile" });
+        handleError({ error, title: 'Failed to load profile' });
       }
     };
 
@@ -72,10 +69,7 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
   const loadProfile = async () => {
     const userProfile = await getProfile();
     const now = new Date();
-    setIsSubscriptionExpired(
-      userProfile?.subscription_end_date &&
-        new Date(userProfile.subscription_end_date) < now
-    );
+    setIsSubscriptionExpired(userProfile?.subscription_end_date && new Date(userProfile.subscription_end_date) < now);
     setProfile(userProfile);
   };
   useEffect(() => {
@@ -89,7 +83,7 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
           setProfile(null);
         }
       } catch (error) {
-        handleError({ error, title: "Failed to load profile" });
+        handleError({ error, title: 'Failed to load profile' });
       }
     };
 
@@ -119,7 +113,7 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
         await loadProfile();
       }
     } catch (error) {
-      handleError({ error, title: "Failed to load profile" });
+      handleError({ error, title: 'Failed to load profile' });
     }
   };
 

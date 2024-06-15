@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { JobSite } from "../../../supabase/functions/_shared/types";
-import { useError } from "./error";
-import { listSites } from "@/lib/electronMainSdk";
-import { useSession } from "./session";
+import { listSites } from '@/lib/electronMainSdk';
+import { createContext, useContext, useEffect, useState } from 'react';
+
+import { JobSite } from '../../../supabase/functions/_shared/types';
+import { useError } from './error';
+import { useSession } from './session';
 
 /**
  * Context that stores supported sites.
@@ -19,7 +20,7 @@ export const SitesContext = createContext<{
 export const useSites = () => {
   const sites = useContext(SitesContext);
   if (sites === undefined) {
-    throw new Error("useSites must be used within a SitesProvider");
+    throw new Error('useSites must be used within a SitesProvider');
   }
   return sites;
 };
@@ -47,9 +48,7 @@ export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
     asyncLoad();
   }, [isLoggedIn]);
 
-  const siteLogos = Object.fromEntries(
-    sites.map((site) => [site.id, site.logo_url])
-  );
+  const siteLogos = Object.fromEntries(sites.map((site) => [site.id, site.logo_url]));
 
   return (
     <SitesContext.Provider

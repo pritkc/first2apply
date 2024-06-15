@@ -7,7 +7,7 @@ export function parseUrlHash(url: string) {
     hashParts.map((part) => {
       const [name, value] = part.split('=');
       return [name, value];
-    })
+    }),
   );
 
   return hashMap;

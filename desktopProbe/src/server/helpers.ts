@@ -4,14 +4,12 @@
  */
 export async function promiseAllSequence<ElementType, PromisedReturnType>(
   items: ElementType[],
-  functor: (item: ElementType) => Promise<PromisedReturnType>
+  functor: (item: ElementType) => Promise<PromisedReturnType>,
 ): Promise<PromisedReturnType[]> {
   return items.reduce(
     (promiseChain, item) =>
-      promiseChain.then((resultsSoFar) =>
-        functor(item).then((currentResult) => [...resultsSoFar, currentResult])
-      ),
-    Promise.resolve<PromisedReturnType[]>([])
+      promiseChain.then((resultsSoFar) => functor(item).then((currentResult) => [...resultsSoFar, currentResult])),
+    Promise.resolve<PromisedReturnType[]>([]),
   );
 }
 
