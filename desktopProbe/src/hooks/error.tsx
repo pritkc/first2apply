@@ -1,6 +1,6 @@
-import { useToast } from "@/components/ui/use-toast";
-import { getExceptionMessage } from "@/lib/error";
-import { useState } from "react";
+import { useToast } from '@/components/ui/use-toast';
+import { getExceptionMessage } from '@/lib/error';
+import { useState } from 'react';
 
 /**
  * Hook used to handle errors.
@@ -12,7 +12,7 @@ export function useError() {
 
   const handleError = ({
     error,
-    title = "Oops, something went wrong!",
+    title = 'Oops, something went wrong!',
     silent = false,
   }: {
     error: unknown;
@@ -25,7 +25,7 @@ export function useError() {
       toast({
         title,
         description: getExceptionMessage(error, true),
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
 

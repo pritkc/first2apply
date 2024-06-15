@@ -1,14 +1,12 @@
-import { app, autoUpdater, Notification, shell } from "electron";
+import { IAnalyticsClient } from '@/lib/analytics';
+import { Notification, app, autoUpdater, shell } from 'electron';
+import { ScheduledTask, schedule } from 'node-cron';
+import * as semver from 'semver';
 
-import { schedule, ScheduledTask } from "node-cron";
-import * as semver from "semver";
+import { getExceptionMessage } from '../lib/error';
+import { ILogger } from './logger';
 
-import { getExceptionMessage } from "../lib/error";
-import { IAnalyticsClient } from "@/lib/analytics";
-import { ILogger } from "./logger";
-
-const S3_BUCKET =
-  "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases";
+const S3_BUCKET = 'https://s3.eu-central-1.amazonaws.com/first2apply.com/releases';
 
 type ReleaseJson = {
   currentRelease: string;
@@ -46,7 +44,7 @@ export class F2aAutoUpdater {
   constructor(
     private _logger: ILogger,
     private _onQuit: () => Promise<void>,
-    private _analytics: IAnalyticsClient
+    private _analytics: IAnalyticsClient,
   ) {
     // only enable auto-updates in packaged apps
     this._canAutoUpdate = app.isPackaged;
@@ -59,33 +57,30 @@ export class F2aAutoUpdater {
   start() {
     if (!this._canAutoUpdate) return;
 
-    autoUpdater.setFeedURL({ url: this._feedUrl, serverType: "json" });
+    autoUpdater.setFeedURL({ url: this._feedUrl, serverType: 'json' });
 
     // setup auto updater events
-    autoUpdater.on("error", (error) => {
-      console.error("Error fetching updates", getExceptionMessage(error));
+    autoUpdater.on('error', (error) => {
+      console.error('Error fetching updates', getExceptionMessage(error));
     });
-    autoUpdater.on("checking-for-update", () => {
-      this._logger.info("Checking for updates ...");
+    autoUpdater.on('checking-for-update', () => {
+      this._logger.info('Checking for updates ...');
     });
-    autoUpdater.on("update-available", () => {
-      this._logger.info("Update available, downloading in background ...");
+    autoUpdater.on('update-available', () => {
+      this._logger.info('Update available, downloading in background ...');
     });
-    autoUpdater.on("update-not-available", () => {
-      this._logger.info("No updates available");
+    autoUpdater.on('update-not-available', () => {
+      this._logger.info('No updates available');
     });
 
-    autoUpdater.on(
-      "update-downloaded",
-      (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-        this._showUpdateNotification({ releaseName, updateURL });
-      }
-    );
+    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
+      this._showUpdateNotification({ releaseName, updateURL });
+    });
 
-    this._logger.info("auto updater started");
+    this._logger.info('auto updater started');
 
     // check for updates every hour
-    this._cronJob = schedule("0 * * * *", () => {
+    this._cronJob = schedule('0 * * * *', () => {
       this._checkForUpdates();
     });
 
@@ -105,47 +100,39 @@ export class F2aAutoUpdater {
   /**
    * Show a notification for new updates.
    */
-  private _showUpdateNotification({
-    releaseName,
-    updateURL,
-  }: {
-    releaseName: string;
-    updateURL: string;
-  }) {
+  private _showUpdateNotification({ releaseName, updateURL }: { releaseName: string; updateURL: string }) {
     // cache the release info for further checks
     this._latestRelease = { name: releaseName, url: updateURL };
 
     // show a notification
     const message =
-      process.platform === "darwin"
-        ? "A new version has been downloaded. Restart the application to apply the updates."
-        : "A new version is available. You can now download and install it.";
+      process.platform === 'darwin'
+        ? 'A new version has been downloaded. Restart the application to apply the updates.'
+        : 'A new version is available. You can now download and install it.';
     const actions: Electron.NotificationAction[] | undefined =
-      process.platform === "darwin"
-        ? [{ text: "Restart Now", type: "button" }]
-        : undefined;
+      process.platform === 'darwin' ? [{ text: 'Restart Now', type: 'button' }] : undefined;
     this._notification = new Notification({
       title: releaseName,
       body: message,
       actions,
     });
     this._notification.show();
-    this._analytics.trackEvent("show_update_notification", {
+    this._analytics.trackEvent('show_update_notification', {
       release_name: releaseName,
     });
 
     const applyUpdate = async () => {
       try {
-        process.platform === "darwin"
-          ? this._logger.info("restarting to apply update ...")
-          : this._logger.info("opening download url ...");
-        this._analytics.trackEvent("apply_update", {
+        process.platform === 'darwin'
+          ? this._logger.info('restarting to apply update ...')
+          : this._logger.info('opening download url ...');
+        this._analytics.trackEvent('apply_update', {
           release_name: releaseName,
         });
 
         // on linux/win32 we can't apply the update automatically, so just open the download page
         // and let the user install it manually
-        if (process.platform !== "darwin") {
+        if (process.platform !== 'darwin') {
           shell.openExternal(updateURL);
           return;
         }
@@ -157,8 +144,8 @@ export class F2aAutoUpdater {
       }
     };
 
-    this._notification.on("action", applyUpdate);
-    this._notification.on("click", applyUpdate);
+    this._notification.on('action', applyUpdate);
+    this._notification.on('click', applyUpdate);
   }
 
   /**
@@ -176,16 +163,14 @@ export class F2aAutoUpdater {
         return;
       }
 
-      if (process.platform === "darwin") {
+      if (process.platform === 'darwin') {
         autoUpdater.checkForUpdates();
       } else {
         // manually check for updates on other platforms
         await this._checkForUpdatesManually();
       }
     } catch (error) {
-      this._logger.error(
-        `Error checking for updates: ${getExceptionMessage(error)}`
-      );
+      this._logger.error(`Error checking for updates: ${getExceptionMessage(error)}`);
     }
   }
 
@@ -194,16 +179,14 @@ export class F2aAutoUpdater {
    */
   private async _checkForUpdatesManually() {
     // download the feed JSON and check for updates
-    this._logger.info("checking for updates manually ...");
-    const releasesJson: ReleaseJson = await fetch(this._feedUrl).then(
-      (response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Failed to fetch updates");
+    this._logger.info('checking for updates manually ...');
+    const releasesJson: ReleaseJson = await fetch(this._feedUrl).then((response) => {
+      if (response.ok) {
+        return response.json();
       }
-    );
-    this._logger.info("release json downloaded");
+      throw new Error('Failed to fetch updates');
+    });
+    this._logger.info('release json downloaded');
 
     // check if the current version is the latest
     const currentVersion = app.getVersion();
@@ -212,13 +195,9 @@ export class F2aAutoUpdater {
       this._logger.info(`new version available: ${latestVersion}`);
 
       // find the release metadata the latest version
-      const release = releasesJson.releases.find(
-        (release) => release.version === latestVersion
-      );
+      const release = releasesJson.releases.find((release) => release.version === latestVersion);
       if (!release) {
-        throw new Error(
-          `Release metadata not found for version ${latestVersion}`
-        );
+        throw new Error(`Release metadata not found for version ${latestVersion}`);
       }
 
       // show the update notification
@@ -227,7 +206,7 @@ export class F2aAutoUpdater {
         updateURL: release.updateTo.url,
       });
     } else {
-      this._logger.info("no updates available");
+      this._logger.info('no updates available');
     }
   }
 }

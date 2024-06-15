@@ -1,6 +1,7 @@
-import { app } from "electron";
-import { createLogger, Logger as MezmoLogger } from "@logdna/logger";
-import { ENV } from "../env";
+import { Logger as MezmoLogger, createLogger } from '@logdna/logger';
+import { app } from 'electron';
+
+import { ENV } from '../env';
 
 export interface ILogger {
   debug(message: string, data?: Record<string, any>): void;
@@ -47,7 +48,7 @@ class Logger implements ILogger {
 }
 
 const mezmoLogger = createLogger(ENV.mezmoApiKey, {
-  level: ENV.nodeEnv === "development" ? "debug" : "info",
+  level: ENV.nodeEnv === 'development' ? 'debug' : 'info',
   app: ENV.appBundleId,
   env: ENV.nodeEnv,
   hostname: process.platform,

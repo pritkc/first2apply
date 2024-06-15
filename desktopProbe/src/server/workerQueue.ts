@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 
 type AsyncTask<T> = () => Promise<T>;
 
@@ -38,7 +38,7 @@ export class WorkerQueue extends EventEmitter {
     // nothing to do if the queue is empty
     if (this._queue.length === 0) {
       // emit the empty event if the queue is empty and there are no tasks running
-      if (this._currentlyActive === 0) this.emit("empty");
+      if (this._currentlyActive === 0) this.emit('empty');
 
       return;
     }

@@ -1,49 +1,28 @@
-import { RadioGroup } from "@/components/ui/radio-group";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Item } from "@radix-ui/react-radio-group";
-import { useEffect, useState } from "react";
-import { set, useForm } from "react-hook-form";
-import * as z from "zod";
-import { Icons } from "../components/icons";
-import { Button } from "../components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "../components/ui/form";
-import { Input } from "../components/ui/input";
-import { Skeleton } from "../components/ui/skeleton";
-import { Textarea } from "../components/ui/textarea";
-import { toast } from "../components/ui/use-toast";
-import { useError } from "../hooks/error";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup } from '@/components/ui/radio-group';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Item } from '@radix-ui/react-radio-group';
+import { useEffect, useState } from 'react';
+import { set, useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import {
-  createReview,
-  getOS,
-  getUserReview,
-  openExternalUrl,
-  updateReview,
-} from "../lib/electronMainSdk";
-import { DefaultLayout } from "./defaultLayout";
-import { Review } from "../../../supabase/functions/_shared/types";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Review } from '../../../supabase/functions/_shared/types';
+import { Icons } from '../components/icons';
+import { Button } from '../components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '../components/ui/form';
+import { Input } from '../components/ui/input';
+import { Skeleton } from '../components/ui/skeleton';
+import { Textarea } from '../components/ui/textarea';
+import { toast } from '../components/ui/use-toast';
+import { useError } from '../hooks/error';
+import { createReview, getOS, getUserReview, openExternalUrl, updateReview } from '../lib/electronMainSdk';
+import { DefaultLayout } from './defaultLayout';
 
-const MICROSOFT_APP_URL = "ms-windows-store://pdp/?productid=9NK18WV87SV2";
+const MICROSOFT_APP_URL = 'ms-windows-store://pdp/?productid=9NK18WV87SV2';
 
 const StarIcon = ({ filled = false }) => (
   <svg
-    className={`h-6 w-6 ${
-      filled ? "text-primary" : "text-border"
-    } transition-colors`}
+    className={`h-6 w-6 ${filled ? 'text-primary' : 'text-border'} transition-colors`}
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
     viewBox="0 0 24 24"
@@ -54,13 +33,9 @@ const StarIcon = ({ filled = false }) => (
 );
 
 const schema = z.object({
-  title: z.string().min(1, { message: "This field cannot be blank" }).max(80),
-  description: z
-    .string()
-    .min(1, { message: "This field cannot be blank" })
-    .max(500)
-    .optional(),
-  rating: z.number().min(1, { message: "Rate from 1 to 5 stars" }).max(5),
+  title: z.string().min(1, { message: 'This field cannot be blank' }).max(80),
+  description: z.string().min(1, { message: 'This field cannot be blank' }).max(500).optional(),
+  rating: z.number().min(1, { message: 'Rate from 1 to 5 stars' }).max(5),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -69,7 +44,7 @@ export function FeedbackPage() {
   const { handleError } = useError();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [userOS, setUserOS] = useState<NodeJS.Platform | "">("");
+  const [userOS, setUserOS] = useState<NodeJS.Platform | ''>('');
   const [existingReview, setExistingReview] = useState<Review | null>(null);
   const [hoveredValue, setHoveredValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,10 +52,10 @@ export function FeedbackPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: "",
+      title: '',
       rating: 5,
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   /**
@@ -93,9 +68,9 @@ export function FeedbackPage() {
         // check if user has already reviewed and load the form accordingly
         const existingReview = await getUserReview();
         if (existingReview) {
-          form.setValue("title", existingReview.title);
-          form.setValue("description", existingReview.description);
-          form.setValue("rating", existingReview.rating);
+          form.setValue('title', existingReview.title);
+          form.setValue('description', existingReview.description);
+          form.setValue('rating', existingReview.rating);
         }
         setExistingReview(existingReview);
 
@@ -112,7 +87,7 @@ export function FeedbackPage() {
   }, []);
 
   const { setValue, watch } = form;
-  const rating = watch("rating"); // This will update the rating based on the form's current value
+  const rating = watch('rating'); // This will update the rating based on the form's current value
 
   /**
    * Submit the review form.
@@ -137,10 +112,10 @@ export function FeedbackPage() {
       setExistingReview(updatedReview);
 
       toast({
-        title: "Thank you for making First 2 Apply better!",
+        title: 'Thank you for making First 2 Apply better!',
         description:
-          "Your feedback has been submitted and our team will review it soon. You can always update your review later.",
-        variant: "success",
+          'Your feedback has been submitted and our team will review it soon. You can always update your review later.',
+        variant: 'success',
       });
     } catch (error) {
       handleError({ error });
@@ -158,31 +133,28 @@ export function FeedbackPage() {
 
   if (isLoading) {
     return (
-      <DefaultLayout className="p-6 md:p-10 space-y-3">
-        <Skeleton className="h-4 w-full mb-4" />
+      <DefaultLayout className="space-y-3 p-6 md:p-10">
+        <Skeleton className="mb-4 h-4 w-full" />
       </DefaultLayout>
     );
   }
 
   return (
-    <DefaultLayout className="p-6 md:p-10 space-y-3">
-      <h1 className="text-2xl font-medium tracking-wide pb-3">Feedback</h1>
+    <DefaultLayout className="space-y-3 p-6 md:p-10">
+      <h1 className="pb-3 text-2xl font-medium tracking-wide">Feedback</h1>
 
       <Card className="rounded-lg">
         <CardHeader>
-          <h2 className="text-xl font-medium">
-            Help us make First 2 Apply better
-          </h2>
-          <p className="text-muted-foreground text-sm text-balance">
-            Let us know what works, what doesn't or any ideas you might have
-            that would make the app better suited to your job hunting needs.
+          <h2 className="text-xl font-medium">Help us make First 2 Apply better</h2>
+          <p className="text-balance text-sm text-muted-foreground">
+            Let us know what works, what doesn't or any ideas you might have that would make the app better suited to
+            your job hunting needs.
           </p>
-          {userOS === "win32" && (
-            <p className="text-muted-foreground text-sm text-balance my-2">
-              If you're enjoying First 2 Apply, please consider leaving a review
-              on the{" "}
+          {userOS === 'win32' && (
+            <p className="my-2 text-balance text-sm text-muted-foreground">
+              If you're enjoying First 2 Apply, please consider leaving a review on the{' '}
               <a
-                className="text-primary underline hover:no-underline hover:text-primary-dark hover:cursor-pointer"
+                className="hover:text-primary-dark text-primary underline hover:cursor-pointer hover:no-underline"
                 onClick={(e) => {
                   e.preventDefault();
                   openWindowsStore();
@@ -206,9 +178,7 @@ export function FeedbackPage() {
                     <FormControl>
                       <RadioGroup
                         value={String(rating)}
-                        onValueChange={(value) =>
-                          setValue("rating", Number(value))
-                        }
+                        onValueChange={(value) => setValue('rating', Number(value))}
                         className="flex items-center"
                       >
                         {Array.from({ length: 5 }, (_, index) => {
@@ -221,9 +191,7 @@ export function FeedbackPage() {
                               onMouseLeave={() => setHoveredValue(0)}
                             >
                               <label className="cursor-pointer">
-                                <StarIcon
-                                  filled={value <= (hoveredValue || rating)}
-                                />
+                                <StarIcon filled={value <= (hoveredValue || rating)} />
                               </label>
                             </Item>
                           );
@@ -256,32 +224,22 @@ export function FeedbackPage() {
                       Description <i>(Optional)</i>
                     </FormLabel>
                     <FormControl>
-                      <Textarea
-                        id="description"
-                        className="resize-none mb-4"
-                        rows={6}
-                        {...field}
-                      />
+                      <Textarea id="description" className="mb-4 resize-none" rows={6} {...field} />
                     </FormControl>
                   </FormItem>
                 )}
               />
 
-              <Button
-                type="submit"
-                disabled={!form.formState.isValid || isSubmitting}
-                size="lg"
-                className="text-base"
-              >
+              <Button type="submit" disabled={!form.formState.isValid || isSubmitting} size="lg" className="text-base">
                 {isSubmitting ? (
                   <>
-                    <Icons.spinner2 className="animate-spin h-4 w-4" />
+                    <Icons.spinner2 className="h-4 w-4 animate-spin" />
                     Submitting review...
                   </>
                 ) : existingReview ? (
-                  "Update review"
+                  'Update review'
                 ) : (
-                  "Submit review"
+                  'Submit review'
                 )}
               </Button>
             </form>

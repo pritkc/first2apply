@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { JobScannerSettings } from "@/lib/types";
-import { getProbeSettings, updateProbeSettings } from "@/lib/electronMainSdk";
-import { useError } from "@/hooks/error";
-import { useSession } from "./session";
+import { useError } from '@/hooks/error';
+import { getProbeSettings, updateProbeSettings } from '@/lib/electronMainSdk';
+import { JobScannerSettings } from '@/lib/types';
+import { createContext, useContext, useEffect, useState } from 'react';
+
+import { useSession } from './session';
 
 // Define the shape of the context data
 interface SettingsContextType {
@@ -12,15 +13,13 @@ interface SettingsContextType {
 }
 
 // Create the context with a default value
-const SettingsContext = createContext<SettingsContextType | undefined>(
-  undefined
-);
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 // Hook for consuming context
 export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error("useSettings must be used within a SettingsProvider");
+    throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
 };
@@ -60,9 +59,7 @@ export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
   };
 
   return (
-    <SettingsContext.Provider
-      value={{ settings, isLoading, updateSettings: onUpdateSettings }}
-    >
+    <SettingsContext.Provider value={{ settings, isLoading, updateSettings: onUpdateSettings }}>
       {children}
     </SettingsContext.Provider>
   );

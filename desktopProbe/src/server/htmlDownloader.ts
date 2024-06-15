@@ -1,11 +1,11 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow } from 'electron';
+import { backOff } from 'exponential-backoff';
 
-import { backOff } from "exponential-backoff";
-import { WorkerQueue } from "./workerQueue";
-import { sleep } from "./helpers";
-import { ILogger } from "./logger";
+import { sleep } from './helpers';
+import { ILogger } from './logger';
+import { WorkerQueue } from './workerQueue';
 
-const KNOWN_AUTHWALLS = ["authwall", "login"];
+const KNOWN_AUTHWALLS = ['authwall', 'login'];
 
 /**
  * Wrapper over a headless window that can be used to download HTML.
@@ -41,13 +41,9 @@ export class HtmlDownloader {
   }: {
     url: string;
     scrollTimes?: number;
-    callback: (_: {
-      html: string;
-      maxRetries: number;
-      retryCount: number;
-    }) => Promise<T>;
+    callback: (_: { html: string; maxRetries: number; retryCount: number }) => Promise<T>;
   }): Promise<T> {
-    if (!this._pool) throw new Error("Pool not initialized");
+    if (!this._pool) throw new Error('Pool not initialized');
 
     return this._pool.useBrowserWindow(async (window) => {
       await this._loadUrl(window, url, scrollTimes);
@@ -56,13 +52,11 @@ export class HtmlDownloader {
       let retryCount = 0;
       return backOff(
         async () => {
-          const html: string = await window.webContents.executeJavaScript(
-            "document.documentElement.innerHTML"
-          );
+          const html: string = await window.webContents.executeJavaScript('document.documentElement.innerHTML');
           return callback({ html, maxRetries, retryCount: retryCount++ });
         },
         {
-          jitter: "full",
+          jitter: 'full',
           numOfAttempts: 1 + maxRetries,
           maxDelay: 5_000,
           startingDelay: 1_000,
@@ -70,7 +64,7 @@ export class HtmlDownloader {
             // perform retries only if the window is still running
             return this._isRunning;
           },
-        }
+        },
       );
     });
   }
@@ -86,58 +80,49 @@ export class HtmlDownloader {
   /**
    * Load an URL and make sure to wait for the page to load.
    */
-  private async _loadUrl(
-    window: BrowserWindow,
-    url: string,
-    scrollTimes: number
-  ) {
-    if (!this._isRunning) return "<html></html>";
+  private async _loadUrl(window: BrowserWindow, url: string, scrollTimes: number) {
+    if (!this._isRunning) return '<html></html>';
 
     this._logger.info(`loading url: ${url} ...`);
     await backOff(
       async () => {
         let statusCode: number | undefined;
-        window.webContents.once(
-          "did-navigate",
-          (event, url, httpResponseCode) => {
-            statusCode = httpResponseCode;
-          }
-        );
+        window.webContents.once('did-navigate', (event, url, httpResponseCode) => {
+          statusCode = httpResponseCode;
+        });
         await window.loadURL(url);
 
         // handle 429 status code
         if (statusCode === 429) {
           this._logger.debug(`429 status code detected: ${url}`);
           await sleep(5_000);
-          throw new Error("rate limit exceeded");
+          throw new Error('rate limit exceeded');
         }
 
         // scroll to bottom a few times to trigger infinite loading
         for (let i = 0; i < scrollTimes; i++) {
           await window.webContents.executeJavaScript(
-            'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});'
+            'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});',
           );
           await sleep(2_000);
 
           // check if page was redirected to a login page
           const finalUrl = window.webContents.getURL();
-          if (
-            KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))
-          ) {
+          if (KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))) {
             this._logger.debug(`authwall detected: ${finalUrl}`);
-            throw new Error("authwall");
+            throw new Error('authwall');
           }
         }
       },
       {
-        jitter: "full",
+        jitter: 'full',
         numOfAttempts: 20,
         maxDelay: 5_000,
         retry: () => {
           // perform retries only if the window is still running
           return this._isRunning;
         },
-      }
+      },
     );
 
     this._logger.info(`finished loading url: ${url}`);
@@ -186,7 +171,7 @@ class BrowserWindowPool {
   async useBrowserWindow<T>(fn: (window: BrowserWindow) => Promise<T>) {
     return this._queue.enqueue(() => {
       const worker = this._pool.find((w) => w.isAvailable);
-      if (!worker) throw new Error("No available window found");
+      if (!worker) throw new Error('No available window found');
       worker.isAvailable = false;
 
       return fn(worker.window).finally(() => {
@@ -201,7 +186,7 @@ class BrowserWindowPool {
   close() {
     return new Promise<void>((resolve) => {
       // wait until the queue is empty
-      this._queue.on("empty", () => {
+      this._queue.on('empty', () => {
         this._pool.forEach((w) => w.window.close());
 
         // artificial delay to allow the window to close

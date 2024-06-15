@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
-import { changePassword } from "@/lib/electronMainSdk";
-import { useError } from "@/hooks/error";
-import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { ResetPasswordCard } from "@/components/resetPasswordCard";
-import { useSession } from "@/hooks/session";
+import { ResetPasswordCard } from '@/components/resetPasswordCard';
+import { useToast } from '@/components/ui/use-toast';
+import { useError } from '@/hooks/error';
+import { useSession } from '@/hooks/session';
+import { changePassword } from '@/lib/electronMainSdk';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Component used to render the reset password page.
@@ -23,12 +23,11 @@ export function ResetPasswordPage() {
       const user = await changePassword({ password });
       login(user);
       toast({
-        title: "Password changed",
-        description:
-          "Your password has been changed successfully, you can use it to login next time.",
-        variant: "success",
+        title: 'Password changed',
+        description: 'Your password has been changed successfully, you can use it to login next time.',
+        variant: 'success',
       });
-      navigate("/");
+      navigate('/');
     } catch (error) {
       handleError({ error });
     } finally {
@@ -37,11 +36,8 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <main className="flex justify-center items-center min-h-screen">
-      <ResetPasswordCard
-        onChangePassword={handlePasswordChange}
-        isSubmitting={isSubmitting}
-      />
+    <main className="flex min-h-screen items-center justify-center">
+      <ResetPasswordCard onChangePassword={handlePasswordChange} isSubmitting={isSubmitting} />
     </main>
   );
 }

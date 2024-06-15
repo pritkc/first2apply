@@ -1,45 +1,24 @@
-import { JobScannerSettings } from "@/lib/types";
-import * as luxon from "luxon";
+import { CronSchedule } from '@/components/cronSchedule';
+import { SettingsSkeleton } from '@/components/skeletons/SettingsSkeleton';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { useError } from '@/hooks/error';
+import { useSession } from '@/hooks/session';
+import { useSettings } from '@/hooks/settings';
+import { getProfile, getStripeConfig, logout, openExternalUrl } from '@/lib/electronMainSdk';
+import { JobScannerSettings } from '@/lib/types';
+import * as luxon from 'luxon';
+import { useEffect, useState } from 'react';
 
-import { useError } from "@/hooks/error";
-import { useSession } from "@/hooks/session";
-import { useSettings } from "@/hooks/settings";
-
-import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
-import { DefaultLayout } from "./defaultLayout";
-import { CronSchedule } from "@/components/cronSchedule";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-
-import {
-  getProfile,
-  getStripeConfig,
-  logout,
-  openExternalUrl,
-} from "@/lib/electronMainSdk";
-import { useEffect, useState } from "react";
-import {
-  Profile,
-  StripeConfig,
-} from "../../../supabase/functions/_shared/types";
+import { Profile, StripeConfig } from '../../../supabase/functions/_shared/types';
+import { DefaultLayout } from './defaultLayout';
 
 export function SettingsPage() {
   const { handleError } = useError();
-  const {
-    isLoading: isLoadingSession,
-    logout: resetUser,
-    user,
-    profile,
-    stripeConfig,
-  } = useSession();
-  const {
-    isLoading: isLoadingSettings,
-    settings,
-    updateSettings,
-  } = useSettings();
+  const { isLoading: isLoadingSession, logout: resetUser, user, profile, stripeConfig } = useSession();
+  const { isLoading: isLoadingSettings, settings, updateSettings } = useSettings();
 
-  const isLoading =
-    !profile || !stripeConfig || isLoadingSettings || isLoadingSession;
+  const isLoading = !profile || !stripeConfig || isLoadingSettings || isLoadingSession;
 
   // Update settings
   const onUpdatedSettings = async (newSettings: JobScannerSettings) => {
@@ -66,92 +45,73 @@ export function SettingsPage() {
       const newSettings = { ...settings, cronRule };
       await updateSettings(newSettings);
     } catch (error) {
-      handleError({ error, title: "Failed to update notification frequency" });
+      handleError({ error, title: 'Failed to update notification frequency' });
     }
   };
 
   if (isLoading) {
     return (
-      <DefaultLayout className="p-6 md:p-10 space-y-3">
+      <DefaultLayout className="space-y-3 p-6 md:p-10">
         <SettingsSkeleton />
       </DefaultLayout>
     );
   }
 
   return (
-    <DefaultLayout className="p-6 md:p-10 space-y-3">
-      <h1 className="text-2xl font-medium tracking-wide pb-3">
-        Settings ({user.email})
-      </h1>
+    <DefaultLayout className="space-y-3 p-6 md:p-10">
+      <h1 className="pb-3 text-2xl font-medium tracking-wide">Settings ({user.email})</h1>
 
       {/* cron settings */}
-      <CronSchedule
-        cronRule={settings.cronRule}
-        onCronRuleChange={onCronRuleChange}
-      />
+      <CronSchedule cronRule={settings.cronRule} onCronRuleChange={onCronRuleChange} />
 
       {/* sleep settings */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+      <div className="flex flex-row items-center justify-between gap-6 rounded-lg border p-6">
         <div className="space-y-1">
           <h2 className="text-lg">Prevent computer from entering sleep</h2>
-          <p className="text-sm font-light">
-            First2Apply needs to run in the background to notify you of new jobs
-          </p>
+          <p className="text-sm font-light">First2Apply needs to run in the background to notify you of new jobs</p>
         </div>
         <Switch
           checked={settings.preventSleep}
-          onCheckedChange={(checked) =>
-            onUpdatedSettings({ ...settings, preventSleep: checked })
-          }
+          onCheckedChange={(checked) => onUpdatedSettings({ ...settings, preventSleep: checked })}
         />
       </div>
 
       {/* notification settings */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+      <div className="flex flex-row items-center justify-between gap-6 rounded-lg border p-6">
         <div className="space-y-1">
           <h2 className="text-lg">Enable notification sounds</h2>
-          <p className="text-sm font-light">
-            Play a sound when a new job is found in order to get your attention
-          </p>
+          <p className="text-sm font-light">Play a sound when a new job is found in order to get your attention</p>
         </div>
         <Switch
           checked={settings.useSound}
-          onCheckedChange={(checked) =>
-            onUpdatedSettings({ ...settings, useSound: checked })
-          }
+          onCheckedChange={(checked) => onUpdatedSettings({ ...settings, useSound: checked })}
         />
       </div>
 
       {/* email notifications */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+      <div className="flex flex-row items-center justify-between gap-6 rounded-lg border p-6">
         <div className="space-y-1">
           <h2 className="text-lg">
             Email notifications <span className="italic">(coming soon)</span>
           </h2>
-          <p className="text-sm font-light">
-            Get notified of new jobs even when you are on the go
-          </p>
+          <p className="text-sm font-light">Get notified of new jobs even when you are on the go</p>
         </div>
-        <Switch disabled value={""} />
+        <Switch disabled value={''} />
       </div>
 
       {/* subscription */}
-      <div className="flex flex-row items-center justify-between rounded-lg border p-6 gap-6">
+      <div className="flex flex-row items-center justify-between gap-6 rounded-lg border p-6">
         <div className="space-y-1">
           <h2 className="text-lg">
             {profile.subscription_tier.toUpperCase()} subscription
-            {profile.is_trial && " (Trial)"}
+            {profile.is_trial && ' (Trial)'}
           </h2>
           <p className="text-sm font-light">
-            Your subscription ends on{" "}
+            Your subscription ends on{' '}
             <span className="underline">
-              {luxon.DateTime.fromISO(profile.subscription_end_date).toFormat(
-                "dd LLLL yyyy"
-              )}
+              {luxon.DateTime.fromISO(profile.subscription_end_date).toFormat('dd LLLL yyyy')}
             </span>
-            .
-            {!profile.is_trial &&
-              " You can cancel or upgrade your subscription at any time."}
+            .{!profile.is_trial && ' You can cancel or upgrade your subscription at any time.'}
           </p>
         </div>
         {!profile.is_trial && (
