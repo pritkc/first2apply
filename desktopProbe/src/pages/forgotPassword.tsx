@@ -1,9 +1,8 @@
-import { sendPasswordResetEmail } from "@/lib/electronMainSdk";
-import { useError } from "@/hooks/error";
-import { ForgotPasswordCard } from "@/components/forgotPasswordCard";
-import { useState } from "react";
-
-import { useToast } from "@/components/ui/use-toast";
+import { ForgotPasswordCard } from '@/components/forgotPasswordCard';
+import { useToast } from '@/components/ui/use-toast';
+import { useError } from '@/hooks/error';
+import { sendPasswordResetEmail } from '@/lib/electronMainSdk';
+import { useState } from 'react';
 
 /**
  * Component used to render the forgot password card.
@@ -19,9 +18,9 @@ export function ForgotPasswordPage() {
       setIsSubmitting(true);
       await sendPasswordResetEmail({ email });
       toast({
-        title: "Reset password email sent",
+        title: 'Reset password email sent',
         description: `An email has been sent to ${email} with a link to reset your password.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
       handleError({ error });
@@ -31,11 +30,8 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <main className="flex justify-center items-center min-h-screen">
-      <ForgotPasswordCard
-        onResetPassword={resetPasswordRequest}
-        isSubmitting={isSubmitting}
-      />
+    <main className="flex min-h-screen items-center justify-center">
+      <ForgotPasswordCard onResetPassword={resetPasswordRequest} isSubmitting={isSubmitting} />
     </main>
   );
 }

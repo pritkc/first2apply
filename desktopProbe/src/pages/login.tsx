@@ -1,11 +1,9 @@
-import { useState } from "react";
-import { useError } from "@/hooks/error";
-import { useSession } from "@/hooks/session";
-import { useNavigate } from "react-router-dom";
-
-import { loginWithEmail } from "@/lib/electronMainSdk";
-
-import { LoginCard } from "@/components/loginCard";
+import { LoginCard } from '@/components/loginCard';
+import { useError } from '@/hooks/error';
+import { useSession } from '@/hooks/session';
+import { loginWithEmail } from '@/lib/electronMainSdk';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Component used to render the login page.
@@ -17,18 +15,12 @@ export function LoginPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onLoginWithEmail = async ({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }) => {
+  const onLoginWithEmail = async ({ email, password }: { email: string; password: string }) => {
     try {
       setIsSubmitting(true);
       const user = await loginWithEmail({ email, password });
-      login(user);
-      navigate("/");
+      await login(user);
+      navigate('/');
     } catch (error) {
       handleError({ error });
     } finally {
@@ -37,11 +29,8 @@ export function LoginPage() {
   };
 
   return (
-    <main className="flex justify-center items-center min-h-screen">
-      <LoginCard
-        onLoginWithEmail={onLoginWithEmail}
-        isSubmitting={isSubmitting}
-      />
+    <main className="flex min-h-screen items-center justify-center">
+      <LoginCard onLoginWithEmail={onLoginWithEmail} isSubmitting={isSubmitting} />
     </main>
   );
 }

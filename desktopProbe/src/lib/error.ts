@@ -4,19 +4,14 @@
 export function getExceptionMessage(error: unknown, noStackTrace = false) {
   if (error instanceof Error) {
     return noStackTrace ? error.message : error.stack ?? error.message;
-  } else if (typeof error === "object") {
-    if (
-      "message" in error &&
-      "details" in error &&
-      "hint" in error &&
-      "code" in error
-    ) {
+  } else if (typeof error === 'object') {
+    if ('message' in error && 'details' in error && 'hint' in error && 'code' in error) {
       // @ts-ignore
       return `${error.message} - ${error.details}`;
     }
 
     return JSON.stringify(error);
-  } else if (typeof error === "string") {
+  } else if (typeof error === 'string') {
     return error;
   }
 

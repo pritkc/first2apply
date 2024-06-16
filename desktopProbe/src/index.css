@@ -59,7 +59,7 @@
     @apply bg-background text-foreground;
   }
 
-  .job-description-md>* {
+  .job-description-md > * {
     @apply mb-4;
   }
 

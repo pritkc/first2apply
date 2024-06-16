@@ -1,45 +1,8 @@
-import {
-  ArchiveIcon,
-  DotsVerticalIcon,
-  TrashIcon,
-  UpdateIcon,
-  DownloadIcon,
-} from "@radix-ui/react-icons";
-import { useEffect, useState, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-
-import { useError } from "@/hooks/error";
-import { useLinks } from "@/hooks/links";
-
-import { useHotkeys } from "react-hotkeys-hook";
-
-import {
-  listJobs,
-  openExternalUrl,
-  scanJob,
-  updateJobLabels,
-  updateJobStatus,
-  getJobById,
-  changeAllJobsStatus,
-  exportJobsToCsv,
-} from "@/lib/electronMainSdk";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DefaultLayout } from "./defaultLayout";
-import { JobsSkeleton } from "@/components/skeletons/jobsSkeleton";
-import { JobsList } from "@/components/jobsList";
-import { JobSummary } from "@/components/jobSummary";
-import { JobDetails } from "@/components/jobDetails";
-import { JobNotes } from "@/components/jobNotes";
-import { Button } from "@/components/ui/button";
+import { JobDetails } from '@/components/jobDetails';
+import { JobNotes } from '@/components/jobNotes';
+import { JobSummary } from '@/components/jobSummary';
+import { JobsList } from '@/components/jobsList';
+import { JobsSkeleton } from '@/components/skeletons/jobsSkeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,17 +12,41 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { toast } from "@/components/ui/use-toast";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
-  Job,
-  JobLabel,
-  JobStatus,
-} from "../../../supabase/functions/_shared/types";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/components/ui/use-toast';
+import { useError } from '@/hooks/error';
+import { useLinks } from '@/hooks/links';
+import { useSession } from '@/hooks/session';
+import {
+  changeAllJobsStatus,
+  exportJobsToCsv,
+  getJobById,
+  listJobs,
+  openExternalUrl,
+  scanJob,
+  updateJobLabels,
+  updateJobStatus,
+} from '@/lib/electronMainSdk';
+import { ArchiveIcon, DotsVerticalIcon, DownloadIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
+import { useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+import { Job, JobLabel, JobStatus } from '../../../supabase/functions/_shared/types';
+import { DefaultLayout } from './defaultLayout';
 
 const JOB_BATCH_SIZE = 30;
-const ALL_JOB_STATUSES: JobStatus[] = ["new", "applied", "archived"];
+const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 type JobListing = {
   isLoading: boolean;
@@ -72,6 +59,7 @@ type JobListing = {
   new: number;
   applied: number;
   archived: number;
+  filtered: number;
   nextPageToken?: string;
 };
 
@@ -83,14 +71,14 @@ export function Home() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSubscriptionExpired } = useSession();
 
   const { links, isLoading: isLoadingLinks } = useLinks();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
 
   // Parse the query parameters to determine the active tab
-  const status = (new URLSearchParams(location.search).get("status") ||
-    "new") as JobStatus;
+  const status = (new URLSearchParams(location.search).get('status') || 'new') as JobStatus;
 
   const [listing, setListing] = useState<JobListing>({
     isLoading: true,
@@ -99,19 +87,19 @@ export function Home() {
     new: 0,
     applied: 0,
     archived: 0,
+    filtered: 0,
   });
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
 
   const statusIndex = ALL_JOB_STATUSES.indexOf(status);
 
-  useHotkeys("left", () => {
-    const nextIndex =
-      (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
+  useHotkeys('left', () => {
+    const nextIndex = (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
     navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
   });
 
-  useHotkeys("right", () => {
+  useHotkeys('right', () => {
     const nextIndex = (statusIndex + 1) % ALL_JOB_STATUSES.length;
     navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
   });
@@ -120,6 +108,12 @@ export function Home() {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        // check subscription status
+        if (isSubscriptionExpired) {
+          navigate('/subscription');
+          return;
+        }
+
         setListing((listing) => ({ ...listing, isLoading: true }));
         const result = await listJobs({ status, limit: JOB_BATCH_SIZE });
 
@@ -136,7 +130,7 @@ export function Home() {
           setSelectedJobId(null);
         }
       } catch (error) {
-        handleError({ error, title: "Failed to load jobs" });
+        handleError({ error, title: 'Failed to load jobs' });
       }
     };
     asyncLoad();
@@ -182,36 +176,36 @@ export function Home() {
   // archive all jobs from the current tab
   const onArchiveAll = async (tab: JobStatus) => {
     try {
-      await changeAllJobsStatus({ from: status, to: "archived" });
+      await changeAllJobsStatus({ from: status, to: 'archived' });
 
       // refresh the tab
       onTabChange(tab);
 
       toast({
-        title: "All jobs archived",
+        title: 'All jobs archived',
         description: `All your ${status} jobs have been archived, you can find them in the archived tab.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
-      handleError({ error, title: "Failed to archive all jobs" });
+      handleError({ error, title: 'Failed to archive all jobs' });
     }
   };
 
   // delete all jobs from the current tab
   const onDeleteAll = async (tab: JobStatus) => {
     try {
-      await changeAllJobsStatus({ from: tab, to: "deleted" });
+      await changeAllJobsStatus({ from: tab, to: 'deleted' });
 
       // refresh the tab
       onTabChange(tab);
 
       toast({
-        title: "All jobs deleted",
+        title: 'All jobs deleted',
         description: `All your ${status} jobs have been deleted.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
-      handleError({ error, title: "Failed to delete all jobs" });
+      handleError({ error, title: 'Failed to delete all jobs' });
     }
   };
 
@@ -227,23 +221,21 @@ export function Home() {
       const tabToIncrement = newStatus;
 
       const newCount =
-        tabToIncrement === "new"
-          ? listing.new + 1
-          : tabToDecrement === "new"
-          ? listing.new - 1
-          : listing.new;
+        tabToIncrement === 'new' ? listing.new + 1 : tabToDecrement === 'new' ? listing.new - 1 : listing.new;
       const appliedCount =
-        tabToIncrement === "applied"
+        tabToIncrement === 'applied'
           ? listing.applied + 1
-          : tabToDecrement === "applied"
-          ? listing.applied - 1
-          : listing.applied;
+          : tabToDecrement === 'applied'
+            ? listing.applied - 1
+            : listing.applied;
       const archivedCount =
-        tabToIncrement === "archived"
+        tabToIncrement === 'archived'
           ? listing.archived + 1
-          : tabToDecrement === "archived"
-          ? listing.archived - 1
-          : listing.archived;
+          : tabToDecrement === 'archived'
+            ? listing.archived - 1
+            : listing.archived;
+      const filteredCount =
+        tabToDecrement === 'excluded_by_advanced_matching' ? listing.filtered - 1 : listing.filtered;
 
       return {
         ...listing,
@@ -251,6 +243,7 @@ export function Home() {
         new: newCount,
         applied: appliedCount,
         archived: archivedCount,
+        filtered: filteredCount,
       };
     });
   };
@@ -258,8 +251,7 @@ export function Home() {
   // select the next job in the list
   const selectNextJob = (jobId: number) => {
     const currentJobIndex = listing.jobs.findIndex((job) => job.id === jobId);
-    const nextJob =
-      listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
+    const nextJob = listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
     if (nextJob) {
       scanJobAndSelect(nextJob);
     } else {
@@ -272,23 +264,23 @@ export function Home() {
       await updateListedJobStatus(jobId, newStatus);
       selectNextJob(jobId);
     } catch (error) {
-      handleError({ error, title: "Failed to update job status" });
+      handleError({ error, title: 'Failed to update job status' });
     }
   };
 
   const onApplyToJob = async (job: Job) => {
     try {
       await openExternalUrl(job.externalUrl);
-      await updateJobLabels({ jobId: job.id, labels: ["Submitted"] });
-      await updateListedJobStatus(job.id, "applied");
+      await updateJobLabels({ jobId: job.id, labels: ['Submitted'] });
+      await updateListedJobStatus(job.id, 'applied');
       selectNextJob(job.id);
       toast({
-        title: "Job applied",
-        description: "The job has been automatically marked as applied.",
-        variant: "success",
+        title: 'Job applied',
+        description: 'The job has been automatically marked as applied.',
+        variant: 'success',
       });
     } catch (error) {
-      handleError({ error, title: "Failed to apply to job" });
+      handleError({ error, title: 'Failed to apply to job' });
     }
   };
 
@@ -300,7 +292,7 @@ export function Home() {
         jobs: listing.jobs.map((job) => (job.id === jobId ? updatedJob : job)),
       }));
     } catch (error) {
-      handleError({ error, title: "Failed to update job label" });
+      handleError({ error, title: 'Failed to update job label' });
     }
   };
 
@@ -319,7 +311,7 @@ export function Home() {
         hasMore: result.jobs.length === JOB_BATCH_SIZE,
       }));
     } catch (error) {
-      handleError({ error, title: "Failed to load more jobs" });
+      handleError({ error, title: 'Failed to load more jobs' });
     }
   };
 
@@ -334,9 +326,7 @@ export function Home() {
       try {
         // Set the job as loading
         setListing((listing) => {
-          const jobs = listing.jobs.map((j) =>
-            j.id === job.id ? { ...job, isLoadingJD: true } : j
-          );
+          const jobs = listing.jobs.map((j) => (j.id === job.id ? { ...job, isLoadingJD: true } : j));
           return { ...listing, jobs };
         });
 
@@ -350,13 +340,11 @@ export function Home() {
 
         // Update the job in the list
         setListing((listing) => {
-          const jobs = listing.jobs.map((j) =>
-            j.id === updatedJob.id ? updatedJob : j
-          );
+          const jobs = listing.jobs.map((j) => (j.id === updatedJob.id ? updatedJob : j));
           return { ...listing, jobs };
         });
       } catch (error) {
-        handleError({ error, title: "Failed to scan job" });
+        handleError({ error, title: 'Failed to scan job' });
       }
     }
   };
@@ -375,12 +363,12 @@ export function Home() {
     try {
       await exportJobsToCsv(tab);
       toast({
-        title: "Jobs exported",
+        title: 'Jobs exported',
         description: `All your ${tab} jobs have been exported to a CSV file.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
-      handleError({ error, title: "Failed to export jobs" });
+      handleError({ error, title: 'Failed to export jobs' });
     }
   };
 
@@ -404,16 +392,16 @@ export function Home() {
   return (
     <DefaultLayout className="px-6 pt-6 md:px-10">
       <Tabs value={status} onValueChange={(value) => onTabChange(value)}>
-        <TabsList className="w-full h-fit p-2">
+        <TabsList className="h-fit w-full p-2">
           <TabsTrigger
             value="new"
-            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
-              status === "new" ? "justify-between" : "justify-center"
+            className={`flex flex-1 items-center px-6 py-3.5 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+              status === 'new' ? 'justify-between' : 'justify-center'
             }`}
           >
-            {status === "new" && <span className="w-6" />}
+            {status === 'new' && <span className="w-6" />}
             New Jobs {`(${listing.new})`}
-            {status === "new" && (
+            {status === 'new' && (
               <TabActions
                 tab="new"
                 onTabChange={onTabChange}
@@ -425,13 +413,13 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="applied"
-            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
-              status === "applied" ? "justify-between" : "justify-center"
+            className={`flex flex-1 items-center px-6 py-3.5 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+              status === 'applied' ? 'justify-between' : 'justify-center'
             }`}
           >
-            {status === "applied" && <span className="w-6" />}
+            {status === 'applied' && <span className="w-6" />}
             Applied {`(${listing.applied})`}
-            {status === "applied" && (
+            {status === 'applied' && (
               <TabActions
                 tab="applied"
                 onTabChange={onTabChange}
@@ -443,15 +431,33 @@ export function Home() {
           </TabsTrigger>
           <TabsTrigger
             value="archived"
-            className={`px-6 py-3.5 flex-1 flex items-center focus-visible:ring-0 focus-visible:ring-offset-0 ${
-              status === "archived" ? "justify-between" : "justify-center"
+            className={`flex flex-1 items-center px-6 py-3.5 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+              status === 'archived' ? 'justify-between' : 'justify-center'
             }`}
           >
-            {status === "archived" && <span className="w-6" />}
+            {status === 'archived' && <span className="w-6" />}
             Archived {`(${listing.archived})`}
-            {status === "archived" && (
+            {status === 'archived' && (
               <TabActions
                 tab="archived"
+                onTabChange={onTabChange}
+                onCsvExport={onCsvExport}
+                onArchiveAll={onArchiveAll}
+                onDeleteAll={onDeleteAll}
+              />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="excluded_by_advanced_matching"
+            className={`flex flex-1 items-center px-6 py-3.5 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+              status === 'excluded_by_advanced_matching' ? 'justify-between' : 'justify-center'
+            }`}
+          >
+            {status === 'excluded_by_advanced_matching' && <span className="w-6" />}
+            Filtered {`(${listing.filtered})`}
+            {status === 'excluded_by_advanced_matching' && (
+              <TabActions
+                tab="excluded_by_advanced_matching"
                 onTabChange={onTabChange}
                 onCsvExport={onCsvExport}
                 onArchiveAll={onArchiveAll}
@@ -464,20 +470,13 @@ export function Home() {
         {listing.jobs.length > 0 ? (
           ALL_JOB_STATUSES.map((statusItem) => {
             return (
-              <TabsContent
-                key={statusItem}
-                value={statusItem}
-                className="focus-visible:ring-0"
-              >
+              <TabsContent key={statusItem} value={statusItem} className="focus-visible:ring-0">
                 {listing.isLoading || statusItem !== status ? (
                   <JobsSkeleton />
                 ) : (
                   <section className="flex">
                     {/* jobs list */}
-                    <div
-                      id="jobsList"
-                      className="w-1/2 lg:w-2/5 h-[calc(100vh-100px)] overflow-scroll no-scrollbar"
-                    >
+                    <div id="jobsList" className="no-scrollbar h-[calc(100vh-100px)] w-1/2 overflow-scroll lg:w-2/5">
                       <JobsList
                         jobs={listing.jobs}
                         selectedJobId={selectedJobId}
@@ -486,10 +485,10 @@ export function Home() {
                         onLoadMore={onLoadMore}
                         onSelect={(job) => scanJobAndSelect(job)}
                         onArchive={(j) => {
-                          onUpdateJobStatus(j.id, "archived");
+                          onUpdateJobStatus(j.id, 'archived');
                         }}
                         onDelete={(j) => {
-                          onUpdateJobStatus(j.id, "deleted");
+                          onUpdateJobStatus(j.id, 'deleted');
                         }}
                       />
                     </div>
@@ -497,7 +496,7 @@ export function Home() {
                     {/* JD side panel */}
                     <div
                       ref={jobDescriptionRef}
-                      className="w-1/2 lg:w-3/5 h-[calc(100vh-100px)] overflow-scroll border-l-[1px] border-muted pl-2 lg:pl-4 space-y-4 lg:space-y-5"
+                      className="h-[calc(100vh-100px)] w-1/2 space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4"
                     >
                       {selectedJob && (
                         <>
@@ -507,18 +506,15 @@ export function Home() {
                               onApplyToJob(j);
                             }}
                             onArchive={(j) => {
-                              onUpdateJobStatus(j.id, "archived");
+                              onUpdateJobStatus(j.id, 'archived');
                             }}
                             onDelete={(j) => {
-                              onUpdateJobStatus(j.id, "deleted");
+                              onUpdateJobStatus(j.id, 'deleted');
                             }}
                             onUpdateLabels={onUpdateJobLabels}
                             onView={onViewJob}
                           />
-                          <JobDetails
-                            job={selectedJob}
-                            isScrapingDescription={!!selectedJob.isLoadingJD}
-                          ></JobDetails>
+                          <JobDetails job={selectedJob} isScrapingDescription={!!selectedJob.isLoadingJD}></JobDetails>
                           <hr className="border-t border-muted" />
                           <JobNotes jobId={selectedJobId} />
                         </>
@@ -530,9 +526,9 @@ export function Home() {
             );
           })
         ) : (
-          <p className="text-center mt-20 max-w-md m-auto">
-            No new job listings right now, but don't worry! We're on the lookout
-            and will update you as soon as we find anything.
+          <p className="m-auto mt-20 max-w-md text-center">
+            No new job listings right now, but don't worry! We're on the lookout and will update you as soon as we find
+            anything.
           </p>
         )}
       </Tabs>
@@ -546,7 +542,7 @@ export function Home() {
 function Loading() {
   return (
     <DefaultLayout className="p-6 pb-0 md:px-10">
-      <div className="h-[68px] bg-[#809966]/5 w-full rounded-lg flex flex-row gap-1 p-2 animate-pulse mb-2">
+      <div className="mb-2 flex h-[68px] w-full animate-pulse flex-row gap-1 rounded-lg bg-[#809966]/5 p-2">
         <Skeleton className="flex-1" />
         <Skeleton className="flex-1" />
         <Skeleton className="flex-1" />
@@ -562,18 +558,14 @@ function Loading() {
  */
 function NoLinks() {
   return (
-    <DefaultLayout
-      className={`flex flex-col justify-evenly h-screen pb-14 max-w-[800px] w-full md:px-10 lg:px-20`}
-    >
+    <DefaultLayout className={`flex h-screen w-full max-w-[800px] flex-col justify-evenly pb-14 md:px-10 lg:px-20`}>
       <div className="flex flex-col items-center gap-10">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
+        <h1 className="text-3xl font-semibold sm:text-4xl md:text-5xl lg:text-6xl">
           Be the: <span className="text-primary">first 2 apply</span>
         </h1>
-        <p className="text-muted-foreground text-center">
-          Save your tailored job searches from top job platforms, and let us do
-          the heavy lifting. We'll monitor your specified job feeds and swiftly
-          notify you of new postings, providing you the edge to be the first in
-          line.
+        <p className="text-center text-muted-foreground">
+          Save your tailored job searches from top job platforms, and let us do the heavy lifting. We'll monitor your
+          specified job feeds and swiftly notify you of new postings, providing you the edge to be the first in line.
         </p>
         <Link to="/links">
           <Button>Add new search</Button>
@@ -606,36 +598,30 @@ function TabActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="w-6 h-6 focus-visible:outline-none focus-visible:ring-0"
+          className="h-6 w-6 focus-visible:outline-none focus-visible:ring-0"
           onClick={(evt) => {
             evt.preventDefault();
             evt.stopPropagation();
           }}
         >
-          <DotsVerticalIcon className="h-5 hover:h-6 transition-all duration-200 ease-in-out m-auto w-auto text-muted-foreground" />
+          <DotsVerticalIcon className="m-auto h-5 w-auto text-muted-foreground transition-all duration-200 ease-in-out hover:h-6" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" className="space-y-1">
-          <DropdownMenuItem
-            className="cursor-pointer focus:bg-secondary/40"
-            onClick={() => onTabChange(tab)}
-          >
-            <UpdateIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+          <DropdownMenuItem className="cursor-pointer focus:bg-secondary/40" onClick={() => onTabChange(tab)}>
+            <UpdateIcon className="mb-0.5 mr-2 inline-block h-4 w-4" />
             Refresh
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer focus:bg-secondary/40"
-            onClick={() => onCsvExport(tab)}
-          >
-            <DownloadIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+          <DropdownMenuItem className="cursor-pointer focus:bg-secondary/40" onClick={() => onCsvExport(tab)}>
+            <DownloadIcon className="mb-0.5 mr-2 inline-block h-4 w-4" />
             CSV export
           </DropdownMenuItem>
-          {tab !== "archived" && (
+          {tab !== 'archived' && (
             <DropdownMenuItem
               className="cursor-pointer focus:bg-secondary/40"
               onClick={() => setIsArchiveAllDialogOpen(true)}
             >
-              <ArchiveIcon className="h-4 w-4 mr-2 inline-block mb-0.5" />
+              <ArchiveIcon className="mb-0.5 mr-2 inline-block h-4 w-4" />
               Archive all
             </DropdownMenuItem>
           )}
@@ -643,7 +629,7 @@ function TabActions({
             className="cursor-pointer bg-destructive/5 focus:bg-destructive/20"
             onClick={() => setIsDeleteAllDialogOpen(true)}
           >
-            <TrashIcon className="h-5 w-5 -ml-0.5 mr-2 inline-block mb-0.5 text-destructive" />
+            <TrashIcon className="-ml-0.5 mb-0.5 mr-2 inline-block h-5 w-5 text-destructive" />
             Delete all
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -653,25 +639,20 @@ function TabActions({
       <AlertDialog open={isArchiveAllDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Are you sure you want to archive all {tab} jobs?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to archive all {tab} jobs?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone and all jobs will be moved to the
-              archived tab.
+              This action cannot be undone and all jobs will be moved to the archived tab.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsArchiveAllDialogOpen(false)}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsArchiveAllDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setIsArchiveAllDialogOpen(false);
                 onArchiveAll(tab);
               }}
             >
-              <ArchiveIcon className="h-4 w-4 mr-2 inline-block" />
+              <ArchiveIcon className="mr-2 inline-block h-4 w-4" />
               Archive All
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -682,17 +663,13 @@ function TabActions({
       <AlertDialog open={isDeleteAllDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Are you sure you want to delete all {tab} jobs?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete all {tab} jobs?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone, you won't ever see these jobs again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteAllDialogOpen(false)}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsDeleteAllDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => {
@@ -700,7 +677,7 @@ function TabActions({
                 onDeleteAll(tab);
               }}
             >
-              <TrashIcon className="h-5 w-5 mr-2 inline-block" />
+              <TrashIcon className="mr-2 inline-block h-5 w-5" />
               Delete All
             </AlertDialogAction>
           </AlertDialogFooter>

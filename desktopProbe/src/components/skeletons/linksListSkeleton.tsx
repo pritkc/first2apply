@@ -1,36 +1,37 @@
-import { FC } from "react";
-import { Skeleton } from "../ui/skeleton";
+import { FC } from 'react';
+
+import { Skeleton } from '../ui/skeleton';
 
 export const LinksListSkeleton: FC = () => {
   return (
     <>
       {/* Title skeleton */}
-      <div className="flex justify-between items-start">
+      <div className="flex items-start justify-between">
         <Skeleton className="h-8 w-[152px] rounded-md" />
         <Skeleton className="h-10 w-[166px] rounded-md" />
       </div>
 
       {/* List skeleton */}
-      <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 2xl:gap-6 mt-4">
+      <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:gap-6">
         {Array.from({ length: 9 }).map((_, index) => (
           <li
             key={index}
-            className="px-6 pt-8 pb-6 bg-card cursor-pointer border border-border shadow-sm rounded-lg flex flex-col gap-4 animate-pulse"
+            className="flex animate-pulse cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card px-6 pb-6 pt-8 shadow-sm"
           >
             <div className="flex items-center gap-2">
               {/* Avatar */}
-              <Skeleton className="w-12 h-12 rounded-full" />
+              <Skeleton className="h-12 w-12 rounded-full" />
 
               <div>
                 {/* Site name */}
-                <Skeleton className="h-2 mb-1 w-32" />
+                <Skeleton className="mb-1 h-2 w-32" />
                 {/* Title */}
                 <Skeleton className="h-5 w-64" />
               </div>
             </div>
 
             {/* URL */}
-            <div className="space-y-1 mt-6 mb-4">
+            <div className="mb-4 mt-6 space-y-1">
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-full" />
@@ -40,7 +41,7 @@ export const LinksListSkeleton: FC = () => {
               <Skeleton className="h-4 w-28" />
 
               {/* Button skeleton */}
-              <Skeleton className="h-9 w-9 d rounded-full" />
+              <Skeleton className="d h-9 w-9 rounded-full" />
             </div>
           </li>
         ))}

@@ -1,30 +1,12 @@
-import {
-  BackpackIcon,
-  CookieIcon,
-  ListBulletIcon,
-  ExternalLinkIcon,
-  TrashIcon,
-} from "@radix-ui/react-icons";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
+import { LABEL_COLOR_CLASSES } from '@/lib/labels';
+import { BackpackIcon, CookieIcon, ExternalLinkIcon, ListBulletIcon, TrashIcon } from '@radix-ui/react-icons';
+import React from 'react';
 
-import {
-  JOB_LABELS,
-  Job,
-  JobLabel,
-} from "../../../supabase/functions/_shared/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-
-import { LABEL_COLOR_CLASSES } from "@/lib/labels";
-
-import { DeleteJobDialog } from "./deleteJobDialog";
-import React from "react";
+import { JOB_LABELS, Job, JobLabel } from '../../../supabase/functions/_shared/types';
+import { DeleteJobDialog } from './deleteJobDialog';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from './ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -51,54 +33,54 @@ export function JobSummary({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   return (
-    <div className="border border-muted rounded-lg p-4 lg:p-6">
-      <div className="flex justify-between items-start gap-4 lg:gap-6">
+    <div className="rounded-lg border border-muted p-4 lg:p-6">
+      <div className="flex items-start justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-xl font-medium mt-3 lg:mt-4">{job.title}</h1>
+          <h1 className="mt-3 text-xl font-medium lg:mt-4">{job.title}</h1>
 
           <p className="text-sm text-muted-foreground">
             {job.companyName}
             {job.location && (
               <span>
-                {" · "}
+                {' · '}
                 {job.location}
               </span>
             )}
           </p>
         </div>
         {job.companyLogo && (
-          <Avatar className="w-16 h-16">
+          <Avatar className="h-16 w-16">
             <AvatarImage src={job.companyLogo} />
           </Avatar>
         )}
       </div>
 
-      <div className="space-y-1.5 mt-3 lg:mt-4">
+      <div className="mt-3 space-y-1.5 lg:mt-4">
         {job.jobType && (
-          <div className="flex gap-3 items-center text-muted-foreground capitalize">
-            <BackpackIcon className="w-5 h-auto" />
+          <div className="flex items-center gap-3 capitalize text-muted-foreground">
+            <BackpackIcon className="h-auto w-5" />
             {job.jobType}
           </div>
         )}
         {job.salary && (
-          <div className="flex gap-3 items-center text-muted-foreground">
-            <CookieIcon className="w-5 h-auto" />
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <CookieIcon className="h-auto w-5" />
             {job.salary}
           </div>
         )}
         {job.tags && (
-          <div className="flex gap-3 items-center text-muted-foreground">
-            <ListBulletIcon className="w-5 h-auto" />
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <ListBulletIcon className="h-auto w-5" />
             <p>
-              {"Skills: "}
-              {job.tags?.slice(0, 5).join(", ")}
+              {'Skills: '}
+              {job.tags?.slice(0, 5).join(', ')}
             </p>
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-6 lg:mt-10">
-        {job.status !== "applied" && (
+      <div className="mt-6 flex flex-wrap gap-2 lg:mt-10">
+        {job.status !== 'applied' && (
           <Button
             size="lg"
             className="w-24 text-sm"
@@ -109,7 +91,7 @@ export function JobSummary({
             Apply
           </Button>
         )}
-        {job.status !== "archived" && (
+        {job.status !== 'archived' && (
           <Button
             size="lg"
             variant="secondary"
@@ -125,7 +107,7 @@ export function JobSummary({
         <Button
           size="lg"
           variant="secondary"
-          className="w-10 px-0 border-none bg-border hover:bg-foreground/15 focus:bg-foreground/15 transition-colors duration-200 ease-in-out"
+          className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
           onClick={() => onView(job)}
         >
           <ExternalLinkIcon className="h-4 w-auto" />
@@ -134,7 +116,7 @@ export function JobSummary({
         <Button
           size="lg"
           variant="destructive"
-          className="w-10 px-0 bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 transition-colors duration-200 ease-in-out"
+          className="w-10 bg-destructive/10 px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
           onClick={() => setIsDeleteDialogOpen(true)}
         >
           <TrashIcon className="h-5 w-auto text-destructive" />
@@ -165,19 +147,13 @@ function JobLabelSelector({
   job: Job;
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
 }) {
-  const label = job.labels[0] ?? "";
+  const label = job.labels[0] ?? '';
 
-  const LabelOptionWithColor = ({
-    jobLabel,
-    colorClass,
-  }: {
-    jobLabel: string;
-    colorClass: string;
-  }) => (
+  const LabelOptionWithColor = ({ jobLabel, colorClass }: { jobLabel: string; colorClass: string }) => (
     <SelectItem value={jobLabel}>
       <div className="flex items-center">
-        <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
-        <div className="flex-1 ml-2">{jobLabel}</div>
+        <div className={`h-3 w-3 rounded-full ${colorClass}`}></div>
+        <div className="ml-2 flex-1">{jobLabel}</div>
       </div>
     </SelectItem>
   );
@@ -190,7 +166,7 @@ function JobLabelSelector({
         onUpdateLabels(job.id, newLabels);
       }}
     >
-      <SelectTrigger className="w-[148px] h-10">
+      <SelectTrigger className="h-10 w-[148px]">
         <SelectValue placeholder="Add Label" />
       </SelectTrigger>
       <SelectContent>
@@ -199,11 +175,7 @@ function JobLabelSelector({
 
         {/* labels with colors */}
         {Object.values(JOB_LABELS).map((jobLabel) => (
-          <LabelOptionWithColor
-            key={jobLabel}
-            jobLabel={jobLabel}
-            colorClass={LABEL_COLOR_CLASSES[jobLabel]}
-          />
+          <LabelOptionWithColor key={jobLabel} jobLabel={jobLabel} colorClass={LABEL_COLOR_CLASSES[jobLabel]} />
         ))}
       </SelectContent>
     </Select>

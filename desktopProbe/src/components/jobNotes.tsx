@@ -1,39 +1,3 @@
-import { useEffect, useState } from "react";
-import { useError } from "@/hooks/error";
-import { useToast } from "@/components/ui/use-toast";
-import { PlusIcon } from "@radix-ui/react-icons";
-
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import TextareaAutosize from "react-textarea-autosize";
-
-import {
-  addFileToNote,
-  createNote,
-  deleteNote,
-  listNotes,
-  updateNote,
-} from "@/lib/electronMainSdk";
-
-import { Note } from "../../../supabase/functions/_shared/types";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "./ui/card";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
-
-import { Pencil2Icon, TrashIcon, UploadIcon } from "@radix-ui/react-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,8 +5,23 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AlertDialogFooter, AlertDialogHeader } from "./ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
+import { useError } from '@/hooks/error';
+import { addFileToNote, createNote, deleteNote, listNotes, updateNote } from '@/lib/electronMainSdk';
+import { PlusIcon } from '@radix-ui/react-icons';
+import { Pencil2Icon, TrashIcon, UploadIcon } from '@radix-ui/react-icons';
+import { useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
+import TextareaAutosize from 'react-textarea-autosize';
+import remarkGfm from 'remark-gfm';
+
+import { Note } from '../../../supabase/functions/_shared/types';
+import { AlertDialogFooter, AlertDialogHeader } from './ui/alert-dialog';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from './ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 export function JobNotes({ jobId }: { jobId: number }) {
   const { handleError } = useError();
@@ -70,27 +49,23 @@ export function JobNotes({ jobId }: { jobId: number }) {
   }, [jobId]);
 
   // Create a new note
-  const handleCreateNote = async (
-    job_id: number,
-    text: string,
-    files: string[]
-  ) => {
+  const handleCreateNote = async (job_id: number, text: string, files: string[]) => {
     try {
       const newNote = await createNote({ job_id, text, files });
       setNewNote(undefined);
       setNotes((prevNotes) => [newNote, ...prevNotes]);
     } catch (error) {
-      handleError({ error, title: "Failed to create note" });
+      handleError({ error, title: 'Failed to create note' });
     }
   };
 
   // Update an existing note
   const handleUpdateNote = async (noteId: number, text: string) => {
-    if (text.trim() === "") {
+    if (text.trim() === '') {
       toast({
-        title: "Error",
-        description: "Note text cannot be empty.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Note text cannot be empty.',
+        variant: 'destructive',
       });
       return;
     }
@@ -100,13 +75,9 @@ export function JobNotes({ jobId }: { jobId: number }) {
         text,
       });
       setEditingNoteId(null);
-      setNotes(
-        notes.map((note) =>
-          note.id === noteId ? { ...note, ...updatedNote } : note
-        )
-      );
+      setNotes(notes.map((note) => (note.id === noteId ? { ...note, ...updatedNote } : note)));
     } catch (error) {
-      handleError({ error, title: "Failed to update note" });
+      handleError({ error, title: 'Failed to update note' });
     }
   };
 
@@ -116,7 +87,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
       await deleteNote(noteId);
       setNotes(notes.filter((note) => note.id !== noteId));
     } catch (error) {
-      handleError({ error, title: "Failed to delete note" });
+      handleError({ error, title: 'Failed to delete note' });
     }
   };
 
@@ -127,15 +98,11 @@ export function JobNotes({ jobId }: { jobId: number }) {
         noteId,
         file,
       });
-      setNotes(
-        notes.map((note) =>
-          note.id === noteId ? { ...note, ...updatedNote } : note
-        )
-      );
+      setNotes(notes.map((note) => (note.id === noteId ? { ...note, ...updatedNote } : note)));
       toast({
-        title: "Success",
-        description: "File has been successfully added to the note.",
-        variant: "success",
+        title: 'Success',
+        description: 'File has been successfully added to the note.',
+        variant: 'success',
       });
     } catch (error) {
       handleError({ error });
@@ -148,9 +115,9 @@ export function JobNotes({ jobId }: { jobId: number }) {
       setNewNote({
         id: -1,
         created_at: new Date(),
-        user_id: "",
+        user_id: '',
         job_id: jobId,
-        text: "",
+        text: '',
         files: [],
       });
     } catch (error) {
@@ -161,21 +128,16 @@ export function JobNotes({ jobId }: { jobId: number }) {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="pb-10 ml-[25px]">
+    <div className="ml-[25px] pb-10">
       <div className="flex items-center">
         <h3 className="text-2xl">Your notes</h3>
 
-        <Button
-          size="xs"
-          className="ml-2 rounded-full px-1"
-          onClick={handleNewNote}
-          disabled={newNote !== undefined}
-        >
-          <PlusIcon className="w-4 h-4" />
+        <Button size="xs" className="ml-2 rounded-full px-1" onClick={handleNewNote} disabled={newNote !== undefined}>
+          <PlusIcon className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="mt-4 lg:mt-5 space-y-3">
+      <div className="mt-4 space-y-3 lg:mt-5">
         {newNote && (
           <EditJobNote
             note={newNote}
@@ -205,13 +167,11 @@ export function JobNotes({ jobId }: { jobId: number }) {
               <JobNote
                 key={note.id}
                 note={note}
-                onDelete={(noteId) =>
-                  setNoteToDelete(notes.find((note) => note.id === noteId))
-                }
+                onDelete={(noteId) => setNoteToDelete(notes.find((note) => note.id === noteId))}
                 onAddFile={handleAddFileToNote}
                 onStartEditing={() => setEditingNoteId(note.id)}
               />
-            )
+            ),
           )
         )}
       </div>
@@ -243,21 +203,14 @@ function JobNote({
 }) {
   return (
     <Card>
-      <CardHeader className="w-full flex flex-row justify-between items-center">
-        <CardDescription className="text-xs">
-          {new Date(note.created_at).toLocaleDateString()}
-        </CardDescription>
+      <CardHeader className="flex w-full flex-row items-center justify-between">
+        <CardDescription className="text-xs">{new Date(note.created_at).toLocaleDateString()}</CardDescription>
         <div className="flex gap-2">
           <TooltipProvider delayDuration={500}>
             <Tooltip>
               <TooltipTrigger>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-8 p-0"
-                  onClick={() => onStartEditing(note.id)}
-                >
-                  <Pencil2Icon className="w-auto h-4" />
+                <Button variant="outline" size="sm" className="w-8 p-0" onClick={() => onStartEditing(note.id)}>
+                  <Pencil2Icon className="h-4 w-auto" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-sm">
@@ -269,13 +222,8 @@ function JobNote({
           <TooltipProvider delayDuration={500}>
             <Tooltip>
               <TooltipTrigger>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-8 p-0"
-                  onClick={() => onDelete(note.id)}
-                >
-                  <TrashIcon className="w-4 h-auto" />
+                <Button variant="outline" size="sm" className="w-8 p-0" onClick={() => onDelete(note.id)}>
+                  <TrashIcon className="h-auto w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-sm">
@@ -308,10 +256,7 @@ function JobNote({
         </div>
       </CardHeader>
       <CardContent className="pb-5">
-        <Markdown
-          remarkPlugins={[remarkGfm]}
-          className="job-description-md px-6 py-2"
-        >
+        <Markdown remarkPlugins={[remarkGfm]} className="job-description-md px-6 py-2">
           {note.text}
         </Markdown>
       </CardContent>
@@ -352,10 +297,8 @@ function EditJobNote({
 
   return (
     <Card>
-      <CardHeader className="w-full flex flex-row justify-between items-center">
-        <CardDescription className="text-xs">
-          {new Date(note.created_at).toLocaleDateString()}
-        </CardDescription>
+      <CardHeader className="flex w-full flex-row items-center justify-between">
+        <CardDescription className="text-xs">{new Date(note.created_at).toLocaleDateString()}</CardDescription>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -363,7 +306,7 @@ function EditJobNote({
             onClick={() => {
               isNew ? onCreate(note.job_id, text, []) : onUpdate(note.id, text);
             }}
-            disabled={text.trim() === ""}
+            disabled={text.trim() === ''}
           >
             Save
           </Button>
@@ -384,11 +327,11 @@ function EditJobNote({
           value={text}
           autoFocus={isNew}
           onChange={(e) => setText(e.target.value)}
-          className={`mb-2.5 w-full px-6 py-2 resize-none rounded-md text-base focus:outline-none focus:ring-2 ring-ring ${
-            isNew && "ring-2"
+          className={`mb-2.5 w-full resize-none rounded-md px-6 py-2 text-base ring-ring focus:outline-none focus:ring-2 ${
+            isNew && 'ring-2'
           }`}
         />
-        <p className="italic text-sm">Hint: Markdown syntax is supported</p>
+        <p className="text-sm italic">Hint: Markdown syntax is supported</p>
       </CardContent>
       <CardFooter>
         {/* {note.files.length > 0 && (
@@ -431,19 +374,14 @@ export function DeleteNoteDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Are you sure you want to delete this note?
-          </AlertDialogTitle>
+          <AlertDialogTitle>Are you sure you want to delete this note?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the note.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive hover:bg-destructive/90"
-            onClick={() => onDelete(note)}
-          >
+          <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => onDelete(note)}>
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

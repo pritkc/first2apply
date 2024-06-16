@@ -1,19 +1,15 @@
+import { FunctionsHttpError, PostgrestError, SupabaseClient, User } from '@supabase/supabase-js';
+import { backOff } from 'exponential-backoff';
+import * as luxon from 'luxon';
+
 import {
-  FunctionsHttpError,
-  PostgrestError,
-  SupabaseClient,
-  User,
-} from "@supabase/supabase-js";
-import {
+  AdvancedMatchingConfig,
   DbSchema,
   Job,
   JobLabel,
   JobStatus,
   Link,
-  Review,
-} from "../../../supabase/functions/_shared/types";
-import * as luxon from "luxon";
-import { backOff } from "exponential-backoff";
+} from '../../../supabase/functions/_shared/types';
 
 /**
  * Class used to interact with our Supabase API.
@@ -25,18 +21,15 @@ export class F2aSupabaseApi {
    * Create a new user account using an email and password.
    */
   signupWithEmail({ email, password }: { email: string; password: string }) {
-    return this._supabaseApiCall(() =>
-      this._supabase.auth.signUp({ email, password })
-    );
+    return this._supabaseApiCall(() => this._supabase.auth.signUp({ email, password }));
   }
 
   /**
    * Login using an email and password.
    */
-  loginWithEmail({ email, password }: { email: string; password: string }) {
-    return this._supabaseApiCall(() =>
-      this._supabase.auth.signInWithPassword({ email, password })
-    );
+  async loginWithEmail({ email, password }: { email: string; password: string }) {
+    const { data } = await this._supabase.from('profile').select('*').eq('id', '1').single();
+    return this._supabaseApiCall(() => this._supabase.auth.signInWithPassword({ email, password }));
   }
 
   /**
@@ -45,8 +38,8 @@ export class F2aSupabaseApi {
   sendPasswordResetEmail({ email }: { email: string }) {
     return this._supabaseApiCall(() =>
       this._supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "first2apply://reset-password",
-      })
+        redirectTo: 'first2apply://reset-password',
+      }),
     );
   }
 
@@ -54,9 +47,7 @@ export class F2aSupabaseApi {
    * Update the password for the current user.
    */
   updatePassword({ password }: { password: string }) {
-    return this._supabaseApiCall(() =>
-      this._supabase.auth.updateUser({ password })
-    );
+    return this._supabaseApiCall(() => this._supabase.auth.updateUser({ password }));
   }
 
   /**
@@ -70,9 +61,7 @@ export class F2aSupabaseApi {
    * Get the user from the current supabase session
    */
   getUser(): Promise<{ user: User | null }> {
-    return this._supabaseApiCall(
-      async () => await this._supabase.auth.getUser()
-    ).catch(() => ({
+    return this._supabaseApiCall(async () => await this._supabase.auth.getUser()).catch(() => ({
       user: null,
     }));
   }
@@ -82,15 +71,12 @@ export class F2aSupabaseApi {
    */
   async createLink({ title, url }: { title: string; url: string }) {
     const { link, newJobs } = await this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>(
-        "create-link",
-        {
-          body: {
-            title,
-            url,
-          },
-        }
-      )
+      this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>('create-link', {
+        body: {
+          title,
+          url,
+        },
+      }),
     );
 
     return { link, newJobs };
@@ -101,7 +87,7 @@ export class F2aSupabaseApi {
    */
   listLinks() {
     return this._supabaseApiCall(async () =>
-      this._supabase.from("links").select("*").order("id", { ascending: false })
+      this._supabase.from('links').select('*').order('id', { ascending: false }),
     );
   }
 
@@ -109,9 +95,7 @@ export class F2aSupabaseApi {
    * Delete a link.
    */
   deleteLink(linkId: string) {
-    return this._supabaseApiCall(async () =>
-      this._supabase.from("links").delete().eq("id", linkId)
-    );
+    return this._supabaseApiCall(async () => this._supabase.from('links').delete().eq('id', linkId));
   }
 
   /**
@@ -123,17 +107,14 @@ export class F2aSupabaseApi {
       content: string;
       maxRetries: number;
       retryCount: number;
-    }[]
+    }[],
   ) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ newJobs: Job[]; parseFailed: boolean }>(
-        "scan-urls",
-        {
-          body: {
-            htmls,
-          },
-        }
-      )
+      this._supabase.functions.invoke<{ newJobs: Job[]; parseFailed: boolean }>('scan-urls', {
+        body: {
+          htmls,
+        },
+      }),
     );
   }
 
@@ -152,57 +133,43 @@ export class F2aSupabaseApi {
     retryCount: number;
   }) {
     return this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ job: Job; parseFailed: boolean }>(
-        "scan-job-description",
-        {
-          body: {
-            jobId,
-            html,
-            maxRetries,
-            retryCount,
-          },
-        }
-      )
+      this._supabase.functions.invoke<{ job: Job; parseFailed: boolean }>('scan-job-description', {
+        body: {
+          jobId,
+          html,
+          maxRetries,
+          retryCount,
+        },
+      }),
     );
   }
 
   /**
    * List all jobs for the current user.
    */
-  async listJobs({
-    status,
-    limit = 50,
-    after,
-  }: {
-    status: JobStatus;
-    limit?: number;
-    after?: string;
-  }) {
-    const jobs = await this._supabaseApiCall<Job[], PostgrestError>(
-      async () => {
-        // @ts-ignore
-        const res = await this._supabase.rpc("list_jobs", {
-          jobs_status: status,
-          jobs_after: after ?? null,
-          jobs_page_size: limit,
-        });
+  async listJobs({ status, limit = 50, after }: { status: JobStatus; limit?: number; after?: string }) {
+    const jobs = await this._supabaseApiCall<Job[], PostgrestError>(async () => {
+      const res = await this._supabase.rpc('list_jobs', {
+        jobs_status: status,
+        jobs_after: after ?? null,
+        jobs_page_size: limit,
+      });
 
-        return res;
-      }
-    );
+      return res;
+    });
 
     // also return counters for grouped statuses
-    const statusses: JobStatus[] = ["new", "archived", "applied"];
+    const statusses: JobStatus[] = ['new', 'archived', 'applied', 'excluded_by_advanced_matching'];
     const counters = await Promise.all(
       statusses.map(async (status) => {
         const { count, error } = await this._supabase
-          .from("jobs")
-          .select("*", { count: "exact", head: true })
-          .eq("status", status);
+          .from('jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status);
         if (error) throw error;
 
         return { status, count };
-      })
+      }),
     );
 
     let nextPageToken: string | undefined;
@@ -217,6 +184,7 @@ export class F2aSupabaseApi {
       new: counters[0].count,
       archived: counters[1].count,
       applied: counters[2].count,
+      filtered: counters[3].count,
       nextPageToken,
     };
   }
@@ -228,12 +196,12 @@ export class F2aSupabaseApi {
     return this._supabaseApiCall(
       async () =>
         await this._supabase
-          .from("jobs")
+          .from('jobs')
           .update({
             status,
             updated_at: luxon.DateTime.now().toUTC().toJSDate(),
           })
-          .eq("id", jobId)
+          .eq('id', jobId),
     );
   }
 
@@ -241,22 +209,16 @@ export class F2aSupabaseApi {
    * Update the labels of a job.
    * @returns the updated job
    */
-  async updateJobLabels({
-    jobId,
-    labels,
-  }: {
-    jobId: string;
-    labels: JobLabel[];
-  }) {
+  async updateJobLabels({ jobId, labels }: { jobId: string; labels: JobLabel[] }) {
     const [updatedJob] = await this._supabaseApiCall(
       async () =>
         await this._supabase
-          .from("jobs")
+          .from('jobs')
           .update({
             labels,
           })
-          .eq("id", jobId)
-          .select("*")
+          .eq('id', jobId)
+          .select('*'),
     );
 
     return updatedJob;
@@ -266,18 +228,14 @@ export class F2aSupabaseApi {
    * List all sites.
    */
   listSites() {
-    return this._supabaseApiCall(
-      async () => await this._supabase.from("sites").select("*")
-    );
+    return this._supabaseApiCall(async () => await this._supabase.from('sites').select('*'));
   }
 
   /**
    * Get a job by id.
    */
   async getJob(jobId: number) {
-    const [job] = await this._supabaseApiCall(async () =>
-      this._supabase.from("jobs").select("*").eq("id", jobId)
-    );
+    const [job] = await this._supabaseApiCall(async () => this._supabase.from('jobs').select('*').eq('id', jobId));
     return job;
   }
 
@@ -287,22 +245,21 @@ export class F2aSupabaseApi {
   async changeAllJobStatus({ from, to }: { from: JobStatus; to: JobStatus }) {
     return this._supabaseApiCall(async () =>
       this._supabase
-        .from("jobs")
+        .from('jobs')
         .update({
           status: to,
           updated_at: luxon.DateTime.now().toUTC().toJSDate(),
         })
-        .eq("status", from)
+        .eq('status', from),
     );
   }
 
   /**
    * Wrapper around a Supabase method that handles errors.
    */
-  private async _supabaseApiCall<
-    T,
-    E extends Error | PostgrestError | FunctionsHttpError
-  >(method: () => Promise<{ data?: T; error: E }>) {
+  private async _supabaseApiCall<T, E extends Error | PostgrestError | FunctionsHttpError>(
+    method: () => Promise<{ data?: T; error: E }>,
+  ) {
     const { data, error } = await backOff(
       async () => {
         const result = await method();
@@ -312,19 +269,19 @@ export class F2aSupabaseApi {
       },
       {
         numOfAttempts: 5,
-        jitter: "full",
+        jitter: 'full',
         startingDelay: 300,
-      }
+      },
     );
 
     // edge functions don't throw errors, instead they return an errorMessage field in the data object
     // work around for this issue https://github.com/supabase/functions-js/issues/45
     if (
       !!data &&
-      typeof data === "object" &&
-      "errorMessage" in data &&
+      typeof data === 'object' &&
+      'errorMessage' in data &&
       // @ts-ignore
-      typeof data.errorMessage === "string"
+      typeof data.errorMessage === 'string'
     ) {
       // @ts-ignore
       throw new Error(data.errorMessage);
@@ -338,25 +295,17 @@ export class F2aSupabaseApi {
   /**
    * Create a user review.
    */
-  async createReview({
-    title,
-    description,
-    rating,
-  }: {
-    title: string;
-    description?: string;
-    rating: number;
-  }) {
+  async createReview({ title, description, rating }: { title: string; description?: string; rating: number }) {
     const [createdReview] = await this._supabaseApiCall(
       async () =>
         await this._supabase
-          .from("reviews")
+          .from('reviews')
           .insert({
             title: title.trim(),
             description: description?.trim(),
             rating,
           })
-          .select("*")
+          .select('*'),
     );
 
     return createdReview;
@@ -366,9 +315,7 @@ export class F2aSupabaseApi {
    * Get user's review.
    */
   async getUserReview() {
-    const [review] = await this._supabaseApiCall(
-      async () => await this._supabase.from("reviews").select("*")
-    );
+    const [review] = await this._supabaseApiCall(async () => await this._supabase.from('reviews').select('*'));
 
     return review;
   }
@@ -390,37 +337,34 @@ export class F2aSupabaseApi {
     const [updatedReview] = await this._supabaseApiCall(
       async () =>
         await this._supabase
-          .from("reviews")
+          .from('reviews')
           .update({
             title: title.trim(),
             description: description?.trim(),
             rating,
           })
-          .eq("id", id)
-          .select("*")
+          .eq('id', id)
+          .select('*'),
     );
 
     return updatedReview;
   }
 
   /**
+   * Get the profile of the current user.
+   */
+  async getProfile() {
+    const [profile] = await this._supabaseApiCall(async () => await this._supabase.from('profiles').select('*'));
+
+    return profile;
+  }
+
+  /**
    * Create a new note for the current user.
    */
-  async createNote({
-    job_id,
-    text,
-    files,
-  }: {
-    job_id: number;
-    text: string;
-    files?: string[];
-  }) {
+  async createNote({ job_id, text, files }: { job_id: number; text: string; files?: string[] }) {
     const [createdNote] = await this._supabaseApiCall(
-      async () =>
-        await this._supabase
-          .from("notes")
-          .insert({ job_id, text, files })
-          .select("*")
+      async () => await this._supabase.from('notes').insert({ job_id, text, files }).select('*'),
     );
 
     return createdNote;
@@ -431,11 +375,7 @@ export class F2aSupabaseApi {
    */
   async listNotes(job_id: number) {
     return this._supabaseApiCall(async () =>
-      this._supabase
-        .from("notes")
-        .select("*")
-        .eq("job_id", job_id)
-        .order("created_at", { ascending: false })
+      this._supabase.from('notes').select('*').eq('job_id', job_id).order('created_at', { ascending: false }),
     );
   }
 
@@ -444,12 +384,7 @@ export class F2aSupabaseApi {
    */
   async updateNote({ noteId, text }: { noteId: number; text: string }) {
     return this._supabaseApiCall(async () =>
-      this._supabase
-        .from("notes")
-        .update({ text })
-        .eq("id", noteId)
-        .select("*")
-        .single()
+      this._supabase.from('notes').update({ text }).eq('id', noteId).select('*').single(),
     );
   }
 
@@ -457,26 +392,16 @@ export class F2aSupabaseApi {
    * Add a file to a note.
    */
   async addFileToNote({ noteId, file }: { noteId: number; file: string }) {
-    const result = await this._supabase
-      .from("notes")
-      .select("files")
-      .eq("id", noteId)
-      .single();
+    const result = await this._supabase.from('notes').select('files').eq('id', noteId).single();
 
     if (result.error) {
       throw result.error;
     }
 
-    const updatedFiles = result.data.files
-      ? [...result.data.files, file]
-      : [file];
+    const updatedFiles = result.data.files ? [...result.data.files, file] : [file];
 
     return this._supabaseApiCall(async () =>
-      this._supabase
-        .from("notes")
-        .update({ files: updatedFiles })
-        .eq("id", noteId)
-        .single()
+      this._supabase.from('notes').update({ files: updatedFiles }).eq('id', noteId).single(),
     );
   }
 
@@ -484,8 +409,34 @@ export class F2aSupabaseApi {
    * Delete a specific note by ID.
    */
   async deleteNote(noteId: number) {
-    return this._supabaseApiCall(async () =>
-      this._supabase.from("notes").delete().eq("id", noteId)
+    return this._supabaseApiCall(async () => this._supabase.from('notes').delete().eq('id', noteId));
+  }
+
+  /**
+   * Get the advanced matching configuration for the current user.
+   */
+  async getAdvancedMatchingConfig() {
+    const [config] = await this._supabaseApiCall(
+      async () => await this._supabase.from('advanced_matching').select('*'),
     );
+
+    return config;
+  }
+
+  /**
+   * Update the advanced matching configuration for the current user.
+   */
+  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>) {
+    const [updatedConfig] = await this._supabaseApiCall(
+      async () =>
+        await this._supabase
+          .from('advanced_matching')
+          .upsert(config, {
+            onConflict: 'user_id',
+          })
+          .select('*'),
+    );
+
+    return updatedConfig;
   }
 }
