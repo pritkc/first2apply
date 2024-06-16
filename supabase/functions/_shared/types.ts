@@ -47,7 +47,13 @@ export type Link = {
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
-export type JobStatus = "new" | "applied" | "archived" | "deleted";
+export type JobStatus =
+  | "new"
+  | "applied"
+  | "archived"
+  | "deleted"
+  | "processing"
+  | "excluded_by_advanced_matching";
 export type Job = {
   id: number;
   user_id: string;
@@ -99,6 +105,40 @@ export type Note = {
   files: string[];
 };
 
+export type SubscriptionTier = "basic" | "pro";
+export type Profile = {
+  id: number;
+  user_id: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  subscription_end_date: string;
+  subscription_tier: SubscriptionTier;
+  is_trial: boolean;
+};
+
+export type StripeBillingPlan = {
+  tier: SubscriptionTier;
+  monthlyCheckoutLink: string;
+  quarterlyCheckoutLink: string;
+  biannuallyCheckoutLink: string;
+  yearlyCheckoutLink: string;
+};
+
+export type StripeConfig = {
+  customerPortalLink: string;
+  plans: StripeBillingPlan[];
+};
+
+export type AdvancedMatchingConfig = {
+  id: number;
+  user_id: string;
+  blacklisted_companies: string[];
+  chatgpt_prompt: string;
+  ai_api_cost: number;
+  ai_api_input_tokens_used: number;
+  ai_api_output_tokens_used: number;
+};
+
 /**
  * Supabase database schema.
  */
@@ -146,13 +186,52 @@ export type DbSchema = {
         Insert: Pick<HtmlDump, "url" | "html">;
         Update: never;
       };
+      profiles: {
+        Row: Profile;
+        Insert: never;
+        Update: Pick<
+          Profile,
+          | "stripe_customer_id"
+          | "stripe_subscription_id"
+          | "subscription_end_date"
+          | "subscription_tier"
+          | "is_trial"
+        >;
+      };
       notes: {
         Row: Note;
         Insert: Pick<Note, "job_id" | "text" | "files">;
         Update: Partial<Pick<Note, "text" | "files">>;
       };
+      advanced_matching: {
+        Row: AdvancedMatchingConfig;
+        Insert: Pick<
+          AdvancedMatchingConfig,
+          "blacklisted_companies" | "chatgpt_prompt"
+        >;
+        Update: Partial<
+          Pick<
+            AdvancedMatchingConfig,
+            "blacklisted_companies" | "chatgpt_prompt"
+          >
+        >;
+      };
     };
     Views: {};
-    Functions: {};
+    Functions: {
+      get_user_id_by_email: {
+        Params: { email: string };
+        Returns: { id: string };
+      };
+      count_chatgpt_usage: {
+        Params: {
+          for_user_id: string;
+          cost_increment: number;
+          input_tokens_increment: number;
+          output_tokens_increment: number;
+        };
+        Returns: {};
+      };
+    };
   };
 };

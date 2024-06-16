@@ -1,5 +1,6 @@
-import React from "react";
-import { Job } from "../../../supabase/functions/_shared/types";
+import React from 'react';
+
+import { Job } from '../../../supabase/functions/_shared/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,8 +10,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./ui/alert-dialog";
-import { Checkbox } from "./ui/checkbox";
+} from './ui/alert-dialog';
+import { Checkbox } from './ui/checkbox';
 
 let SHOW_DELETE_WARNING = true;
 
@@ -49,12 +50,9 @@ export function DeleteJobDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Are you sure you want to delete this job?
-          </AlertDialogTitle>
+          <AlertDialogTitle>Are you sure you want to delete this job?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete this job
-            and you won't be able to see it again.
+            This action cannot be undone. This will permanently delete this job and you won't be able to see it again.
           </AlertDialogDescription>
           <AlertDialogDescription className="flex items-center">
             <Checkbox
@@ -63,20 +61,14 @@ export function DeleteJobDialog({
                 SHOW_DELETE_WARNING = !checked;
               }}
             ></Checkbox>
-            <label
-              htmlFor="disable-delete-warning"
-              className="space-y-1 leading-none ml-2"
-            >
+            <label htmlFor="disable-delete-warning" className="ml-2 space-y-1 leading-none">
               Do not show this warning again.
             </label>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive hover:bg-destructive/90"
-            onClick={() => onDelete(job)}
-          >
+          <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => onDelete(job)}>
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -1,8 +1,3 @@
-import { useState } from "react";
-
-import { useError } from "@/hooks/error";
-import { useLinks } from "@/hooks/links";
-import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -11,24 +6,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
+import { useError } from '@/hooks/error';
+import { useLinks } from '@/hooks/links';
+import { useSites } from '@/hooks/sites';
+import { openExternalUrl } from '@/lib/electronMainSdk';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-import { Button } from "./ui/button";
-import { Icons } from "./icons";
-import { Input } from "./ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
-import { useSites } from "@/hooks/sites";
-import { openExternalUrl } from "@/lib/electronMainSdk";
-import { Badge } from "./ui/badge";
+import { Icons } from './icons';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
+import { Input } from './ui/input';
 
 // Schema definition for form validation using Zod
 const schema = z.object({
-  title: z.string().min(1, { message: "This field cannot be blank" }).max(80),
-  url: z.string().url().min(1, { message: "This field cannot be blank" }),
+  title: z.string().min(1, { message: 'This field cannot be blank' }).max(80),
+  url: z.string().url().min(1, { message: 'This field cannot be blank' }),
 });
 
 // Types for form values
@@ -48,10 +46,10 @@ export function CreateLink() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: "",
-      url: "",
+      title: '',
+      url: '',
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   // Handler for form submission
@@ -65,10 +63,9 @@ export function CreateLink() {
       // Reset form and stop submitting only if creation is successful
       form.reset();
       toast({
-        title: "Success",
-        description:
-          "Job search saved successfully! We are scanning the site for new jobs in the background.",
-        variant: "success",
+        title: 'Success',
+        description: 'Job search saved successfully! We are scanning the site for new jobs in the background.',
+        variant: 'success',
       });
 
       // Close the dialog
@@ -85,18 +82,16 @@ export function CreateLink() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="lg" className="text-base px-10">
+        <Button variant="default" size="lg" className="px-10 text-base">
           Add Search
         </Button>
       </DialogTrigger>
-      <DialogContent className="p-6 max-w-xl">
+      <DialogContent className="max-w-xl p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-medium tracking-wide">
-            Add new job search
-          </DialogTitle>
+          <DialogTitle className="text-xl font-medium tracking-wide">Add new job search</DialogTitle>
           <DialogDescription>
-            Go to one of your favorite websites and search for a job. The more
-            specific your filters, the better we can tailor job alerts for you.
+            Go to one of your favorite websites and search for a job. The more specific your filters, the better we can
+            tailor job alerts for you.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,41 +126,36 @@ export function CreateLink() {
                   <FormItem className="w-full">
                     <FormLabel>URL</FormLabel>
                     <FormControl>
-                      <Input
-                        id="url"
-                        type="url"
-                        placeholder="Paste the URL of your job search"
-                        {...field}
-                      />
+                      <Input id="url" type="url" placeholder="Paste the URL of your job search" {...field} />
                     </FormControl>
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="flex flex-row justify-between items-center pt-3">
+            <div className="flex flex-row items-center justify-between pt-3">
               {/* Submit button */}
               <Button
                 type="submit"
                 disabled={!form.formState.isValid || isSubmitting}
-                className="flex justify-center items-center gap-2 ml-auto"
+                className="ml-auto flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <Icons.spinner2 className="animate-spin h-4 w-4" />
+                    <Icons.spinner2 className="h-4 w-4 animate-spin" />
                     Scanning site...
                   </>
                 ) : (
-                  "Save"
+                  'Save'
                 )}
               </Button>
             </div>
           </form>
         </Form>
 
-        <h2 className="text-base tracking-wide mt-6">Supported job boards:</h2>
+        <h2 className="mt-6 text-base tracking-wide">Supported job boards:</h2>
         <DialogFooter>
-          <ul className="w-full flex gap-1.5 flex-wrap justify-evenly">
+          <ul className="flex w-full flex-wrap justify-evenly gap-1.5">
             {sortedSites.map((site) => (
               <li key={site.id}>
                 <Badge

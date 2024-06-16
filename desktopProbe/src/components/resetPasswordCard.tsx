@@ -1,25 +1,16 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Icons } from "./icons";
+import { Icons } from './icons';
+import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
 
 // Schema definition for form validation using Zod
 const schema = z.object({
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
 });
 
 type LoginFormValues = z.infer<typeof schema>;
@@ -35,9 +26,9 @@ export function ResetPasswordCard({
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      password: "",
+      password: '',
     },
-    mode: "onChange",
+    mode: 'onChange',
     disabled: isSubmitting,
   });
 
@@ -50,12 +41,9 @@ export function ResetPasswordCard({
   return (
     <Card className="w-80 space-y-2.5">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center tracking-wide">
-          Reset password
-        </CardTitle>
+        <CardTitle className="text-center text-2xl tracking-wide">Reset password</CardTitle>
         <CardDescription className="text-center">
-          Enter your new password below, maybe one that you can remember this
-          time :)
+          Enter your new password below, maybe one that you can remember this time :)
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -74,15 +62,15 @@ export function ResetPasswordCard({
               )}
             />
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 pt-2 pb-7">
+          <CardFooter className="flex flex-col gap-4 pb-7 pt-2">
             <Button className="w-full" disabled={!form.formState.isValid}>
               {isSubmitting ? (
                 <>
-                  <Icons.spinner2 className="mr-1 animate-spin w-4 h-4" />
+                  <Icons.spinner2 className="mr-1 h-4 w-4 animate-spin" />
                   Changing password
                 </>
               ) : (
-                "Change password"
+                'Change password'
               )}
             </Button>
           </CardFooter>

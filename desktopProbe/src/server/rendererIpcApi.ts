@@ -1,11 +1,13 @@
-import { dialog, ipcMain, shell } from "electron";
-import { F2aSupabaseApi } from "./supabaseApi";
-import { getExceptionMessage } from "../lib/error";
-import { JobScanner } from "./jobScanner";
-import fs from "fs";
-import { json2csv } from "json-2-csv";
-import { Job } from "../../../supabase/functions/_shared/types";
-import os from "os";
+import { dialog, ipcMain, shell } from 'electron';
+import fs from 'fs';
+import { json2csv } from 'json-2-csv';
+import os from 'os';
+
+import { Job } from '../../../supabase/functions/_shared/types';
+import { getExceptionMessage } from '../lib/error';
+import { JobScanner } from './jobScanner';
+import { getStripeConfig } from './stripeConfig';
+import { F2aSupabaseApi } from './supabaseApi';
 
 /**
  * Helper methods used to centralize error handling.
@@ -27,41 +29,39 @@ async function _apiCall<T>(method: () => Promise<T>) {
 export function initRendererIpcApi({
   supabaseApi,
   jobScanner,
+  nodeEnv,
 }: {
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
+  nodeEnv: string;
 }) {
-  ipcMain.handle("get-os-type", (event) =>
+  ipcMain.handle('get-os-type', (event) =>
     _apiCall(async () => {
       return os.platform();
-    })
+    }),
   );
 
-  ipcMain.handle("signup-with-email", async (event, { email, password }) =>
-    _apiCall(() => supabaseApi.signupWithEmail({ email, password }))
+  ipcMain.handle('signup-with-email', async (event, { email, password }) =>
+    _apiCall(() => supabaseApi.signupWithEmail({ email, password })),
   );
 
-  ipcMain.handle("login-with-email", async (event, { email, password }) =>
-    _apiCall(() => supabaseApi.loginWithEmail({ email, password }))
+  ipcMain.handle('login-with-email', async (event, { email, password }) =>
+    _apiCall(() => supabaseApi.loginWithEmail({ email, password })),
   );
 
-  ipcMain.handle("send-password-reset-email", async (event, { email }) =>
-    _apiCall(() => supabaseApi.sendPasswordResetEmail({ email }))
+  ipcMain.handle('send-password-reset-email', async (event, { email }) =>
+    _apiCall(() => supabaseApi.sendPasswordResetEmail({ email })),
   );
 
-  ipcMain.handle("change-password", async (event, { password }) =>
-    _apiCall(() => supabaseApi.updatePassword({ password }))
+  ipcMain.handle('change-password', async (event, { password }) =>
+    _apiCall(() => supabaseApi.updatePassword({ password })),
   );
 
-  ipcMain.handle("logout", async (event, {}) =>
-    _apiCall(() => supabaseApi.logout())
-  );
+  ipcMain.handle('logout', async (event, {}) => _apiCall(() => supabaseApi.logout()));
 
-  ipcMain.handle("get-user", async (event) =>
-    _apiCall(() => supabaseApi.getUser())
-  );
+  ipcMain.handle('get-user', async (event) => _apiCall(() => supabaseApi.getUser()));
 
-  ipcMain.handle("create-link", async (event, { title, url }) =>
+  ipcMain.handle('create-link', async (event, { title, url }) =>
     _apiCall(async () => {
       const { link } = await supabaseApi.createLink({
         title,
@@ -74,83 +74,65 @@ export function initRendererIpcApi({
       });
 
       return { link };
-    })
+    }),
   );
 
-  ipcMain.handle("list-links", async (event, { title, url }) =>
-    _apiCall(() => supabaseApi.listLinks())
+  ipcMain.handle('list-links', async (event, { title, url }) => _apiCall(() => supabaseApi.listLinks()));
+
+  ipcMain.handle('delete-link', async (event, { linkId }) => _apiCall(() => supabaseApi.deleteLink(linkId)));
+
+  ipcMain.handle('list-jobs', async (event, { status, limit, after }) =>
+    _apiCall(() => supabaseApi.listJobs({ status, limit, after })),
   );
 
-  ipcMain.handle("delete-link", async (event, { linkId }) =>
-    _apiCall(() => supabaseApi.deleteLink(linkId))
+  ipcMain.handle('update-job-status', async (event, { jobId, status }) =>
+    _apiCall(() => supabaseApi.updateJobStatus({ jobId, status })),
   );
 
-  ipcMain.handle("list-jobs", async (event, { status, limit, after }) =>
-    _apiCall(() => supabaseApi.listJobs({ status, limit, after }))
+  ipcMain.handle('update-job-labels', async (event, { jobId, labels }) =>
+    _apiCall(() => supabaseApi.updateJobLabels({ jobId, labels })),
   );
 
-  ipcMain.handle("update-job-status", async (event, { jobId, status }) =>
-    _apiCall(() => supabaseApi.updateJobStatus({ jobId, status }))
-  );
+  ipcMain.handle('list-sites', async (event) => _apiCall(() => supabaseApi.listSites()));
 
-  ipcMain.handle("update-job-labels", async (event, { jobId, labels }) =>
-    _apiCall(() => supabaseApi.updateJobLabels({ jobId, labels }))
-  );
-
-  ipcMain.handle("list-sites", async (event) =>
-    _apiCall(() => supabaseApi.listSites())
-  );
-
-  ipcMain.handle("update-job-scanner-settings", async (event, { settings }) =>
-    _apiCall(async () => jobScanner.updateSettings(settings))
+  ipcMain.handle('update-job-scanner-settings', async (event, { settings }) =>
+    _apiCall(async () => jobScanner.updateSettings(settings)),
   );
 
   // handler used to fetch the cron schedule
-  ipcMain.handle("get-job-scanner-settings", async (event) =>
-    _apiCall(async () => jobScanner.getSettings())
-  );
+  ipcMain.handle('get-job-scanner-settings', async (event) => _apiCall(async () => jobScanner.getSettings()));
 
-  ipcMain.handle("open-external-url", async (event, { url }) =>
-    _apiCall(async () => shell.openExternal(url))
-  );
+  ipcMain.handle('open-external-url', async (event, { url }) => _apiCall(async () => shell.openExternal(url)));
 
-  ipcMain.handle("scan-job-description", async (event, { job }) =>
+  ipcMain.handle('scan-job-description', async (event, { job }) =>
     _apiCall(async () => {
       const [updatedJob] = await jobScanner.scanJobs([job]);
       return { job: updatedJob };
-    })
+    }),
   );
 
-  ipcMain.handle(
-    "create-user-review",
-    async (event, { title, description, rating }) =>
-      _apiCall(() => supabaseApi.createReview({ title, description, rating }))
+  ipcMain.handle('create-user-review', async (event, { title, description, rating }) =>
+    _apiCall(() => supabaseApi.createReview({ title, description, rating })),
   );
 
-  ipcMain.handle("get-user-review", async (event) =>
-    _apiCall(async () => supabaseApi.getUserReview())
+  ipcMain.handle('get-user-review', async (event) => _apiCall(async () => supabaseApi.getUserReview()));
+
+  ipcMain.handle('update-user-review', async (event, { id, title, description, rating }) =>
+    _apiCall(async () => supabaseApi.updateReview({ id, title, description, rating })),
   );
 
-  ipcMain.handle(
-    "update-user-review",
-    async (event, { id, title, description, rating }) =>
-      _apiCall(async () =>
-        supabaseApi.updateReview({ id, title, description, rating })
-      )
-  );
-
-  ipcMain.handle("get-job-by-id", async (event, { jobId }) =>
+  ipcMain.handle('get-job-by-id', async (event, { jobId }) =>
     _apiCall(async () => {
       const job = await supabaseApi.getJob(jobId);
       return { job };
-    })
+    }),
   );
 
-  ipcMain.handle("export-jobs-csv", async (event, { status }) =>
+  ipcMain.handle('export-jobs-csv', async (event, { status }) =>
     _apiCall(async () => {
       const res = await dialog.showSaveDialog({
-        properties: ["createDirectory"],
-        filters: [{ name: "CSV Jobs", extensions: ["csv"] }],
+        properties: ['createDirectory'],
+        filters: [{ name: 'CSV Jobs', extensions: ['csv'] }],
       });
       const filePath = res.filePath;
       if (res.canceled) return;
@@ -182,33 +164,51 @@ export function initRendererIpcApi({
 
       const csvJobs = json2csv(sanitizedJobs);
       fs.writeFileSync(filePath, csvJobs);
-    })
+    }),
   );
 
-  ipcMain.handle("change-all-job-status", async (event, { from, to }) =>
+  ipcMain.handle('change-all-job-status', async (event, { from, to }) =>
     _apiCall(async () => {
       const job = await supabaseApi.changeAllJobStatus({ from, to });
       return { job };
-    })
+    }),
   );
 
-  ipcMain.handle("create-note", async (event, { job_id, text, files }) =>
-    _apiCall(() => supabaseApi.createNote({ job_id, text, files }))
+  ipcMain.handle('get-profile', async (event, {}) =>
+    _apiCall(async () => {
+      const profile = await supabaseApi.getProfile();
+      return { profile };
+    }),
   );
 
-  ipcMain.handle("list-notes", async (event, { job_id }) =>
-    _apiCall(() => supabaseApi.listNotes(job_id))
+  ipcMain.handle('get-stripe-config', async (event, {}) =>
+    _apiCall(async () => {
+      const config = await getStripeConfig(nodeEnv);
+      return { config };
+    }),
   );
 
-  ipcMain.handle("update-note", async (event, { noteId, text }) =>
-    _apiCall(() => supabaseApi.updateNote({ noteId, text }))
+  ipcMain.handle('create-note', async (event, { job_id, text, files }) =>
+    _apiCall(() => supabaseApi.createNote({ job_id, text, files })),
   );
 
-  ipcMain.handle("add-file-to-note", async (event, { noteId, file }) =>
-    _apiCall(() => supabaseApi.addFileToNote({ noteId, file }))
+  ipcMain.handle('list-notes', async (event, { job_id }) => _apiCall(() => supabaseApi.listNotes(job_id)));
+
+  ipcMain.handle('update-note', async (event, { noteId, text }) =>
+    _apiCall(() => supabaseApi.updateNote({ noteId, text })),
   );
 
-  ipcMain.handle("delete-note", async (event, { noteId }) =>
-    _apiCall(() => supabaseApi.deleteNote(noteId))
+  ipcMain.handle('add-file-to-note', async (event, { noteId, file }) =>
+    _apiCall(() => supabaseApi.addFileToNote({ noteId, file })),
+  );
+
+  ipcMain.handle('delete-note', async (event, { noteId }) => _apiCall(() => supabaseApi.deleteNote(noteId)));
+
+  ipcMain.handle('get-advanced-matching-config', async (event, {}) =>
+    _apiCall(() => supabaseApi.getAdvancedMatchingConfig()),
+  );
+
+  ipcMain.handle('update-advanced-matching-config', async (event, { config }) =>
+    _apiCall(() => supabaseApi.updateAdvancedMatchingConfig(config)),
   );
 }

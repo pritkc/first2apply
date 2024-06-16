@@ -1,12 +1,12 @@
-import { app } from "electron";
-import { createHash } from "crypto";
+import { IAnalyticsClient } from '@/lib/analytics';
+import * as amplitude from '@amplitude/analytics-node';
+import { createHash } from 'crypto';
+import { app } from 'electron';
 
-import * as amplitude from "@amplitude/analytics-node";
-import { ENV } from "../env";
-import { IAnalyticsClient } from "@/lib/analytics";
+import { ENV } from '../env';
 
-const userDataPath = app.getPath("userData");
-const deviceId = createHash("sha256").update(userDataPath).digest("hex");
+const userDataPath = app.getPath('userData');
+const deviceId = createHash('sha256').update(userDataPath).digest('hex');
 
 export class AmplitudeAnalyticsClient implements IAnalyticsClient {
   private _isInitialized = false;
@@ -43,7 +43,7 @@ export class AmplitudeAnalyticsClient implements IAnalyticsClient {
         app_version: this._appVersion,
         platform: process.platform,
         device_id: deviceId,
-      }
+      },
     );
   }
 
