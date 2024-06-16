@@ -164,7 +164,7 @@ public.profiles (
   stripe_customer_id text null,
   stripe_subscription_id text null,
   subscription_end_date timestamp without time zone not null default (now() + '7 days'::interval),
-  subscription_tier text not null default 'pro'::text,
+  subscription_tier text not null default 'basic'::text,
   is_trial boolean not null default true,
   constraint profiles_pkey primary key (id),
   constraint profiles_user_id_key unique (user_id),
