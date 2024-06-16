@@ -128,10 +128,10 @@ export function FiltersPage() {
             autoFocus={true}
             onChange={(evt) => setUserAiInput(evt.target.value)}
             minRows={3}
-            maxLength={200}
+            maxLength={300}
             className="w-full resize-none rounded-md border border-border bg-card px-6 py-4 text-base ring-ring placeholder:text-muted-foreground focus:outline-none focus:ring-2"
           />
-          <span className="absolute bottom-4 right-4 text-sm text-muted-foreground">{userAiInput.length}/200</span>
+          <span className="absolute bottom-4 right-4 text-sm text-muted-foreground">{userAiInput.length}/300</span>
         </div>
 
         <Alert className="flex items-center gap-2 border-0 p-0">
