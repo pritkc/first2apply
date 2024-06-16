@@ -225,7 +225,7 @@ export type DbSchema = {
       };
       count_chatgpt_usage: {
         Params: {
-          user_id: number;
+          for_user_id: string;
           cost_increment: number;
           input_tokens_increment: number;
           output_tokens_increment: number;

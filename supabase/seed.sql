@@ -309,7 +309,7 @@ using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
 create or replace function count_chatgpt_usage(
-  user_id integer, 
+  for_user_id uuid, 
   cost_increment numeric, 
   input_tokens_increment integer, 
   output_tokens_increment integer
@@ -323,6 +323,6 @@ begin
     ai_api_cost = ai_api_cost + cost_increment, 
     ai_api_input_tokens_used = ai_api_input_tokens_used + input_tokens_increment, 
     ai_api_output_tokens_used = ai_api_output_tokens_used + output_tokens_increment
-  where user_id = user_id;
+  where user_id = for_user_id;
 end;
 $$;

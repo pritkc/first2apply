@@ -76,7 +76,7 @@ export async function applyAdvancedMatchingFilters({
     const { error: countUsageError } = await supabaseClient.rpc(
       "count_chatgpt_usage",
       {
-        user_id: job.user_id,
+        for_user_id: job.user_id,
         cost_increment: cost,
         input_tokens_increment: inputTokensUsed,
         output_tokens_increment: outputTokensUsed,
@@ -171,7 +171,8 @@ async function promptOpenAI({
   });
 
   const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo-0125",
+    // model: "gpt-3.5-turbo-0125",
+    model: "gpt-4o",
     messages: [
       {
         role: "system",
@@ -186,9 +187,9 @@ async function promptOpenAI({
         }),
       },
     ],
-    temperature: 1.0,
+    temperature: 0,
     max_tokens: 1,
-    top_p: 1,
+    top_p: 0,
     frequency_penalty: 0,
     presence_penalty: 0,
   });
@@ -197,8 +198,10 @@ async function promptOpenAI({
 
   const inputTokensUsed = response.usage?.prompt_tokens ?? 0;
   const outputTokensUsed = response.usage?.completion_tokens ?? 0;
-  const costPerMillionInputTokens = 0.5; // cost per million tokens
-  const costPerMillionOutputTokens = 1.5; // cost per million tokens
+  // const costPerMillionInputTokens = 0.5; // cost per million tokens
+  // const costPerMillionOutputTokens = 1.5; // cost per million tokens
+  const costPerMillionInputTokens = 5; // cost per million tokens
+  const costPerMillionOutputTokens = 15; // cost per million tokens
   const cost =
     (costPerMillionInputTokens / 1_000_000) * inputTokensUsed +
     (costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
@@ -231,19 +234,18 @@ function generateUserPrompt({
   // - Salary should be at least $80,000 per year.
   // - I'm from the UK, so only want jobs that allow working remotely from the UK.
   // - Exclude jobs with the title "Senior" or "Lead".
-  return `Analyze the following job description and answer if it should be excluded based on these filters:
+  return `Here are my requirements for job filtering:
 ${prompt}
 
-Job Title: "${title}"
+Job Title: ${title}
 Job Description:
-"${description}"
+${description}
 
-Should this job be excluded from the user's feed? Reply with 'yes' or 'no'.`;
+Based on my requirements, should this job be excluded from my feed?`;
 }
 
-const SYSTEM_PROMPT = `You are an assistant trained to determine if a job description should be excluded based on specific criteria.
-You will have to analyze a job description and answer if it should be excluded based on the user's requirements.
-Special mentions: 
+const SYSTEM_PROMPT = `You are an assistant which helps users with their job search. You will have to analyze a job and decide if it should be discarded based on the user's requirements.
+Following are the rules for filtering jobs: 
 - regarding excluded keywords like tech stack or skills, if at least one of them is mentioned, the job should be excluded. If none of them are mentioned, the job should be included.
 - if the user is requesting a minimum salary, it should be fine if the job just says: "Up to x amount" or "Depending on experience". Also the currency can be ignored.
 - if the job does not mention a salary range, ignore salary requirements by the user (this rule can be overridden by the user if they want to exclude jobs without a salary range).
@@ -256,4 +258,4 @@ Special mentions:
 - technological tools: only jobs mandating undesired technologies should be disqualified, absence of mention should be neutral.
 - working hours: absence of detailed working hours should not disqualify a job unless specific hours are a user requirement.
 - for experience, interpret any specified maximum or minimum years of experience in relation to what is stated in the job description. If the job specifies an experience range, the job should be considered a match if the user's requirement fits within this range or if the user's requirement aligns with the maximum experience mentioned. Absence of experience details in the job description should not disqualify the job unless the user explicitly requires experience details to be mentioned.
-`;
+Answer only with 'yes' or 'no' based on the user's requirements.`;

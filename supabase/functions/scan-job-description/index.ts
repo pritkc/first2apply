@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
       .update({
         description: updatedJob.description,
         status: updatedJob.status,
+        updated_at: new Date(),
       })
       .eq("id", jobId);
     if (updateJobErr) {
