@@ -59,6 +59,7 @@ type JobListing = {
   new: number;
   applied: number;
   archived: number;
+  filtered: number;
   nextPageToken?: string;
 };
 
@@ -86,6 +87,7 @@ export function Home() {
     new: 0,
     applied: 0,
     archived: 0,
+    filtered: 0,
   });
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
@@ -232,6 +234,8 @@ export function Home() {
           : tabToDecrement === 'archived'
             ? listing.archived - 1
             : listing.archived;
+      const filteredCount =
+        tabToDecrement === 'excluded_by_advanced_matching' ? listing.filtered - 1 : listing.filtered;
 
       return {
         ...listing,
@@ -239,6 +243,7 @@ export function Home() {
         new: newCount,
         applied: appliedCount,
         archived: archivedCount,
+        filtered: filteredCount,
       };
     });
   };
@@ -445,11 +450,11 @@ export function Home() {
           <TabsTrigger
             value="excluded_by_advanced_matching"
             className={`flex flex-1 items-center px-6 py-3.5 focus-visible:ring-0 focus-visible:ring-offset-0 ${
-              status === 'archived' ? 'justify-between' : 'justify-center'
+              status === 'excluded_by_advanced_matching' ? 'justify-between' : 'justify-center'
             }`}
           >
             {status === 'excluded_by_advanced_matching' && <span className="w-6" />}
-            Filtered {`(${0})`}
+            Filtered {`(${listing.filtered})`}
             {status === 'excluded_by_advanced_matching' && (
               <TabActions
                 tab="excluded_by_advanced_matching"

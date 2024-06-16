@@ -118,6 +118,7 @@ export async function listJobs({ status, limit, after }: { status: JobStatus; li
     new: number;
     applied: number;
     archived: number;
+    filtered: number;
     nextPageToken?: string;
   }>('list-jobs', {
     status,
