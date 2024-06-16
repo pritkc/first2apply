@@ -38,11 +38,11 @@ const pricingPlans: PricingPlan[] = [
   {
     name: 'Pro',
     description: 'All you need to get hired',
-    monthly: { pricePerMonth: 10, total: 10, discount: 0, period: 1 },
-    quarterly: { pricePerMonth: 7.5, total: 22.5, discount: 0.25, period: 3 },
-    biannually: { pricePerMonth: 6.5, total: 39, discount: 0.35, period: 6 },
-    yearly: { pricePerMonth: 5, total: 60, discount: 0.5, period: 12 },
-    benefits: ['Everything the basic plan offers.', 'Blacklist companies.', 'Advanced filtering.'],
+    monthly: { pricePerMonth: 20, total: 20, discount: 0, period: 1 },
+    quarterly: { pricePerMonth: 18.75, total: 56.25, discount: 0.25, period: 3 },
+    biannually: { pricePerMonth: 18.25, total: 109.5, discount: 0.35, period: 6 },
+    yearly: { pricePerMonth: 17.5, total: 210, discount: 0.5, period: 12 },
+    benefits: ['Everything the basic plan offers.', 'Blacklist companies.', 'Advanced filtering using AI.'],
   },
 ];
 
@@ -128,12 +128,6 @@ export function PricingOptions({
                 Select
               </Button>
             </CardFooter>
-
-            {plan.name === 'Pro' && (
-              <div className="absolute -right-2 top-12 -translate-y-1/4 translate-x-1/4 rotate-45 transform bg-primary px-20 py-1 font-medium text-background sm:py-2 sm:text-lg">
-                Coming Soon
-              </div>
-            )}
           </Card>
         ))}
       </div>
