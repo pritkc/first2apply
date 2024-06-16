@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
       .select("*");
     if (insertError) throw new Error(insertError.message);
 
-    const newJobs = upsertedJobs?.filter((job) => job.status === "new") ?? [];
+    const newJobs =
+      upsertedJobs?.filter((job) => job.status === "processing") ?? [];
     console.log(`found ${newJobs.length} new jobs`);
 
     return new Response(JSON.stringify({ newJobs, parseFailed }), {
