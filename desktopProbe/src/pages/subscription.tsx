@@ -5,12 +5,14 @@ import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
 import { openExternalUrl } from '@/lib/electronMainSdk';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { StripeBillingPlan, SubscriptionTier } from '../../../supabase/functions/_shared/types';
 
 export function SubscriptionPage() {
   const { handleError } = useError();
-  const { isLoading: isLoadingSession, profile, stripeConfig, refreshProfile } = useSession();
+  const { isLoading: isLoadingSession, profile, isSubscriptionExpired, stripeConfig, refreshProfile } = useSession();
+  const navigate = useNavigate();
   const isLoading = isLoadingSession || !profile || !stripeConfig;
 
   /**
@@ -23,6 +25,15 @@ export function SubscriptionPage() {
 
     return () => clearInterval(interval);
   }, [refreshProfile]);
+
+  /**
+   * Go to home page after successful subscription.
+   */
+  useEffect(() => {
+    if (!isSubscriptionExpired) {
+      navigate('/');
+    }
+  }, [profile, navigate]);
 
   /**
    * Open the checkout page for the selected plan.

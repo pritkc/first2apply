@@ -12,10 +12,10 @@ const devConfig: StripeConfig = {
     },
     {
       tier: 'pro',
-      monthlyCheckoutLink: 'https://buy.stripe.com/test_aEUcPM2Si8zt6AwfZ2',
-      quarterlyCheckoutLink: 'https://buy.stripe.com/test_bIY5nk8cC9Dxgb68wC',
-      biannuallyCheckoutLink: 'https://buy.stripe.com/test_5kA030eB03f98IEdQV',
-      yearlyCheckoutLink: 'https://buy.stripe.com/test_bIYg1Y78yaHB2kg4gn',
+      monthlyCheckoutLink: 'https://buy.stripe.com/test_00gdTQ8cCbLF1gcfZ6',
+      quarterlyCheckoutLink: 'https://buy.stripe.com/test_6oEdTQfF402Xgb6cMV',
+      biannuallyCheckoutLink: 'https://buy.stripe.com/test_5kA030csS5nh3okdR0',
+      yearlyCheckoutLink: 'https://buy.stripe.com/test_dR64jgfF402Xf725kv',
     },
   ],
 };
