@@ -149,7 +149,6 @@ export class F2aSupabaseApi {
    */
   async listJobs({ status, limit = 50, after }: { status: JobStatus; limit?: number; after?: string }) {
     const jobs = await this._supabaseApiCall<Job[], PostgrestError>(async () => {
-      // @ts-ignore
       const res = await this._supabase.rpc('list_jobs', {
         jobs_status: status,
         jobs_after: after ?? null,
@@ -160,7 +159,7 @@ export class F2aSupabaseApi {
     });
 
     // also return counters for grouped statuses
-    const statusses: JobStatus[] = ['new', 'archived', 'applied'];
+    const statusses: JobStatus[] = ['new', 'archived', 'applied', 'excluded_by_advanced_matching'];
     const counters = await Promise.all(
       statusses.map(async (status) => {
         const { count, error } = await this._supabase
@@ -185,6 +184,7 @@ export class F2aSupabaseApi {
       new: counters[0].count,
       archived: counters[1].count,
       applied: counters[2].count,
+      filtered: counters[3].count,
       nextPageToken,
     };
   }
