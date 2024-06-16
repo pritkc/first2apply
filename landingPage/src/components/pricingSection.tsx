@@ -159,20 +159,13 @@ export function PricingSection() {
                   ))}
                 </ul>
               </CardFooter>
-
-              {plan.name === "Pro" && (
-                <div className="absolute top-12 -right-2 bg-primary text-background sm:text-lg font-medium py-1 sm:py-2 px-20 transform rotate-45 translate-x-1/4 -translate-y-1/4">
-                  Coming Soon
-                </div>
-              )}
             </Card>
           ))}
         </div>
       </Tabs>
 
       <p className="mt-[5vh] text-xl sm:text-2xl font-medium text-center text-balance">
-        Since we haven&apos;t implemented payments yet, feel free to use the app
-        free of charge for now :)
+        You get a 7 DAYS FREE trial. No credit card required.
       </p>
     </section>
   );

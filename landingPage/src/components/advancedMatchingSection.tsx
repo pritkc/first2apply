@@ -23,16 +23,13 @@ export function AdvancedMatchingSection() {
         <Image
           src={advancedMatchingLight}
           alt="advanced-matching light"
-          className="w-full h-auto blur-sm dark:hidden"
+          className="w-full h-auto dark:hidden"
         />
         <Image
           src={advancedMatchingDark}
           alt="advanced-matching dark"
-          className="hidden w-full h-auto blur-sm dark:block"
+          className="hidden w-full h-auto dark:block"
         />
-        <div className="absolute top-8 xs:top-10 sm:top-12 md:top-8 lg:top-14 right-1 xs:right-2 sm:right-3 md:right-2 lg:right-3 bg-gradient-to-r from-primary via-primary via-80% to-background/5 opacity-70 rounded-l-sm py-2 pl-6 pr-8 transform text-background sm:text-lg font-medium tracking-wide">
-          Coming Soon
-        </div>
       </div>
     </section>
   );
