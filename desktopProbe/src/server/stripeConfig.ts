@@ -32,10 +32,10 @@ const prodConfig: StripeConfig = {
     },
     {
       tier: 'pro',
-      monthlyCheckoutLink: 'https://buy.stripe.com/bIY16fgXC6rjg4E149',
-      quarterlyCheckoutLink: 'https://buy.stripe.com/fZe7uD7n2dTLf0A6ou',
-      biannuallyCheckoutLink: 'https://buy.stripe.com/8wM02bcHm16Z6u43cj',
-      yearlyCheckoutLink: 'https://buy.stripe.com/14k6qz36M2b319KbIQ',
+      monthlyCheckoutLink: 'https://buy.stripe.com/cN25mv36Mg1T9GgaEN',
+      quarterlyCheckoutLink: 'https://buy.stripe.com/4gw4irgXCbLDdWw7sD',
+      biannuallyCheckoutLink: 'https://buy.stripe.com/fZe3en22I8zrg4E5kw',
+      yearlyCheckoutLink: 'https://buy.stripe.com/14k3enbDi8zr2dO6oB',
     },
   ],
 };
