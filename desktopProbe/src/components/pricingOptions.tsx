@@ -47,8 +47,10 @@ const pricingPlans: PricingPlan[] = [
 ];
 
 export function PricingOptions({
+  disableBasic,
   onSelectPlan,
 }: {
+  disableBasic?: boolean;
   onSelectPlan: (_: { tier: SubscriptionTier; billingCycle: string }) => void;
 }) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -69,7 +71,7 @@ export function PricingOptions({
           </TabsTrigger>
         ))}
       </TabsList>
-      <div className="mt-[5vh] grid w-full gap-6 sm:mt-[10vh] sm:grid-cols-2 md:gap-10 lg:gap-20">
+      <div className="mt-10 grid w-full gap-6 md:gap-10 lg:grid-cols-2">
         {pricingPlans.map((plan) => (
           <Card key={plan.name} className="relative overflow-hidden">
             <CardHeader className="md:p-8">
@@ -117,7 +119,7 @@ export function PricingOptions({
               <Button
                 size="lg"
                 className="mt-10 w-40 self-center"
-                // disabled={plan.name === "Pro"}
+                disabled={plan.name === 'Basic' && disableBasic}
                 onClick={() =>
                   onSelectPlan({
                     tier: plan.name.toLowerCase() as SubscriptionTier,
