@@ -297,7 +297,8 @@ public.advanced_matching (
   ai_api_input_tokens_used double precision not null default '0'::double precision,
   ai_api_output_tokens_used double precision not null default '0'::double precision,
   constraint advanced_matching_pkey primary key (id),
-  constraint advanced_matching_user_id_key unique (user_id)
+  constraint advanced_matching_user_id_key unique (user_id),
+  constraint advanced_matching_user_id_fkey foreign key (user_id) references auth.users (id) on update restrict on delete restrict
 ) tablespace pg_default;
 alter table public.advanced_matching enable row level security;
 create policy "enable all for users based on user_id" 
