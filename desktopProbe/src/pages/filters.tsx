@@ -1,4 +1,5 @@
 import { PricingOptions } from '@/components/pricingOptions';
+import { FiltersSkeleton } from '@/components/skeletons/filtersSkeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -31,6 +32,7 @@ export function FiltersPage() {
   const [blacklistedCompanies, setBlacklistedCompanies] = useState<string[]>([]);
   const [addBlacklistedCompany, setAddBlacklistedCompany] = useState<string>('');
   const [isSubscriptionDialogOpen, setSubscriptionDialogOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   /**
    * Load the advanced matching filters from the user's profile.
@@ -45,6 +47,8 @@ export function FiltersPage() {
         }
       } catch (error) {
         handleError({ error, title: 'Failed to load advanced matching filters' });
+      } finally {
+        setIsLoading(false);
       }
     };
     asyncLoad();
@@ -110,6 +114,14 @@ export function FiltersPage() {
       handleError({ error, title: 'Failed to close subscription dialog' });
     }
   };
+
+  if (isLoading) {
+    return (
+      <DefaultLayout className="flex flex-col p-6 md:p-10">
+        <FiltersSkeleton />
+      </DefaultLayout>
+    );
+  }
 
   return (
     <DefaultLayout className="flex flex-col space-y-16 p-6 md:p-10">
