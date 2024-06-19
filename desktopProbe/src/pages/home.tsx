@@ -454,7 +454,7 @@ export function Home() {
             }`}
           >
             {status === 'excluded_by_advanced_matching' && <span className="w-6" />}
-            Filtered {`(${listing.filtered})`}
+            Filtered out {`(${listing.filtered})`}
             {status === 'excluded_by_advanced_matching' && (
               <TabActions
                 tab="excluded_by_advanced_matching"
