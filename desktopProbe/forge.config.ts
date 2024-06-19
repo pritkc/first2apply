@@ -1,48 +1,48 @@
-import { config as loadEnvVars } from "dotenv";
-import path from "path";
-import fs from "fs";
+import { MakerAppX } from '@electron-forge/maker-appx';
+import { MakerDeb } from '@electron-forge/maker-deb';
+import { MakerDMG } from '@electron-forge/maker-dmg';
+import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
+import { WebpackPlugin } from '@electron-forge/plugin-webpack';
+import type { ForgeConfig } from '@electron-forge/shared-types';
+import { config as loadEnvVars } from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+
+import { mainConfig } from './webpack.main.config';
+import { rendererConfig } from './webpack.renderer.config';
+
 // load env vars
-loadEnvVars({ path: path.join(__dirname, "..", "desktopProbe", ".env") });
-
-import type { ForgeConfig } from "@electron-forge/shared-types";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerDeb } from "@electron-forge/maker-deb";
-import { MakerDMG } from "@electron-forge/maker-dmg";
-import { MakerAppX } from "@electron-forge/maker-appx";
-import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
-import { WebpackPlugin } from "@electron-forge/plugin-webpack";
-
-import { mainConfig } from "./webpack.main.config";
-import { rendererConfig } from "./webpack.renderer.config";
+loadEnvVars({ path: path.join(__dirname, '..', 'desktopProbe', '.env') });
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: path.join(__dirname, "packagers", "icons", "paper-plane"),
+    icon: path.join(__dirname, 'packagers', 'icons', 'paper-plane'),
     appBundleId: process.env.APP_BUNDLE_ID,
     protocols: [
       {
-        name: "First 2 Apply",
-        schemes: ["first2apply"],
+        name: 'First 2 Apply',
+        schemes: ['first2apply'],
       },
     ],
     osxSign: {},
     osxNotarize: {
-      appleId: process.env.APPLE_ID ?? "",
-      appleIdPassword: process.env.APPLE_PASSWORD ?? "",
-      teamId: process.env.APPLE_TEAM_ID ?? "",
+      appleId: process.env.APPLE_ID ?? '',
+      appleIdPassword: process.env.APPLE_PASSWORD ?? '',
+      teamId: process.env.APPLE_TEAM_ID ?? '',
     },
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      authors: "BeastX Industries",
-      name: "f2a",
-      setupIcon: path.join(__dirname, "packagers", "icons", "paper-plane.ico"),
+      authors: 'BeastX Industries',
+      name: 'f2a',
+      setupIcon: path.join(__dirname, 'packagers', 'icons', 'paper-plane.ico'),
     }),
     new MakerDMG({
-      format: "ULFO",
-      background: path.join(__dirname, "packagers", "macos-dmg-background.png"),
+      format: 'ULFO',
+      background: path.join(__dirname, 'packagers', 'macos-dmg-background.png'),
       additionalDMGOptions: {
         window: {
           size: {
@@ -53,24 +53,25 @@ const config: ForgeConfig = {
       },
     }),
     new MakerAppX({
-      packageName: "BeastXIndustries.First2Apply",
-      publisher: "CN=A2CA7EBA-28F4-4422-B08E-763EC4EEEACE",
+      packageName: 'BeastXIndustries.First2Apply',
+      publisher: 'CN=A2CA7EBA-28F4-4422-B08E-763EC4EEEACE',
       makeVersionWinStoreCompatible: true,
       // @ts-ignore
-      publisherDisplayName: "BeastX Industries",
-      assets: "./packagers/appx/icons",
-      manifest: "./packagers/appx/AppXManifest.xml",
+      publisherDisplayName: 'BeastX Industries',
+      assets: './packagers/appx/icons',
+      manifest: './packagers/appx/AppXManifest.xml',
     }),
     // new MakerRpm({}),
     new MakerDeb({
       options: {
-        name: "First 2 Apply",
-        bin: "First 2 Apply",
-        icon: path.join(__dirname, "packagers", "icons", "paper-plane.png"),
+        name: 'First 2 Apply',
+        bin: 'First 2 Apply',
+        icon: path.join(__dirname, 'packagers', 'icons', 'paper-plane.png'),
+        mimeType: ['x-scheme-handler/first2apply'],
       },
     }),
     {
-      name: "@electron-forge/maker-zip",
+      name: '@electron-forge/maker-zip',
       config: (arch: string) => ({
         // Note that we must provide this S3 URL here
         // in order to support smooth version transitions
@@ -81,10 +82,10 @@ const config: ForgeConfig = {
   ],
   publishers: [
     {
-      name: "@electron-forge/publisher-s3",
+      name: '@electron-forge/publisher-s3',
       config: {
-        bucket: "first2apply.com",
-        region: "eu-central-1",
+        bucket: 'first2apply.com',
+        region: 'eu-central-1',
         public: true,
         keyResolver: (fileName: string, platform: string, arch: string) => {
           return `releases/${platform}/${arch}/${fileName}`;
@@ -101,11 +102,11 @@ const config: ForgeConfig = {
         config: rendererConfig,
         entryPoints: [
           {
-            html: "./src/index.html",
-            js: "./src/renderer.ts",
-            name: "main_window",
+            html: './src/index.html',
+            js: './src/renderer.ts',
+            name: 'main_window',
             preload: {
-              js: "./src/preload.ts",
+              js: './src/preload.ts',
             },
           },
         ],
