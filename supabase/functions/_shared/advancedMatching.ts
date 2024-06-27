@@ -20,7 +20,7 @@ export async function applyAdvancedMatchingFilters({
 }): Promise<JobStatus> {
   console.log(`applying advanced matching filters to job ${job.id} ...`);
   // check if the user has advanced matching enabled
-  const { profile, hasAdvancedMatching } = await checkUserSubscription({
+  const { hasAdvancedMatching } = await checkUserSubscription({
     supabaseClient,
     userId: job.user_id,
   });
@@ -38,7 +38,7 @@ export async function applyAdvancedMatchingFilters({
   if (getAdvancedMatchingErr) {
     throw getAdvancedMatchingErr;
   }
-  const advancedMatching = advancedMatchingArr?.[0];
+  const advancedMatching: AdvancedMatchingConfig = advancedMatchingArr?.[0];
   if (!advancedMatching) {
     console.log(`advanced matching config not found for user ${job.user_id}`);
     return "new";
@@ -55,6 +55,13 @@ export async function applyAdvancedMatchingFilters({
     console.log(
       "prompting OpenAI to determine if the job should be excluded ..."
     );
+
+    // check if the user must be limited to a lower LLM tier
+    const shouldBeThrottled = advancedMatching.ai_api_cost > 10;
+    if (shouldBeThrottled) {
+      console.log("user has reached its LLM quota and will be throttled");
+    }
+
     const {
       jobShouldBeExcluded,
       message,
@@ -66,6 +73,7 @@ export async function applyAdvancedMatchingFilters({
       title: job.title,
       description: job.description,
       openAiApiKey,
+      shouldBeThrottled,
     });
 
     console.debug(message);
@@ -160,19 +168,32 @@ async function promptOpenAI({
   title,
   description,
   openAiApiKey,
+  shouldBeThrottled,
 }: {
   prompt: string;
   title: string;
   description: string;
   openAiApiKey: string;
+  shouldBeThrottled: boolean;
 }) {
   const openai = new OpenAI({
     apiKey: openAiApiKey,
   });
 
+  const llmConfig = shouldBeThrottled
+    ? {
+        model: "gpt-3.5-turbo-0125",
+        costPerMillionInputTokens: 0.5,
+        costPerMillionOutputTokens: 1.5,
+      }
+    : {
+        model: "gpt-4o",
+        costPerMillionInputTokens: 5,
+        costPerMillionOutputTokens: 15,
+      };
+
   const response = await openai.chat.completions.create({
-    // model: "gpt-3.5-turbo-0125",
-    model: "gpt-4o",
+    model: llmConfig.model,
     messages: [
       {
         role: "system",
@@ -198,13 +219,9 @@ async function promptOpenAI({
 
   const inputTokensUsed = response.usage?.prompt_tokens ?? 0;
   const outputTokensUsed = response.usage?.completion_tokens ?? 0;
-  // const costPerMillionInputTokens = 0.5; // cost per million tokens
-  // const costPerMillionOutputTokens = 1.5; // cost per million tokens
-  const costPerMillionInputTokens = 5; // cost per million tokens
-  const costPerMillionOutputTokens = 15; // cost per million tokens
   const cost =
-    (costPerMillionInputTokens / 1_000_000) * inputTokensUsed +
-    (costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
+    (llmConfig.costPerMillionInputTokens / 1_000_000) * inputTokensUsed +
+    (llmConfig.costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
 
   return {
     jobShouldBeExcluded: message === "Yes",
