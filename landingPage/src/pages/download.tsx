@@ -1,6 +1,6 @@
 import { DefaultLayout } from "@/components/defaultLayout";
 import { Button } from "@/components/ui/button";
-import { sendGAEvent, sendGTMEvent } from "@next/third-parties/google";
+import { sendGTMEvent } from "@next/third-parties/google";
 import Head from "next/head";
 
 export default function Download() {
@@ -87,11 +87,9 @@ export default function Download() {
             <a
               href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-1.5.1-arm64.dmg"
               onClick={() => {
-                sendGTMEvent({ event: "file_download" });
-                sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.5.1-arm64",
+                sendGTMEvent({
+                  event: "file_download",
                   file_extension: "dmg",
-                  link_domain: "first2apply.com",
                 });
               }}
             >
@@ -119,11 +117,9 @@ export default function Download() {
             <a
               href="ms-windows-store://pdp/?productid=9NK18WV87SV2"
               onClick={() => {
-                sendGTMEvent({ event: "file_download" });
-                sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.5.1",
+                sendGTMEvent({
+                  event: "file_download",
                   file_extension: "exe",
-                  link_domain: "first2apply.com",
                 });
               }}
             >
@@ -151,11 +147,9 @@ export default function Download() {
             <a
               href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-1.5.1-x64.dmg"
               onClick={() => {
-                sendGTMEvent({ event: "file_download" });
-                sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.5.1-x64",
+                sendGTMEvent({
+                  event: "file_download",
                   file_extension: "dmg",
-                  link_domain: "first2apply.com",
                 });
               }}
             >
@@ -183,11 +177,9 @@ export default function Download() {
             <a
               href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_1.5.1_amd64.deb"
               onClick={() => {
-                sendGTMEvent({ event: "file_download" });
-                sendGAEvent("event", "file_download", {
-                  file_name: "First 2 Apply-1.5.1-amd64",
+                sendGTMEvent({
+                  event: "file_download",
                   file_extension: "deb",
-                  link_domain: "first2apply.com",
                 });
               }}
             >
