@@ -1,4 +1,4 @@
-import OpenAI from "npm:openai";
+import { AzureOpenAI } from "npm:openai";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
@@ -176,10 +176,13 @@ async function promptOpenAI({
   openAiApiKey: string;
   shouldBeThrottled: boolean;
 }) {
-  const openai = new OpenAI({
+  const openai = new AzureOpenAI({
     apiKey: openAiApiKey,
+    endpoint: "https://first2apply.openai.azure.com/",
+    apiVersion: "2024-02-15-preview",
   });
 
+  shouldBeThrottled = false; // bypass throttling for now
   const llmConfig = shouldBeThrottled
     ? {
         model: "gpt-3.5-turbo-0125",
@@ -193,7 +196,7 @@ async function promptOpenAI({
       };
 
   const response = await openai.chat.completions.create({
-    model: llmConfig.model,
+    model: "f2agpt4o", // custom azure deployment
     messages: [
       {
         role: "system",
