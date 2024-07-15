@@ -12,14 +12,14 @@ export default function Download() {
           name="description"
           content="Experience the convenience of monitoring and managing job
           applications from top platforms, all in one place. Dive into a 7-day
-          free trial, no payment required."
+          free trial, no credit card required."
         />
         <meta property="og:title" content="Download First 2 Apply" />
         <meta
           property="og:description"
           content="Experience the convenience of monitoring and managing job
           applications from top platforms, all in one place. Dive into a 7-day
-          free trial, no payment required."
+          free trial, no credit card required."
         />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/preview-image.jpeg" />
@@ -79,7 +79,7 @@ export default function Download() {
           <h2 className="mt-2 text-sm lg:text-xl text-foreground/70 font-medium sm:text-center sm:text-balance sm:tracking-wide">
             Experience the convenience of monitoring and managing job
             applications from top platforms, all in one place. Dive into a 7-day
-            free trial, no payment required
+            free trial, no credit card required
           </h2>
 
           <div className="mt-12 w-full xs:max-w-[500px] flex flex-col xs:flex-row xs:flex-wrap xs:items-center xs:justify-center gap-4">
