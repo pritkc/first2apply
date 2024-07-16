@@ -11,10 +11,26 @@ const menuItems = [
   { name: "Pricing", id: "pricing" },
 ];
 
+function useScrollLock(lock: boolean) {
+  useEffect(() => {
+    if (lock) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [lock]);
+}
+
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const router = useRouter();
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,7 +125,7 @@ export function Navbar() {
         </div>
 
         <dialog
-          className={`fixed z-[9999] top-0 bg-background flex flex-col items-start gap-6 w-full h-full pl-12 pt-24 md:hidden ${
+          className={`fixed z-[9999] top-0 bg-background flex flex-col items-start gap-6 w-full h-screen pl-12 pt-24 md:hidden ${
             !isOpen && "hidden"
           }`}
           open={isOpen}
