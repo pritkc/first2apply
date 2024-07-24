@@ -4,6 +4,7 @@ import { LinksListSkeleton } from '@/components/skeletons/linksListSkeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
+import { debugLink } from '@/lib/electronMainSdk';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 import { DefaultLayout } from './defaultLayout';
@@ -16,6 +17,15 @@ export function LinksPage() {
   const handleDeleteLink = async (linkId: number) => {
     try {
       await removeLink(linkId);
+    } catch (error) {
+      handleError({ error });
+    }
+  };
+
+  // start debugging link
+  const handleDebugLink = async (linkId: number) => {
+    try {
+      await debugLink(linkId);
     } catch (error) {
       handleError({ error });
     }
@@ -93,7 +103,7 @@ export function LinksPage() {
         </>
       )}
 
-      {links.length > 0 && <LinksList links={links} onDeleteLink={handleDeleteLink} />}
+      {links.length > 0 && <LinksList links={links} onDeleteLink={handleDeleteLink} onDebugLink={handleDebugLink} />}
     </DefaultLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { IAnalyticsClient } from '@/lib/analytics';
-import { Notification, app, powerSaveBlocker } from 'electron';
+import { BrowserWindow, Notification, app, powerSaveBlocker } from 'electron';
 import fs from 'fs';
 import { ScheduledTask, schedule } from 'node-cron';
 import path from 'path';
@@ -128,10 +128,11 @@ export class JobScanner {
       if (!this._isRunning) return;
       const { jobs } = await this._supabaseApi.listJobs({
         status: 'processing',
+        limit: 300,
       });
       this._logger.info(`found ${jobs.length} jobs that need processing`);
-      await this.scanJobs(jobs);
-      const newJobs = jobs.filter((job) => job.status === 'new');
+      const scannedJobs = await this.scanJobs(jobs);
+      const newJobs = scannedJobs.filter((job) => job.status === 'new');
 
       // fire a notification if there are new jobs
       if (!this._isRunning) return;
@@ -281,6 +282,25 @@ export class JobScanner {
   }
 
   /**
+   * Start a debug window for a link.
+   */
+  async startDebugWindow({ linkId }: { linkId: number }) {
+    const link = await this._supabaseApi.listLinks().then((links) => links.find((l) => l.id === linkId));
+    if (!link) {
+      throw new Error(`link not found: ${linkId}`);
+    }
+
+    const debugWindow = new ScannerDebugWindow(this._logger, () => {
+      // scan the link after the debug window is closed
+      this.scanLinks({ links: [link] }).catch((error) => {
+        this._logger.error(getExceptionMessage(error));
+      });
+    });
+
+    await debugWindow.loadUrl(link.url);
+  }
+
+  /**
    * Persist settings to disk.
    */
   private _saveSettings() {
@@ -320,5 +340,44 @@ export class JobScanner {
 
     this._settings = settings;
     this._logger.info(`settings applied successfully`);
+  }
+}
+
+/**
+ * Class used to open a debug window for manual user intervention to a link.
+ */
+class ScannerDebugWindow {
+  private _window: BrowserWindow | undefined;
+
+  /**
+   * Class constructor.
+   */
+  constructor(
+    private _logger: ILogger,
+    private _onClose: () => void = () => {},
+  ) {
+    this._window = new BrowserWindow({
+      show: true,
+      width: 1600,
+      height: 1200,
+      webPreferences: {
+        webSecurity: false,
+        partition: `persist:scraper`,
+      },
+    });
+
+    // destroy the window when closed
+    this._window.on('close', (event) => {
+      this._logger.info('debug window closed');
+      this._window = undefined;
+      this._onClose();
+    });
+  }
+
+  /**
+   * Load a url into the debug window.
+   */
+  loadUrl(url: string) {
+    this._window?.loadURL(url);
   }
 }

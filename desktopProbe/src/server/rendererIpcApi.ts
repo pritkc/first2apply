@@ -211,4 +211,6 @@ export function initRendererIpcApi({
   ipcMain.handle('update-advanced-matching-config', async (event, { config }) =>
     _apiCall(() => supabaseApi.updateAdvancedMatchingConfig(config)),
   );
+
+  ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.startDebugWindow({ linkId })));
 }

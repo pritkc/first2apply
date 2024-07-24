@@ -85,7 +85,7 @@ export class F2aSupabaseApi {
   /**
    * Get all registered links for the current user.
    */
-  listLinks() {
+  listLinks(): Promise<Link[]> {
     return this._supabaseApiCall(async () =>
       this._supabase.from('links').select('*').order('id', { ascending: false }),
     );
