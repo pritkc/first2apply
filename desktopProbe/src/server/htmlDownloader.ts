@@ -155,7 +155,7 @@ class BrowserWindowPool {
           webPreferences: {
             // disable the same origin policy
             webSecurity: false,
-            partition: `persist:scraper-${i}`,
+            partition: `persist:scraper`,
           },
         }),
         isAvailable: true,

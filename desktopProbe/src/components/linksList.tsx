@@ -1,6 +1,6 @@
 import { useSites } from '@/hooks/sites';
 import { openExternalUrl } from '@/lib/electronMainSdk';
-import { TrashIcon } from '@radix-ui/react-icons';
+import { QuestionMarkCircledIcon, TrashIcon } from '@radix-ui/react-icons';
 import { useMemo } from 'react';
 import ReactTimeAgo from 'react-time-ago';
 
@@ -8,7 +8,15 @@ import { Link } from '../../../supabase/functions/_shared/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 
-export function LinksList({ links, onDeleteLink }: { links: Link[]; onDeleteLink: (linkId: number) => void }) {
+export function LinksList({
+  links,
+  onDeleteLink,
+  onDebugLink,
+}: {
+  links: Link[];
+  onDeleteLink: (linkId: number) => void;
+  onDebugLink: (linkId: number) => void;
+}) {
   const { siteLogos, sites } = useSites();
   const sitesMap = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
 
@@ -51,17 +59,31 @@ export function LinksList({ links, onDeleteLink }: { links: Link[]; onDeleteLink
               </p>
 
               {/* actions */}
-              <Button
-                variant="destructive"
-                size="default"
-                className="rounded-full bg-destructive/10 px-2 py-1 text-sm transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
-                onClick={(evt) => {
-                  evt.stopPropagation();
-                  onDeleteLink(link.id);
-                }}
-              >
-                <TrashIcon className="h-5 w-5 text-destructive" />
-              </Button>
+              <div>
+                <Button
+                  variant="secondary"
+                  size="default"
+                  className="rounded-full px-2 py-1 text-sm"
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    onDebugLink(link.id);
+                  }}
+                >
+                  <QuestionMarkCircledIcon className="h-5 w-5 text-primary" />
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  size="default"
+                  className="ml-2 rounded-full bg-destructive/10 px-2 py-1 text-sm transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    onDeleteLink(link.id);
+                  }}
+                >
+                  <TrashIcon className="h-5 w-5 text-destructive" />
+                </Button>
+              </div>
             </div>
           </li>
         );

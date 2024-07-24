@@ -11,7 +11,14 @@ import { StripeBillingPlan, SubscriptionTier } from '../../../supabase/functions
 
 export function SubscriptionPage() {
   const { handleError } = useError();
-  const { isLoading: isLoadingSession, profile, isSubscriptionExpired, stripeConfig, refreshProfile } = useSession();
+  const {
+    isLoading: isLoadingSession,
+    profile,
+    isSubscriptionExpired,
+    stripeConfig,
+    refreshProfile,
+    user,
+  } = useSession();
   const navigate = useNavigate();
   const isLoading = isLoadingSession || !profile || !stripeConfig;
 
@@ -70,6 +77,7 @@ export function SubscriptionPage() {
         <>
           <h1 className="text-2xl font-semibold sm:text-4xl md:text-center lg:text-5xl">Your 7 days trial has ended</h1>
           <p className="mt-1 text-sm tracking-wide md:text-center">pick a plan to continue</p>
+          <p className="mt-1 text-sm tracking-wide md:text-center">use {user.email} email when ordering </p>
           <p className="mb-3 mt-[3vh] text-center sm:mt-[5vh]">Billing Period</p>
 
           <PricingOptions onSelectPlan={handleSelectPlan} />
@@ -90,7 +98,7 @@ export function SubscriptionPage() {
               <p>We hope you landed your dream job with First 2 Apply.</p>
               <p>Just in case you still need to use the app, you can renew your plan or switch to a different one.</p>
             </CardContent>
-            <CardFooter className="flex flex-col items-start md:p-8 md:pt-0">
+            <CardFooter className="flex flex-col items-center justify-center md:p-8 md:pt-0">
               {/* CTA */}
               <Button
                 size="lg"
@@ -99,6 +107,9 @@ export function SubscriptionPage() {
               >
                 Manage Subscription
               </Button>
+              <p className="mt-1 text-sm tracking-wide">
+                use your {user.email} email when logging into the Stripe user portal
+              </p>
             </CardFooter>
           </Card>
         </>

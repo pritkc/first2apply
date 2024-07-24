@@ -343,3 +343,10 @@ export async function updateAdvancedMatchingConfig(
     config,
   });
 }
+
+/**
+ * Start debugging a link.
+ */
+export async function debugLink(linkId: number): Promise<void> {
+  await _mainProcessApiCall('debug-link', { linkId });
+}
