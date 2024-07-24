@@ -1,5 +1,4 @@
 import { useSites } from '@/hooks/sites';
-import { openExternalUrl } from '@/lib/electronMainSdk';
 import { QuestionMarkCircledIcon, TrashIcon } from '@radix-ui/react-icons';
 import { useMemo } from 'react';
 import ReactTimeAgo from 'react-time-ago';
@@ -28,14 +27,14 @@ export function LinksList({
             key={link.id}
             className="flex cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card px-6 pb-6 pt-8 shadow-sm"
             onClick={() => {
-              openExternalUrl(link.url);
+              onDebugLink(link.id);
             }}
           >
             <div className="flex items-center gap-2">
               <Avatar
                 className="h-12 w-12 cursor-pointer"
                 onClick={() => {
-                  openExternalUrl(link.url);
+                  onDebugLink(link.id);
                 }}
               >
                 <AvatarImage src={siteLogos[link.site_id]} />
