@@ -51,7 +51,7 @@ export async function applyAdvancedMatchingFilters({
   }
 
   // prompt OpenAI to determine if the job should be excluded
-  if (job.description) {
+  if (job.description && advancedMatching.chatgpt_prompt) {
     console.log(
       "prompting OpenAI to determine if the job should be excluded ..."
     );
