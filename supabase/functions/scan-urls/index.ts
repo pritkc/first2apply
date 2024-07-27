@@ -3,6 +3,7 @@ import { CORS_HEADERS } from "../_shared/cors.ts";
 import { parseJobsListUrl } from "../_shared/jobListParser.ts";
 import { DbSchema } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
+import { checkUserSubscription } from "../_shared/subscription.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,6 +41,18 @@ Deno.serve(async (req) => {
       .select("*")
       .in("id", linkIds);
     if (error) throw new Error(error.message);
+
+    const userId = links?.[0]?.user_id;
+    const { subscriptionHasExpired } = await checkUserSubscription({
+      supabaseClient,
+      userId,
+    });
+    if (subscriptionHasExpired) {
+      console.log(`subscription has expired for user ${userId}`);
+      return new Response(JSON.stringify({ newJobs: [], parseFailed: false }), {
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
+    }
 
     // list all job sites from db
     const { data, error: selectError } = await supabaseClient
