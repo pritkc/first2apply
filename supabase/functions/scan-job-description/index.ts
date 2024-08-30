@@ -56,15 +56,13 @@ Deno.serve(async (req) => {
     }
 
     // parse the job description
-    console.log(
-      `[${site.provider}] parsing job description for ${job.title} ...`
-    );
+    console.log(`[${site.provider}] parsing job description for ${jobId} ...`);
 
     // update the job with the description
     const jd = parseJobDescription({ site, job, html });
     if (!jd.content) {
       console.error(
-        "no JD details extracted from the html, this could be a problem with the parser"
+        `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`
       );
     }
     let updatedJob: Job = { ...job, description: jd.content, status: "new" };
