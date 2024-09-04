@@ -70,8 +70,7 @@ export async function applyAdvancedMatchingFilters({
       cost,
     } = await promptOpenAI({
       prompt: advancedMatching.chatgpt_prompt,
-      title: job.title,
-      description: job.description,
+      job,
       openAiApiKey,
       shouldBeThrottled,
     });
@@ -165,14 +164,12 @@ export function isExcludedCompany({
  */
 async function promptOpenAI({
   prompt,
-  title,
-  description,
+  job,
   openAiApiKey,
   shouldBeThrottled,
 }: {
   prompt: string;
-  title: string;
-  description: string;
+  job: Job;
   openAiApiKey: string;
   shouldBeThrottled: boolean;
 }) {
@@ -206,8 +203,7 @@ async function promptOpenAI({
         role: "user",
         content: generateUserPrompt({
           prompt,
-          title,
-          description,
+          job,
         }),
       },
     ],
@@ -238,15 +234,7 @@ async function promptOpenAI({
 /**
  * Generate the user prompt for the OpenAI API.
  */
-function generateUserPrompt({
-  prompt,
-  title,
-  description,
-}: {
-  prompt: string;
-  title: string;
-  description: string;
-}) {
+function generateUserPrompt({ prompt, job }: { prompt: string; job: Job }) {
   // - Exclude jobs with the title "Senior" or "Lead".
   // - I'm from the UK, so only want jobs that allow working remotely from the UK.
   // - Do not include jobs that require working with Python or Java.
@@ -257,9 +245,10 @@ function generateUserPrompt({
   return `Here are my requirements for job filtering:
 ${prompt}
 
-Job Title: ${title}
+Job Title: ${job.title}
+Location: ${job.location ?? "Not specified"}
 Job Description:
-${description}
+${job.description}
 
 Based on my requirements, should this job be excluded from my feed?`;
 }
