@@ -1097,8 +1097,7 @@ export function parseRemotiveJobs({
     const jobTitle = el?.querySelector(".job-tile-title a");
     if (!jobTitle) return null;
 
-    const externalUrl =
-      "https://remotive.com/" + jobTitle.getAttribute("href")?.trim();
+    const externalUrl = jobTitle.getAttribute("href")?.trim();
     if (!externalUrl) return null;
 
     const externalId = externalUrl.split("?")[0].split("/").pop();
