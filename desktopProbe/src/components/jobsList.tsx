@@ -137,7 +137,7 @@ export function JobsList({
 
                 <div className="grow">
                   <div className="flex flex-wrap items-center justify-between gap-1.5">
-                    <p className="mb-1 text-xs text-muted-foreground">{job.companyName}</p>
+                    <p className="mb-3 text-xs text-muted-foreground">{job.companyName}</p>
 
                     <div className="ml-auto flex items-center gap-2">
                       {job.status !== 'archived' && (
@@ -172,6 +172,7 @@ export function JobsList({
                       {job.location && <span className="text-sm text-foreground/70">{job.location}</span>}
                       {job.jobType && <span className="text-sm text-foreground/70">| {job.jobType}</span>}
                       {job.salary && <span className="text-sm text-foreground/70">| {job.salary}</span>}
+                      {job.tags?.map((tag) => <span className="text-sm text-foreground/70">| {tag}</span>)}
                     </div>
 
                     <div
@@ -182,6 +183,10 @@ export function JobsList({
                       {job.labels[0]}
                     </div>
                   </div>
+
+                  <p className="ml-auto mt-2 w-fit text-xs font-extralight text-foreground/90">
+                    detected {getRelativeTimeString(new Date(job.created_at))}
+                  </p>
                 </div>
               </div>
 
@@ -200,4 +205,33 @@ export function JobsList({
       )}
     </InfiniteScroll>
   );
+}
+
+function getRelativeTimeString(date: Date, locale: string = 'en') {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const now = new Date();
+  const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
+
+  const minutes = Math.floor(diffInSeconds / 60);
+  const hours = Math.floor(diffInSeconds / (60 * 60));
+  const days = Math.floor(diffInSeconds / (60 * 60 * 24));
+  const weeks = Math.floor(diffInSeconds / (60 * 60 * 24 * 7));
+  const months = Math.floor(diffInSeconds / (60 * 60 * 24 * 30));
+  const years = Math.floor(diffInSeconds / (60 * 60 * 24 * 365));
+
+  if (years >= 1) {
+    return rtf.format(-years, 'year');
+  } else if (months >= 1) {
+    return rtf.format(-months, 'month');
+  } else if (weeks >= 1) {
+    return rtf.format(-weeks, 'week');
+  } else if (days >= 1) {
+    return rtf.format(-days, 'day');
+  } else if (hours >= 1) {
+    return rtf.format(-hours, 'hour');
+  } else if (minutes >= 1) {
+    return rtf.format(-minutes, 'minute');
+  } else {
+    return rtf.format(-Math.floor(diffInSeconds), 'second');
+  }
 }
