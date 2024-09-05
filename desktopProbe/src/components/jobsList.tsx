@@ -136,23 +136,8 @@ export function JobsList({
                 </Avatar>
 
                 <div className="grow">
-                  <div className="flex justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <p className="mb-1 text-xs text-muted-foreground">{job.companyName}</p>
-
-                    <div
-                      className={`w-[85px] rounded-md bg-opacity-80 py-1 text-center text-xs leading-3 text-white dark:bg-opacity-60 ${
-                        LABEL_COLOR_CLASSES[job.labels[0]]
-                      }`}
-                    >
-                      {job.labels[0]}
-                    </div>
-                  </div>
-                  <p className="mt-0.5 leading-5 tracking-wide">{job.title}</p>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    {job.location && <Badge>{job.location}</Badge>}
-                    {job.jobType && <Badge>{job.jobType}</Badge>}
-                    {job.salary && <Badge>{job.salary}</Badge>}
 
                     <div className="ml-auto flex items-center gap-2">
                       {job.status !== 'archived' && (
@@ -178,6 +163,23 @@ export function JobsList({
                       >
                         <TrashIcon className="h-5 w-auto text-destructive" />
                       </Button>
+                    </div>
+                  </div>
+                  <p className="mt-0.5 leading-5 tracking-wide">{job.title}</p>
+
+                  <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {job.location && <span className="text-sm text-foreground/70">{job.location}</span>}
+                      {job.jobType && <span className="text-sm text-foreground/70">| {job.jobType}</span>}
+                      {job.salary && <span className="text-sm text-foreground/70">| {job.salary}</span>}
+                    </div>
+
+                    <div
+                      className={`w-[85px] rounded-md bg-opacity-80 py-1 text-center text-xs leading-3 text-white dark:bg-opacity-60 ${
+                        LABEL_COLOR_CLASSES[job.labels[0]]
+                      }`}
+                    >
+                      {job.labels[0]}
                     </div>
                   </div>
                 </div>
