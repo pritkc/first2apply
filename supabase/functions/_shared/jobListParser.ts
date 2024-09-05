@@ -130,7 +130,7 @@ export function parseJobsListUrl({
   console.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
   const parseFailed = !listFound || (elementsCount > 0 && jobs.length === 0);
-  if (parseFailed) {
+  if (parseFailed && site.provider !== SiteProvider.echojobs) {
     console.error(
       `[${
         site.provider
@@ -212,7 +212,9 @@ export function parseLinkedInJobs({
   if (!document) throw new Error("Could not parse html");
 
   // check if the list is empty first
-  const noResultsNode = document.querySelector(".no-results");
+  const noResultsNode =
+    document.querySelector(".no-results") ||
+    document.querySelector(".jobs-search-no-results-banner");
   if (noResultsNode) {
     return {
       jobs: [],
