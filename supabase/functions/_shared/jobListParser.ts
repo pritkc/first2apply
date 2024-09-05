@@ -664,7 +664,7 @@ export function parseIndeedJobs({
     if (!companyName) return null;
 
     let location = companyEl
-      ?.querySelector(":scope > div > div")
+      ?.querySelector(":scope > div > div[data-testid=text-location]")
       ?.textContent?.trim();
 
     let jobType: JobType = "onsite";
