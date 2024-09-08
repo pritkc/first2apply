@@ -14,7 +14,10 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
   SiteProviderQuerySelectors
 > = {
   [SiteProvider.linkedin]: {
-    description: [".description__text .show-more-less-html__markup"],
+    description: [
+      ".description__text .show-more-less-html__markup",
+      ".jobs-box__html-content > .job-details-module__content",
+    ],
   },
   [SiteProvider.glassdoor]: {
     description: [".JobDetails_jobDescription__uW_fK"],

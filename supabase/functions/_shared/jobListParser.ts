@@ -223,7 +223,14 @@ export function parseLinkedInJobs({
     };
   }
 
-  const jobsList = document.querySelector(".jobs-search__results-list");
+  let isLoggedIn = false;
+  let jobsList = document.querySelector(".jobs-search__results-list");
+  if (!jobsList) {
+    // check if the user is logged into LinkedIn because then it has a totally different layout
+    jobsList = document.querySelector(".scaffold-layout__list-container");
+    isLoggedIn = true;
+  }
+
   if (!jobsList) {
     return {
       jobs: [],
@@ -233,51 +240,115 @@ export function parseLinkedInJobs({
   }
 
   const jobElements = Array.from(jobsList.querySelectorAll("li")) as Element[];
-  const jobs = jobElements.map((el): ParsedJob | null => {
-    const externalUrl = el
-      .querySelector(".base-card__full-link")
-      ?.getAttribute("href");
-    if (!externalUrl) return null;
+  let jobs: Array<ParsedJob | null> = [];
+  if (!isLoggedIn) {
+    jobs = jobElements.map((el): ParsedJob | null => {
+      const externalUrl = el
+        .querySelector(".base-card__full-link")
+        ?.getAttribute("href");
+      if (!externalUrl) return null;
 
-    const externalId = externalUrl.split("?")[0].split("/").pop();
-    if (!externalId) return null;
+      const externalId = externalUrl.split("?")[0].split("/").pop();
+      if (!externalId) return null;
 
-    const title = el
-      .querySelector(".base-search-card__title")
-      ?.textContent?.trim();
-    if (!title) return null;
+      const title = el
+        .querySelector(".base-search-card__title")
+        ?.textContent?.trim();
+      if (!title) return null;
 
-    const companyName = el
-      .querySelector(".base-search-card__subtitle")
-      ?.querySelector("a")
-      ?.textContent?.trim();
-    if (!companyName) return null;
+      const companyName = el
+        .querySelector(".base-search-card__subtitle")
+        ?.querySelector("a")
+        ?.textContent?.trim();
+      if (!companyName) return null;
 
-    const companyLogo =
-      el
-        .querySelector(".search-entity-media")
-        ?.querySelector("img")
-        ?.getAttribute("data-delayed-url") || undefined;
-    const rawLocation = el
-      .querySelector(".job-search-card__location")
-      ?.textContent?.trim();
+      const companyLogo =
+        el
+          .querySelector(".search-entity-media")
+          ?.querySelector("img")
+          ?.getAttribute("data-delayed-url") || undefined;
+      const rawLocation = el
+        .querySelector(".job-search-card__location")
+        ?.textContent?.trim();
 
-    const location = rawLocation
-      ?.replace(/\(remote\)/i, "")
-      .replace(/\(on\-site\)/i, "")
-      .replace(/\(hybrid\)/i, "");
+      const location = rawLocation
+        ?.replace(/\(remote\)/i, "")
+        .replace(/\(on\-site\)/i, "")
+        .replace(/\(hybrid\)/i, "");
 
-    return {
-      siteId,
-      externalId,
-      externalUrl,
-      title,
-      companyName,
-      companyLogo,
-      location,
-      labels: [],
-    };
-  });
+      return {
+        siteId,
+        externalId,
+        externalUrl,
+        title,
+        companyName,
+        companyLogo,
+        location,
+        labels: [],
+      };
+    });
+  } else {
+    jobs = jobElements.map((el): ParsedJob | null => {
+      const externalId = el.getAttribute("data-occludable-job-id")?.trim();
+      if (!externalId) return null;
+
+      const externalUrlEl = el.querySelector(".job-card-list__title--link");
+      if (!externalUrlEl) return null;
+      const externalUrlPath = externalUrlEl.getAttribute("href")?.trim();
+      const externalUrl = `https://www.linkedin.com${externalUrlPath}`;
+
+      const title = externalUrlEl
+        .querySelector(":scope > span > strong")
+        ?.textContent?.trim();
+      if (!title) return null;
+
+      const companyName = el
+        .querySelector(".job-card-container__primary-description")
+        ?.textContent?.trim();
+      if (!companyName) return null;
+
+      const companyLogo =
+        el
+          .querySelector(".ivm-view-attr__img-wrapper")
+          ?.querySelector("img")
+          ?.getAttribute("src") || undefined;
+      const rawLocation = el
+        .querySelector(
+          "ul.job-card-container__metadata-wrapper > li.job-card-container__metadata-item "
+        )
+        ?.textContent?.trim();
+
+      const location = rawLocation
+        ?.replace(/\(remote\)/i, "")
+        .replace(/\(on\-site\)/i, "")
+        .replace(/\(hybrid\)/i, "");
+
+      const jobType = rawLocation?.toLowerCase().includes("remote")
+        ? "remote"
+        : rawLocation?.toLowerCase().includes("hybrid")
+        ? "hybrid"
+        : "onsite";
+
+      const tags: string[] = [];
+      const easyApplyEl = el.querySelector(".job-card-container__apply-method");
+      if (easyApplyEl?.textContent?.trim().toLowerCase() === "easy apply") {
+        tags.push("easy apply");
+      }
+
+      return {
+        siteId,
+        externalId,
+        externalUrl,
+        title,
+        companyName,
+        companyLogo,
+        location,
+        labels: [],
+        jobType,
+        tags,
+      };
+    });
+  }
 
   const validJobs = jobs.filter((job): job is ParsedJob => !!job);
 
