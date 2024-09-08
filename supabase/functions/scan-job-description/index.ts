@@ -23,8 +23,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const body: { jobId: number; html: string } = await req.json();
-    const { jobId, html } = body;
+    const body: {
+      jobId: number;
+      html: string;
+      maxRetries?: number;
+      retryCount?: number;
+    } = await req.json();
+    const { jobId, html, maxRetries, retryCount } = body;
 
     // find the job and its site
     const { data: job, error: findJobErr } = await supabaseClient
@@ -57,14 +62,19 @@ Deno.serve(async (req) => {
 
       // update the job with the description
       const jd = parseJobDescription({ site, job, html });
+      const isLastRetry = retryCount === maxRetries;
       updatedJob = {
         ...updatedJob,
         description: jd.content ?? updatedJob.description,
       };
-      if (!jd.content) {
+      if (!jd.content && isLastRetry) {
         console.error(
-          `[${site.provider}] no JD details extracted from the html of job ${jobId} (${job.url}), this could be a problem with the parser`
+          `[${site.provider}] no JD details extracted from the html of job ${jobId} (${job.externalUrl}), this could be a problem with the parser`
         );
+
+        await supabaseClient
+          .from("html_dumps")
+          .insert([{ url: job.externalUrl, html }]);
       }
 
       const filteredJobStatus = await applyAdvancedMatchingFilters({
