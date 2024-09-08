@@ -830,7 +830,7 @@ export function parseFlexjobsJobs({
     };
 
   const jobElements = Array.from(
-    jobsList.querySelectorAll("div.sc-jv5lm6-0.eTfIRI")
+    jobsList.querySelectorAll("div.sc-14nyru2-2.fmkHkh > div")
   ) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
