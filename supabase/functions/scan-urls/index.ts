@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
           allJobSites,
           url: link.url,
           html: html.content,
+          isLastRetry,
         });
 
         console.log(`[${site.provider}] found ${jobs.length} jobs`);
