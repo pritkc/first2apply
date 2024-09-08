@@ -39,13 +39,6 @@ Deno.serve(async (req) => {
       throw new Error(`Job not found: ${jobId}`);
     }
 
-    // return the job if the description is already set
-    if (job.description) {
-      return new Response(JSON.stringify({ job }), {
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      });
-    }
-
     const { data: site, error: findSiteErr } = await supabaseClient
       .from("sites")
       .select("*")
@@ -55,26 +48,37 @@ Deno.serve(async (req) => {
       throw findSiteErr;
     }
 
-    // parse the job description
-    console.log(`[${site.provider}] parsing job description for ${jobId} ...`);
-
-    // update the job with the description
-    const jd = parseJobDescription({ site, job, html });
-    if (!jd.content) {
-      console.error(
-        `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`
+    let updatedJob: Job = { ...job, status: "new" };
+    if (!job.description) {
+      // parse the job description
+      console.log(
+        `[${site.provider}] parsing job description for ${jobId} ...`
       );
-    }
-    let updatedJob: Job = { ...job, description: jd.content, status: "new" };
 
-    const filteredJobStatus = await applyAdvancedMatchingFilters({
-      job: updatedJob,
-      supabaseClient,
-      openAiApiKey:
-        Deno.env.get("OPENAI_API_KEY") ?? throwError("missing OPENAI_API_KEY"),
-    });
-    console.log(`[${site.provider}] ${filteredJobStatus} ${job.title}`);
-    updatedJob = { ...updatedJob, status: filteredJobStatus };
+      // update the job with the description
+      const jd = parseJobDescription({ site, job, html });
+      updatedJob = {
+        ...updatedJob,
+        description: jd.content ?? updatedJob.description,
+      };
+      if (!jd.content) {
+        console.error(
+          `[${site.provider}] no JD details extracted from the html of job ${jobId} (${job.url}), this could be a problem with the parser`
+        );
+      }
+
+      const filteredJobStatus = await applyAdvancedMatchingFilters({
+        job: updatedJob,
+        supabaseClient,
+        openAiApiKey:
+          Deno.env.get("OPENAI_API_KEY") ??
+          throwError("missing OPENAI_API_KEY"),
+      });
+
+      updatedJob = { ...updatedJob, status: filteredJobStatus };
+    }
+
+    console.log(`[${site.provider}] ${updatedJob.status} ${job.title}`);
 
     const { error: updateJobErr } = await supabaseClient
       .from("jobs")
