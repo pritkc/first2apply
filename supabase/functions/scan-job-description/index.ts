@@ -106,7 +106,9 @@ Deno.serve(async (req) => {
       `[${site.provider}] finished parsing job description for ${job.title}`
     );
 
-    return new Response(JSON.stringify({ job: updatedJob }), {
+    const parseFailed = !updatedJob.description;
+
+    return new Response(JSON.stringify({ job: updatedJob, parseFailed }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {
