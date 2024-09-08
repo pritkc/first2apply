@@ -113,10 +113,12 @@ export function parseJobsListUrl({
   allJobSites,
   url,
   html,
+  isLastRetry,
 }: {
   allJobSites: JobSite[];
   url: string;
   html: string;
+  isLastRetry: boolean;
 }) {
   const site = getJobSite({ allJobSites, url });
   if (!site) {
@@ -130,7 +132,7 @@ export function parseJobsListUrl({
   console.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
   const parseFailed = !listFound || (elementsCount > 0 && jobs.length === 0);
-  if (parseFailed && site.provider !== SiteProvider.echojobs) {
+  if (isLastRetry && parseFailed && site.provider !== SiteProvider.echojobs) {
     console.error(
       `[${
         site.provider
