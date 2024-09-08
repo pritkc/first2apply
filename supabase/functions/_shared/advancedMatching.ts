@@ -247,6 +247,7 @@ ${prompt}
 
 Job Title: ${job.title}
 Location: ${job.location ?? "Not specified"}
+Tags: ${job?.tags?.join(", ") ?? "None"}
 Job Description:
 ${job.description}
 
