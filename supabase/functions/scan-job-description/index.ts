@@ -6,12 +6,14 @@ import { getExceptionMessage, throwError } from "../_shared/errorUtils.ts";
 import { parseJobDescription } from "../_shared/jobDescriptionParser.ts";
 import { applyAdvancedMatchingFilters } from "../_shared/advancedMatching.ts";
 import { Job } from "../_shared/types.ts";
+import { createLoggerWithMeta } from "../_shared/logger.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
+  const logger = createLoggerWithMeta({});
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -22,6 +24,15 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } }
     );
+
+    const { data: userData, error: getUserError } =
+      await supabaseClient.auth.getUser();
+    if (getUserError) {
+      throw new Error(getUserError.message);
+    }
+    const user = userData?.user;
+    logger.addMeta("user_id", user?.id ?? "");
+    logger.addMeta("user_email", user?.email ?? "");
 
     const body: {
       jobId: number;
@@ -56,7 +67,7 @@ Deno.serve(async (req) => {
     let updatedJob: Job = { ...job, status: "new" };
     if (!job.description) {
       // parse the job description
-      console.log(
+      logger.info(
         `[${site.provider}] parsing job description for ${jobId} ...`
       );
 
@@ -68,7 +79,7 @@ Deno.serve(async (req) => {
         description: jd.content ?? updatedJob.description,
       };
       if (!jd.content && isLastRetry) {
-        console.error(
+        logger.error(
           `[${site.provider}] no JD details extracted from the html of job ${jobId} (${job.externalUrl}), this could be a problem with the parser`
         );
 
@@ -88,7 +99,7 @@ Deno.serve(async (req) => {
       updatedJob = { ...updatedJob, status: filteredJobStatus };
     }
 
-    console.log(`[${site.provider}] ${updatedJob.status} ${job.title}`);
+    logger.info(`[${site.provider}] ${updatedJob.status} ${job.title}`);
 
     const { error: updateJobErr } = await supabaseClient
       .from("jobs")
@@ -102,7 +113,7 @@ Deno.serve(async (req) => {
       throw updateJobErr;
     }
 
-    console.log(
+    logger.info(
       `[${site.provider}] finished parsing job description for ${job.title}`
     );
 
@@ -112,7 +123,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {
-    console.error(getExceptionMessage(error));
+    logger.error(getExceptionMessage(error));
     return new Response(
       JSON.stringify({ errorMessage: getExceptionMessage(error, true) }),
       {
