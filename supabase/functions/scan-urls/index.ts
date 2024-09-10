@@ -100,13 +100,16 @@ Deno.serve(async (req) => {
           site,
           parseFailed: currentUrlParseFailed,
         } = await parseJobsListUrl({
+          logger,
           allJobSites,
           url: link.url,
           html: html.content,
           isLastRetry,
         });
 
-        logger.info(`[${site.provider}] found ${jobs.length} jobs`);
+        logger.info(
+          `[${site.provider}] found ${jobs.length} jobs from link ${link.id}`
+        );
 
         // if the parsing failed, save the html dump for debugging
         parseFailed = currentUrlParseFailed;
