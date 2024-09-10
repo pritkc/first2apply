@@ -19,6 +19,9 @@ public.links (
   url text not null,
   title text not null,
   site_id bigint not null,
+  scrape_failure_count integer not null default 0,
+  last_scraped_at timestamp with time zone not null default (now() at time zone 'utc'::text),
+  scrape_failure_email_sent boolean not null default false,
   constraint links_pkey primary key (id),
   constraint links_site_id_fkey foreign key (site_id) references sites (id) on update restrict on delete restrict,
   constraint links_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict

@@ -26,6 +26,11 @@ export const JOB_LABELS = {
 
 export type JobLabel = (typeof JOB_LABELS)[keyof typeof JOB_LABELS];
 
+export type User = {
+  id: string;
+  email: string;
+};
+
 export type JobSite = {
   id: number;
   provider: SiteProvider;
@@ -44,6 +49,9 @@ export type Link = {
   user_id: string;
   site_id: number;
   created_at: Date;
+  scrape_failure_count: number;
+  last_scraped_at: Date;
+  scrape_failure_email_sent: boolean;
 };
 
 export type JobType = "remote" | "hybrid" | "onsite";
@@ -153,7 +161,11 @@ export type DbSchema = {
       links: {
         Row: Link;
         Insert: Pick<Link, "url" | "title" | "site_id">;
-        Update: never;
+        Update: {
+          scrape_failure_count?: number;
+          last_scraped_at?: Date;
+          scrape_failure_email_sent?: boolean;
+        };
       };
       jobs: {
         Row: Job;
@@ -219,8 +231,18 @@ export type DbSchema = {
     };
     Views: {};
     Functions: {
+      list_jobs: {
+        Params: {
+          jobs_status: JobStatus;
+          jobs_after: number | null;
+          jobs_page_size: number;
+        };
+        Args: {};
+        Returns: Job[];
+      };
       get_user_id_by_email: {
         Params: { email: string };
+        Args: {};
         Returns: { id: string };
       };
       count_chatgpt_usage: {
@@ -230,6 +252,7 @@ export type DbSchema = {
           input_tokens_increment: number;
           output_tokens_increment: number;
         };
+        Args: {};
         Returns: {};
       };
     };
