@@ -87,6 +87,8 @@ export type Job = {
 
   created_at: Date;
   updated_at: Date;
+
+  link_id?: number;
 };
 
 export type Review = {
@@ -182,6 +184,7 @@ export type DbSchema = {
           | "tags"
           | "jobType"
           | "status"
+          | "link_id"
         >;
         Update:
           | Pick<Job, "status">
