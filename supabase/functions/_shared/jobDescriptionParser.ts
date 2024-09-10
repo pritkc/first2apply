@@ -32,7 +32,7 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: ["#job-listing-show-container"],
   },
   [SiteProvider.flexjobs]: {
-    description: ["n/a"], // paywalled
+    description: ["#job-description"], // paywalled
   },
   [SiteProvider.dice]: {
     description: [`[data-testid="jobDescriptionHtml"]`],
@@ -301,10 +301,24 @@ function parseDiceJobDescription({ html }: { html: string }): JobDescription {
 /**
  * Parse a FlexJobs job description from the HTML.
  */
-function parseFlexJobsJobDescription({}: { html: string }): JobDescription {
-  // flexjobs has descriptions under a paywall
+function parseFlexJobsJobDescription({
+  html,
+}: {
+  html: string;
+}): JobDescription {
+  const { descriptionContainer } = extractCommonDomElements({
+    provider: SiteProvider.flexjobs,
+    html,
+  });
 
-  return {};
+  let description: string | undefined;
+  if (descriptionContainer) {
+    description = turndownService.turndown(descriptionContainer.innerHTML);
+  }
+
+  return {
+    content: description,
+  };
 }
 
 /**
