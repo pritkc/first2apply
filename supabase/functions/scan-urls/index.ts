@@ -136,6 +136,11 @@ Deno.serve(async (req) => {
             .eq("id", link.id);
         }
 
+        // add the link id to the jobs
+        jobs.forEach((job) => {
+          job.link_id = link.id;
+        });
+
         return jobs;
       })
     ).then((r) => r.flat());
