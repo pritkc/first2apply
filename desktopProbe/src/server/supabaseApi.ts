@@ -145,6 +145,20 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Run the post scan hook edge function.
+   */
+  runPostScanHook({ newJobIds, areEmailAlertsEnabled }: { newJobIds: number[]; areEmailAlertsEnabled: boolean }) {
+    return this._supabaseApiCall(() =>
+      this._supabase.functions.invoke('post-scan-hook', {
+        body: {
+          newJobIds,
+          areEmailAlertsEnabled,
+        },
+      }),
+    );
+  }
+
+  /**
    * List all jobs for the current user.
    */
   async listJobs({ status, limit = 50, after }: { status: JobStatus; limit?: number; after?: string }) {

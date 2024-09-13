@@ -30,4 +30,5 @@ export type JobScannerSettings = {
   cronRule?: string;
   preventSleep: boolean;
   useSound: boolean;
+  areEmailAlertsEnabled: boolean;
 };

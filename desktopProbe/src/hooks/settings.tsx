@@ -34,6 +34,7 @@ export const SettingsProvider = ({ children }: React.PropsWithChildren<{}>) => {
     cronRule: undefined,
     useSound: false,
     preventSleep: false,
+    areEmailAlertsEnabled: true,
   });
 
   // Load settings on component mount

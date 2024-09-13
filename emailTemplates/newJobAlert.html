@@ -1,0 +1,15 @@
+<ol>
+  {% for job in new_jobs %}
+  <li>
+    <a href="{{job.url}}">
+      <div>
+        <span style="font-size: 14px">{{job.company}} | {{job.location}}</span>
+      </div>
+      <p style="font-size: 16px; font-weight: bold">{{job.title}}</p>
+      <div>
+        <p style="font-size: 12px; font-style: italic">{{job.description}}</p>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ol>

@@ -5,12 +5,9 @@ import {
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { parseJobsListUrl } from "../_shared/jobListParser.ts";
 import { DbSchema, Link } from "../_shared/types.ts";
-import { getExceptionMessage, throwError } from "../_shared/errorUtils.ts";
+import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import { checkUserSubscription } from "../_shared/subscription.ts";
-import { MailersendMailer } from "../_shared/emails/mailer.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
-import { EmailTemplateType } from "../_shared/emails/emailTemplates.ts";
-import { JobSite } from "../_shared/types.ts";
 import { ILogger } from "../_shared/logger.ts";
 
 type HtmlParseRequest = {
@@ -117,8 +114,6 @@ Deno.serve(async (req) => {
           await handleParsingFailureForLink({
             logger,
             supabaseClient,
-            site,
-            user,
             link,
             html,
           });
@@ -178,15 +173,11 @@ Deno.serve(async (req) => {
 async function handleParsingFailureForLink({
   logger,
   supabaseClient,
-  site,
-  user,
   link,
   html,
 }: {
   logger: ILogger;
   supabaseClient: SupabaseClient<DbSchema, "public", DbSchema["public"]>;
-  site: JobSite;
-  user: { email?: string };
   link: Link;
   html: HtmlParseRequest;
 }) {
@@ -196,60 +187,12 @@ async function handleParsingFailureForLink({
     .insert([{ url: link.url, html: html.content }]);
 
   // increment the failure count
-  const { data: postUpdateLinkArr, error: linkUpdateError } =
-    await supabaseClient
-      .from("links")
-      .update({ scrape_failure_count: link.scrape_failure_count + 1 })
-      .eq("id", link.id)
-      .select("*");
+  const { error: linkUpdateError } = await supabaseClient
+    .from("links")
+    .update({ scrape_failure_count: link.scrape_failure_count + 1 })
+    .eq("id", link.id);
   if (linkUpdateError) {
     logger.error(linkUpdateError.message);
     return;
-  }
-
-  if (!user.email) {
-    logger.info("user email not found");
-    return;
-  }
-
-  // send an email if the failure count is above the threshold
-  const postUpdateLink = postUpdateLinkArr?.[0] as Link | null;
-  if (!postUpdateLink) {
-    logger.error(`link not found: ${link.id}`);
-    return;
-  }
-
-  const failureThreshold = 3;
-  const shouldSendEmail =
-    postUpdateLink.scrape_failure_count >= failureThreshold &&
-    !postUpdateLink.scrape_failure_email_sent;
-
-  if (shouldSendEmail) {
-    const mailer = new MailersendMailer(
-      Deno.env.get("MAILERSEND_API_KEY") ??
-        throwError("Missing MAILERSEND_API_KEY"),
-      "contact@first2apply.com",
-      "First 2 Apply"
-    );
-
-    await mailer.sendEmail({
-      logger,
-      to: user.email,
-      template: {
-        type: EmailTemplateType.searchParsingFailure,
-        templateId: "pq3enl6v15rg2vwr",
-        payload: {
-          link_title: link.title,
-          link_url: link.url,
-          site_name: site.name,
-        },
-      },
-    });
-
-    // update the link to mark the email as sent
-    await supabaseClient
-      .from("links")
-      .update({ scrape_failure_email_sent: true })
-      .eq("id", link.id);
   }
 }
