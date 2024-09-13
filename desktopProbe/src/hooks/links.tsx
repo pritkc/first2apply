@@ -11,6 +11,7 @@ type LinksContextType = {
   links: Link[];
   createLink: (newLink: Pick<Link, 'title' | 'url'>) => Promise<Link>;
   removeLink: (linkId: number) => Promise<void>;
+  reloadLinks: () => Promise<void>;
 };
 
 // Create the context with an initial default value
@@ -22,6 +23,9 @@ export const LinksContext = createContext<LinksContextType>({
   },
   removeLink: async () => {
     throw new Error('removeLink not implemented');
+  },
+  reloadLinks: async () => {
+    throw new Error('reloadLinks not implemented');
   },
 });
 
@@ -42,19 +46,19 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
   const [isLoading, setIsLoading] = useState(true);
   const [links, setLinks] = useState<Link[]>([]);
 
+  const fetchLinks = async () => {
+    try {
+      if (!isLoggedIn) return;
+      const fetchedLinks = await listLinks();
+      setLinks(fetchedLinks);
+      setIsLoading(false);
+    } catch (error) {
+      handleError({ error });
+    }
+  };
+
   // Fetch links on component mount
   useEffect(() => {
-    const fetchLinks = async () => {
-      try {
-        if (!isLoggedIn) return;
-        const fetchedLinks = await listLinks();
-        setLinks(fetchedLinks);
-        setIsLoading(false);
-      } catch (error) {
-        handleError({ error });
-      }
-    };
-
     fetchLinks();
   }, [isLoggedIn]);
 
@@ -71,6 +75,11 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
     setLinks((currentLinks) => currentLinks.filter((link) => link.id !== linkId));
   };
 
+  // Reload links
+  const onReloadLinks = async () => {
+    await fetchLinks();
+  };
+
   return (
     <LinksContext.Provider
       value={{
@@ -78,6 +87,7 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
         links,
         createLink: onCreateLink,
         removeLink: onRemoveLink,
+        reloadLinks: onReloadLinks,
       }}
     >
       {children}

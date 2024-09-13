@@ -7,6 +7,8 @@ import { Link } from '../../../supabase/functions/_shared/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 
+const scrapeFailureThreshold = 3;
+
 export function LinksList({
   links,
   onDeleteLink,
@@ -19,13 +21,15 @@ export function LinksList({
   const { siteLogos, sites } = useSites();
   const sitesMap = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
 
+  const isInFailureState = (link: Link) => link.scrape_failure_count >= scrapeFailureThreshold;
+
   return (
     <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:gap-6">
       {links.map((link) => {
         return (
           <li
             key={link.id}
-            className="flex cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card px-6 pb-6 pt-8 shadow-sm"
+            className={`flex cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card px-6 pb-6 pt-8 shadow-sm ${isInFailureState(link) ? 'border-destructive' : ''}`}
             onClick={() => {
               onDebugLink(link.id);
             }}
@@ -52,24 +56,32 @@ export function LinksList({
             </p>
 
             <div className="flex items-center justify-between">
-              <p className="text-sm font-light text-foreground/20">
-                {'Added '}
-                <ReactTimeAgo date={link.created_at} locale="en-US" />
-              </p>
+              <div>
+                <p className="text-sm font-light text-foreground/40">
+                  {'Last checked '}
+                  <ReactTimeAgo date={link.last_scraped_at} locale="en-US" />
+                </p>
+                <p className="text-sm font-light text-foreground/40">
+                  {'Added '}
+                  <ReactTimeAgo date={link.created_at} locale="en-US" />
+                </p>
+              </div>
 
               {/* actions */}
               <div>
-                <Button
-                  variant="secondary"
-                  size="default"
-                  className="rounded-full px-2 py-1 text-sm"
-                  onClick={(evt) => {
-                    evt.stopPropagation();
-                    onDebugLink(link.id);
-                  }}
-                >
-                  <QuestionMarkCircledIcon className="h-5 w-5 text-primary" />
-                </Button>
+                {isInFailureState(link) && (
+                  <Button
+                    variant="secondary"
+                    size="default"
+                    className="rounded-full px-2 py-1 text-sm"
+                    onClick={(evt) => {
+                      evt.stopPropagation();
+                      onDebugLink(link.id);
+                    }}
+                  >
+                    <QuestionMarkCircledIcon className="h-5 w-5 text-primary" />
+                  </Button>
+                )}
 
                 <Button
                   variant="destructive"
