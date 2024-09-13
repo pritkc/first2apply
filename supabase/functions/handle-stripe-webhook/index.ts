@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       const { data, error: getUserIdError } = await supabaseClient.rpc(
         "get_user_id_by_email",
         {
-          email: customer.email,
+          email: customer.email?.toLowerCase(),
         }
       );
       if (getUserIdError) {
