@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
   cronRule: AVAILABLE_CRON_RULES[0].value,
   preventSleep: true,
   useSound: true,
+  areEmailAlertsEnabled: true,
 };
 
 /**
@@ -26,10 +27,7 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
  */
 export class JobScanner {
   private _isRunning = true;
-  private _settings: JobScannerSettings = {
-    preventSleep: false,
-    useSound: false,
-  };
+  private _settings: JobScannerSettings = DEFAULT_SETTINGS;
   private _cronJob: ScheduledTask | undefined;
   private _prowerSaveBlockerId: number | undefined;
   private _notificationsMap: Map<string, Notification> = new Map();
@@ -91,6 +89,10 @@ export class JobScanner {
               callback: async ({ html, maxRetries, retryCount }) => {
                 if (!this._isRunning) return []; // stop if the scanner is closed
 
+                // add a random delay before moving on to the next link
+                // to avoid being rate limited by cloudflare
+                await waitRandomBetween(300, 2000);
+
                 const { newJobs, parseFailed } = await this._supabaseApi.scanHtmls([
                   { linkId: link.id, content: html, maxRetries, retryCount },
                 ]);
@@ -108,7 +110,6 @@ export class JobScanner {
             })
             .catch((error): Job[] => {
               const errorMessage = getExceptionMessage(error);
-
               if (this._isRunning)
                 this._logger.error(`failed to scan link: ${errorMessage}`, {
                   linkId: link.id,
@@ -134,6 +135,14 @@ export class JobScanner {
       const scannedJobs = await this.scanJobs(jobs);
       const newJobs = scannedJobs.filter((job) => job.status === 'new');
 
+      // run post scan hook
+      const newJobIds = newJobs.map((job) => job.id);
+      await this._supabaseApi
+        .runPostScanHook({ newJobIds, areEmailAlertsEnabled: this._settings.areEmailAlertsEnabled })
+        .catch((error) => {
+          this._logger.error(`failed to run post scan hook: ${getExceptionMessage(error)}`);
+        });
+
       // fire a notification if there are new jobs
       if (!this._isRunning) return;
       this.showNewJobsNotification({ newJobs });
@@ -157,6 +166,10 @@ export class JobScanner {
     const jobChunks = chunk(jobs, 10);
     const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
       if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
+
+      // add a random delay before moving on to the next link
+      // to avoid being rate limited by cloudflare
+      await waitRandomBetween(300, 1000);
 
       return Promise.all(
         chunkOfJobs.map(async (job) => {
@@ -381,3 +394,7 @@ class ScannerDebugWindow {
     this._window?.loadURL(url);
   }
 }
+
+// method used to wait a random amount of time between a min and max value
+const waitRandomBetween = (min: number, max: number) =>
+  new Promise((resolve) => setTimeout(resolve, Math.random() * (max - min) + min));
