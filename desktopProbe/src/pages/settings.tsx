@@ -91,12 +91,13 @@ export function SettingsPage() {
       {/* email notifications */}
       <div className="flex flex-row items-center justify-between gap-6 rounded-lg border p-6">
         <div className="space-y-1">
-          <h2 className="text-lg">
-            Email notifications <span className="italic">(coming soon)</span>
-          </h2>
+          <h2 className="text-lg">Email notifications</h2>
           <p className="text-sm font-light">Get notified of new jobs even when you are on the go</p>
         </div>
-        <Switch disabled value={''} />
+        <Switch
+          checked={settings.areEmailAlertsEnabled}
+          onCheckedChange={(checked) => onUpdatedSettings({ ...settings, areEmailAlertsEnabled: checked })}
+        />
       </div>
 
       {/* subscription */}
