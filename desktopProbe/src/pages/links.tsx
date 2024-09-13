@@ -6,12 +6,26 @@ import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
 import { debugLink } from '@/lib/electronMainSdk';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { useEffect } from 'react';
 
 import { DefaultLayout } from './defaultLayout';
 
 export function LinksPage() {
   const { handleError } = useError();
-  const { isLoading, links, removeLink } = useLinks();
+  const { isLoading, links, removeLink, reloadLinks } = useLinks();
+
+  // refresh links on component mount
+  useEffect(() => {
+    const asyncLoad = async () => {
+      try {
+        await reloadLinks();
+      } catch (error) {
+        handleError({ error });
+      }
+    };
+
+    asyncLoad();
+  }, []);
 
   // Delete an existing link
   const handleDeleteLink = async (linkId: number) => {
