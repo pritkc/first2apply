@@ -38,7 +38,9 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: [`[data-testid="jobDescriptionHtml"]`],
   },
   [SiteProvider.bestjobs]: {
-    description: [".job-description"],
+    description: [
+      "div.relative.bg-surface div.p-4 div.mt-8.pt-8.border-t.border-input.prose",
+    ],
   },
   [SiteProvider.echojobs]: {
     description: ["#jobDescriptionText"],
