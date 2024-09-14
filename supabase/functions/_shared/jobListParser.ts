@@ -1431,6 +1431,17 @@ export function parseNaukriJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
+  const noResultsNode = document.querySelector(
+    ".styles_no-result-container__miYYz"
+  );
+  if (noResultsNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   const jobsList = document.querySelector("#listContainer");
   if (!jobsList)
     return {
