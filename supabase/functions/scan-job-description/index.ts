@@ -13,7 +13,9 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
-  const logger = createLoggerWithMeta({});
+  const logger = createLoggerWithMeta({
+    function: "scan-job-description",
+  });
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -80,7 +82,10 @@ Deno.serve(async (req) => {
       };
       if (!jd.content && isLastRetry) {
         logger.error(
-          `[${site.provider}] no JD details extracted from the html of job ${jobId} (${job.externalUrl}), this could be a problem with the parser`
+          `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`,
+          {
+            url: job.externalUrl,
+          }
         );
 
         await supabaseClient

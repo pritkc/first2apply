@@ -22,7 +22,9 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
-  const logger = createLoggerWithMeta({});
+  const logger = createLoggerWithMeta({
+    function: "scan-urls",
+  });
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
