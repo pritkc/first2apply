@@ -207,6 +207,11 @@ async function sendNewJobLinksEmail({
     return;
   }
 
+  if (newJobs.length === 0) {
+    logger.info(`no new jobs to send email for`);
+    return;
+  }
+
   // send the email
   logger.info(
     `sending email to ${user.email} for ${newJobs.length} new jobs ...`
