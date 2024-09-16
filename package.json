@@ -1,6 +1,6 @@
 {
   "name": "first2apply",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "## Init project `npx supabase init`",
   "main": "index.js",
   "scripts": {
