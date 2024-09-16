@@ -84,9 +84,6 @@ export function SubscriptionPage() {
         </>
       ) : (
         <>
-          {/* <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold md:text-center">
-            Your {profile.subscription_tier.toUpperCase()} plan has ended
-          </h1> */}
           <Card className="mt-5">
             <CardHeader className="md:p-8">
               <CardTitle className="md:text-3xl">
@@ -96,17 +93,13 @@ export function SubscriptionPage() {
             </CardHeader>
             <CardContent className="md:p-8 md:pt-2">
               <p>We hope you landed your dream job with First 2 Apply.</p>
-              <p>Just in case you still need to use the app, you can renew your plan or switch to a different one.</p>
+              <p className="mb-8">
+                Just in case you still need to use the app, you can renew your plan or switch to a different one.
+              </p>
+              <PricingOptions onSelectPlan={handleSelectPlan} />
             </CardContent>
+            {/* CTA */}
             <CardFooter className="flex flex-col items-center justify-center md:p-8 md:pt-0">
-              {/* CTA */}
-              <Button
-                size="lg"
-                className="mt-10 self-center"
-                onClick={() => openExternalUrl(stripeConfig.customerPortalLink)}
-              >
-                Manage Subscription
-              </Button>
               <p className="mt-1 text-sm tracking-wide">
                 use your {user.email} email when logging into the Stripe user portal
               </p>
