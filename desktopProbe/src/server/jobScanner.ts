@@ -27,7 +27,12 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
  */
 export class JobScanner {
   private _isRunning = true;
-  private _settings: JobScannerSettings = DEFAULT_SETTINGS;
+  // do not use the default settings directly
+  private _settings: JobScannerSettings = {
+    preventSleep: false,
+    useSound: false,
+    areEmailAlertsEnabled: true,
+  };
   private _cronJob: ScheduledTask | undefined;
   private _prowerSaveBlockerId: number | undefined;
   private _notificationsMap: Map<string, Notification> = new Map();
@@ -334,7 +339,7 @@ export class JobScanner {
       // start new cron job if needed
       if (settings.cronRule) {
         this._cronJob = schedule(settings.cronRule, () => this.scanAllLinks());
-        this._logger.info(`cron job started successfully`);
+        this._logger.info(`cron job started successfully ${settings.cronRule}`);
       }
     }
 
