@@ -3,7 +3,7 @@ import {
   Element,
 } from "https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts";
 import turndown from "npm:turndown@7.1.2";
-import { Job, JobType, SiteProvider } from "./types.ts";
+import { Job, JobType, Link, SiteProvider } from "./types.ts";
 import { JobSite } from "./types.ts";
 import { ILogger } from "./logger.ts";
 
@@ -113,16 +113,17 @@ export function cleanJobUrl({
 export function parseJobsListUrl({
   logger,
   allJobSites,
-  url,
+  link,
   html,
   isLastRetry,
 }: {
   logger: ILogger;
   allJobSites: JobSite[];
-  url: string;
+  link: Link;
   html: string;
   isLastRetry: boolean;
 }) {
+  const { url } = link;
   const site = getJobSite({ allJobSites, url });
   if (!site) {
     const parsedUrl = new URL(url);
@@ -135,7 +136,13 @@ export function parseJobsListUrl({
   logger.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
   const parseFailed = !listFound || (elementsCount > 0 && jobs.length === 0);
-  if (isLastRetry && parseFailed && site.provider !== SiteProvider.echojobs) {
+  const isLinkInErrorMode = link.scrape_failure_count >= 3;
+  if (
+    isLastRetry &&
+    parseFailed &&
+    site.provider !== SiteProvider.echojobs &&
+    !isLinkInErrorMode
+  ) {
     logger.error(
       `[${
         site.provider
