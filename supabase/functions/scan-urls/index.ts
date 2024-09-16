@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         } = await parseJobsListUrl({
           logger,
           allJobSites,
-          url: link.url,
+          link,
           html: html.content,
           isLastRetry,
         });
