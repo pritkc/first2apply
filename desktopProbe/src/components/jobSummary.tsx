@@ -7,6 +7,7 @@ import { DeleteJobDialog } from './deleteJobDialog';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -36,8 +37,10 @@ export function JobSummary({
     <div className="rounded-lg border border-muted p-4 lg:p-6">
       <div className="flex items-start justify-between gap-4 lg:gap-6">
         <div>
+          {/* Job title */}
           <h1 className="mt-3 text-xl font-medium lg:mt-4">{job.title}</h1>
 
+          {/* Company name & location */}
           <p className="text-sm text-muted-foreground">
             {job.companyName}
             {job.location && (
@@ -48,6 +51,8 @@ export function JobSummary({
             )}
           </p>
         </div>
+
+        {/* Company logo */}
         {job.companyLogo && (
           <Avatar className="h-16 w-16">
             <AvatarImage src={job.companyLogo} />
@@ -55,6 +60,7 @@ export function JobSummary({
         )}
       </div>
 
+      {/* Job details */}
       <div className="mt-3 space-y-1.5 lg:mt-4">
         {job.jobType && (
           <div className="flex items-center gap-3 capitalize text-muted-foreground">
@@ -79,7 +85,9 @@ export function JobSummary({
         )}
       </div>
 
+      {/* Action buttons */}
       <div className="mt-6 flex flex-wrap gap-2 lg:mt-10">
+        {/* Apply button */}
         {job.status !== 'applied' && (
           <Button
             size="lg"
@@ -91,6 +99,8 @@ export function JobSummary({
             Apply
           </Button>
         )}
+
+        {/* Archive button */}
         {job.status !== 'archived' && (
           <Button
             size="lg"
@@ -104,23 +114,46 @@ export function JobSummary({
           </Button>
         )}
 
-        <Button
-          size="lg"
-          variant="secondary"
-          className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
-          onClick={() => onView(job)}
-        >
-          <ExternalLinkIcon className="h-4 w-auto" />
-        </Button>
+        {/* Open job button */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={() => onView(job)}
+              >
+                <ExternalLinkIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
 
-        <Button
-          size="lg"
-          variant="destructive"
-          className="w-10 bg-destructive/10 px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
-          onClick={() => setIsDeleteDialogOpen(true)}
-        >
-          <TrashIcon className="h-5 w-auto text-destructive" />
-        </Button>
+            <TooltipContent side="bottom" className="text-base">
+              See job page
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Delete button */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                size="lg"
+                variant="destructive"
+                className="w-10 bg-destructive/10 px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <TrashIcon className="h-5 w-auto text-destructive" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Delete
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <DeleteJobDialog
           isOpen={isDeleteDialogOpen}
           job={job}
@@ -128,6 +161,7 @@ export function JobSummary({
           onDelete={onDelete}
         />
 
+        {/* Label selector */}
         <div className="lg:ml-auto">
           <JobLabelSelector job={job} onUpdateLabels={onUpdateLabels} />
         </div>
