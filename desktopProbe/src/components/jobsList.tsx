@@ -10,7 +10,6 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { Job } from '../../../supabase/functions/_shared/types';
 import { DeleteJobDialog } from './deleteJobDialog';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 
 export function JobsList({
@@ -143,7 +142,7 @@ export function JobsList({
                       {job.status !== 'archived' && (
                         <Button
                           variant="secondary"
-                          className="h-[22px] w-[22px] bg-transparent px-0"
+                          className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
                           onClick={(evt) => {
                             onArchive(job);
                             evt.stopPropagation();
