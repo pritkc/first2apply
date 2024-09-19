@@ -10,22 +10,25 @@ export function JobsListSkeleton() {
           <div className="mb-6 flex items-center gap-4">
             {/* Avatar */}
             <Skeleton className="h-16 min-w-16 rounded-full" />
-            <div className="grow space-y-1">
-              {/* Company Name */}
-              <Skeleton className="h-4 w-full max-w-20" />
-              {/* Job Title */}
-              <Skeleton className="mt-0.5 h-5 w-full max-w-60" />
-
-              {/* Location, JobType & Salary */}
-              <div className="flex items-center gap-1.5 pt-2">
-                <Skeleton className="h-5 w-full max-w-32" />
-                <Skeleton className="h-5 w-full max-w-20" />
+            <div className="grow">
+              <div className="flex flex-wrap items-center justify-between">
+                {/* Company Name */}
+                <Skeleton className="mb-3 mt-1 h-3 w-full max-w-20" />
 
                 <div className="ml-auto flex gap-2">
-                  <Skeleton className="h-5 w-5" />
-                  <Skeleton className="h-5 w-5" />
+                  <Skeleton className="h-[22px] w-[22px]" />
+                  <Skeleton className="h-[22px] w-[22px]" />
                 </div>
               </div>
+
+              {/* Job Title */}
+              <Skeleton className="mt-0.5 h-5 w-full max-w-52" />
+
+              {/* Location, JobType & Salary */}
+              <Skeleton className="mt-2 h-4 w-full max-w-32" />
+
+              {/* Timestamp */}
+              <Skeleton className="ml-auto mt-2.5 h-3.5 w-full max-w-28" />
             </div>
           </div>
           <Skeleton className="h-px w-full" /> {/* Divider */}
