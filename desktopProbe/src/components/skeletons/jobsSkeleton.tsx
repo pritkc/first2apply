@@ -8,7 +8,7 @@ export function JobsListSkeleton() {
       {Array.from({ length: 10 }).map((_, index) => (
         <li key={index} className="-mt-[1px] px-2 pt-6 xl:px-4">
           <div className="mb-6 flex items-center gap-4">
-            {/* Avatar */}
+            {/* Company logo */}
             <Skeleton className="h-16 min-w-16 rounded-full" />
             <div className="grow">
               <div className="flex flex-wrap items-center justify-between">
@@ -24,7 +24,7 @@ export function JobsListSkeleton() {
               {/* Job Title */}
               <Skeleton className="mt-0.5 h-5 w-full max-w-52" />
 
-              {/* Location, JobType & Salary */}
+              {/* Location, JobType, Salary & Tags */}
               <Skeleton className="mt-2 h-4 w-full max-w-32" />
 
               {/* Timestamp */}
