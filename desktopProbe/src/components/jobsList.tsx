@@ -56,6 +56,7 @@ export function JobsList({
     return () => clearTimeout(timer);
   }, [scrollToIndex, itemRefs]);
 
+  // Down arrow keyboard shortcut
   useHotkeys(
     'down',
     () => {
@@ -69,6 +70,7 @@ export function JobsList({
     [selectedIndex, jobs],
   );
 
+  // Up arrow keyboard shortcut
   useHotkeys(
     'up',
     () => {
@@ -82,6 +84,7 @@ export function JobsList({
     [selectedIndex, jobs],
   );
 
+  // Archive job keyboard shortcut
   useHotkeys(
     'meta+a, ctrl+a',
     () => {
@@ -96,6 +99,7 @@ export function JobsList({
     { preventDefault: true },
   );
 
+  // Delete job keyboard shortcut
   useHotkeys(
     'meta+d, ctrl+d',
     () => {
@@ -129,6 +133,7 @@ export function JobsList({
               onClick={() => onSelect(job)}
             >
               <div className="mb-6 flex items-center gap-4">
+                {/* Company logo */}
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={siteLogos[job.siteId]} />
                   <AvatarFallback>LI</AvatarFallback>
@@ -136,9 +141,12 @@ export function JobsList({
 
                 <div className="grow">
                   <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    {/* Company Name */}
                     <p className="mb-3 text-xs text-muted-foreground">{job.companyName}</p>
 
+                    {/* Action buttons */}
                     <div className="ml-auto flex items-center gap-2">
+                      {/* Archive button */}
                       {job.status !== 'archived' && (
                         <Button
                           variant="secondary"
@@ -151,6 +159,8 @@ export function JobsList({
                           <ArchiveIcon className="min-h-4 w-fit text-foreground" />
                         </Button>
                       )}
+
+                      {/* Delete button */}
                       <Button
                         variant="destructive"
                         className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
@@ -164,9 +174,12 @@ export function JobsList({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Job Title */}
                   <p className="mt-0.5 leading-5 tracking-wide">{job.title}</p>
 
                   <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5">
+                    {/* Location, JobType, Salary & Tags */}
                     <div className="flex flex-wrap items-center gap-1.5">
                       {job.location && <span className="text-sm text-foreground/70">{job.location}</span>}
                       {job.jobType && <span className="text-sm text-foreground/70">| {job.jobType}</span>}
@@ -174,6 +187,7 @@ export function JobsList({
                       {job.tags?.map((tag) => <span className="text-sm text-foreground/70">| {tag}</span>)}
                     </div>
 
+                    {/* Job Label */}
                     <div
                       className={`w-[85px] rounded-md bg-opacity-80 py-1 text-center text-xs leading-3 text-white dark:bg-opacity-60 ${
                         LABEL_COLOR_CLASSES[job.labels[0]]
@@ -183,6 +197,7 @@ export function JobsList({
                     </div>
                   </div>
 
+                  {/* Timestamp */}
                   <p className="ml-auto mt-2 w-fit text-xs font-extralight text-foreground/90">
                     detected {getRelativeTimeString(new Date(job.created_at))}
                   </p>
