@@ -11,6 +11,7 @@ import { Job } from '../../../supabase/functions/_shared/types';
 import { DeleteJobDialog } from './deleteJobDialog';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 export function JobsList({
   jobs,
@@ -148,30 +149,50 @@ export function JobsList({
                     <div className="ml-auto flex items-center gap-2">
                       {/* Archive button */}
                       {job.status !== 'archived' && (
-                        <Button
-                          variant="secondary"
-                          className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
-                          onClick={(evt) => {
-                            onArchive(job);
-                            evt.stopPropagation();
-                          }}
-                        >
-                          <ArchiveIcon className="min-h-4 w-fit text-foreground" />
-                        </Button>
+                        <TooltipProvider delayDuration={500}>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                variant="secondary"
+                                className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
+                                onClick={(evt) => {
+                                  onArchive(job);
+                                  evt.stopPropagation();
+                                }}
+                              >
+                                <ArchiveIcon className="min-h-4 w-fit text-foreground" />
+                              </Button>
+                            </TooltipTrigger>
+
+                            <TooltipContent side="bottom" className="text-base">
+                              Archive
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
 
                       {/* Delete button */}
-                      <Button
-                        variant="destructive"
-                        className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
-                        onClick={(evt) => {
-                          // onDelete(job);
-                          setJobToDelete(job);
-                          evt.stopPropagation();
-                        }}
-                      >
-                        <TrashIcon className="h-5 w-auto text-destructive" />
-                      </Button>
+                      <TooltipProvider delayDuration={500}>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Button
+                              variant="destructive"
+                              className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
+                              onClick={(evt) => {
+                                // onDelete(job);
+                                setJobToDelete(job);
+                                evt.stopPropagation();
+                              }}
+                            >
+                              <TrashIcon className="h-5 w-auto text-destructive" />
+                            </Button>
+                          </TooltipTrigger>
+
+                          <TooltipContent side="bottom" className="text-base">
+                            Delete
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
 
