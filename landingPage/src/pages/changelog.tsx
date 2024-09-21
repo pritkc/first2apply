@@ -170,8 +170,10 @@ export default function Changelog() {
                   </ul>
                 </div>
               ))}
-              {release.texts?.map((item) => (
-                <div className="my-4">{item.text}</div>
+              {release.texts?.map((item, index) => (
+                <div key={`text-${index}`} className="my-4">
+                  {item.text}
+                </div>
               ))}
             </div>
           </section>
