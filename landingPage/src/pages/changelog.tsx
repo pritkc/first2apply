@@ -3,43 +3,123 @@ import ReactTimeAgo from "react-time-ago";
 import Image, { StaticImageData } from "next/image";
 import alert from "../../public/assets/alert.png";
 
-type changelogContent = {
+type ChangelogContent = {
   version: string;
   date: Date;
-  title?: string;
   image?: StaticImageData;
   changes: { title: string; content: string[] }[];
   texts?: { text: string | JSX.Element }[];
 };
 
-const changelogContent = [
+const changelogContent: ChangelogContent[] = [
   {
-    version: "1.0.1",
-    date: new Date("2024-04-03"),
-    title: "Security Update",
-    image: alert,
+    version: "1.7.0",
+    date: new Date("2024-09-16"),
     changes: [
-      { title: "New Features", content: ["Feature 1", "Feature 2"] },
-      { title: "Bug Fixes", content: ["Bug 1", "Bug 2"] },
-      { title: "Improvements", content: ["Improvement 1", "Improvement 2"] },
-    ],
-    texts: [
       {
-        text: "This is a security update. Please update your app as soon as possible.",
+        title: "New Features",
+        content: [
+          "Send email alerts for new jobs",
+          "Send email alerts when a job search starts failing to get results",
+        ],
+      },
+      {
+        title: "Bug fixes",
+        content: ["Add debug support for searches to bypass captcha screens."],
+      },
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: new Date("2024-09-05"),
+    changes: [
+      {
+        title: "New Features",
+        content: [
+          "Add detection time to jobs in list",
+          "Add support for logging into accounts inside the app scrapper.",
+        ],
+      },
+      {
+        title: "Bug fixes",
+        content: ["Add debug support for searches to bypass captcha screens."],
+      },
+    ],
+  },
+  {
+    version: "1.5.0",
+    date: new Date("2024-06-16"),
+    changes: [
+      {
+        title: "New Features",
+        content: ["Advanced matching using AI"],
+      },
+    ],
+  },
+  {
+    version: "1.4.0",
+    date: new Date("2024-04-19"),
+    changes: [
+      {
+        title: "New Features",
+        content: [
+          "Navigate the job list using keyboard shortcuts",
+          "Add notes to jobs for easier tracking",
+        ],
+      },
+    ],
+  },
+  {
+    version: "1.3.0",
+    date: new Date("2024-03-26"),
+    changes: [
+      {
+        title: "New Features",
+        content: [
+          "Add labels to job for easier tracking",
+          "Bulk actions for deleting or archiving jobs",
+          "Export jobs to CSV file",
+        ],
+      },
+    ],
+  },
+  {
+    version: "1.2.0",
+    date: new Date("2024-03-12"),
+    changes: [
+      {
+        title: "New Features",
+        content: ["In-app job description", "Feedback form"],
+      },
+      {
+        title: "Improvements",
+        content: ["Stability improvements by retrying failed requests"],
+      },
+    ],
+  },
+  {
+    version: "1.1.0",
+    date: new Date("2024-02-18"),
+    changes: [
+      {
+        title: "New Features",
+        content: ["Auto-updater", "Add more supported sites"],
       },
     ],
   },
   {
     version: "1.0.0",
-    date: new Date("2024-03-19"),
-    title: "Initial Release",
+    date: new Date("2024-02-13"),
     image: alert,
     changes: [
-      { title: "New Features", content: ["Feature 1", "Feature 2"] },
-      { title: "Bug Fixes", content: ["Bug 1", "Bug 2"] },
-      { title: "Improvements", content: ["Improvement 1", "Improvement 2"] },
+      {
+        title: "New Features",
+        content: [
+          "Scan jobs from multiple sources",
+          "Native desktop notifications for new jobs",
+        ],
+      },
     ],
-    texts: [{ text: <p className="underline">damn this </p> }],
   },
 ];
 
@@ -54,7 +134,7 @@ export default function Changelog() {
         {changelogContent.map((release) => (
           <section key={`release-${release.version}`} className="mt-16">
             <div className="px-10">
-              <h2 className="pt-16 mb-16 text-[40px] leading-[48px] font-medium">
+              <h2 className="pt-16 mb-4 text-[40px] leading-[48px] font-medium">
                 {release.version}
               </h2>
 
@@ -68,10 +148,6 @@ export default function Changelog() {
                   day: "numeric",
                 }).format(release.date)}
               </p>
-
-              {release.title && (
-                <h3 className="my-4 font-semibold">{release.title}</h3>
-              )}
             </div>
             {release.image && (
               <Image
@@ -81,29 +157,22 @@ export default function Changelog() {
               />
             )}
             <div className="px-10">
-              {release.changes.length > 0 &&
-                release.changes.map((change, index) => (
-                  <div key={`change-${index}`}>
-                    <h4 className="my-4 font-semibold">{change.title}</h4>
+              {release.changes?.map((change, index) => (
+                <div key={`change-${index}`}>
+                  <h4 className="my-4 font-semibold">{change.title}</h4>
 
-                    <ul className="list-disc list-inside pl-3">
-                      {change.content.map((item, index) => (
-                        <li
-                          key={`change-content-${index}`}
-                          className="mt-2 mb-1"
-                        >
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              {release.texts.length > 0 &&
-                release.texts.map((item, index) => (
-                  <div key={`text-${index}`} className="my-4">
-                    {item.text}
-                  </div>
-                ))}
+                  <ul className="list-disc list-inside pl-3">
+                    {change.content.map((item, index) => (
+                      <li key={`change-content-${index}`} className="mt-2 mb-1">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              {release.texts?.map((item) => (
+                <div className="my-4">{item.text}</div>
+              ))}
             </div>
           </section>
         ))}

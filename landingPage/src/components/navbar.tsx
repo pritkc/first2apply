@@ -3,12 +3,12 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { scrollToSection } from "@/utils/scrollToSection";
 import { Button } from "./ui/button";
-import Image from "next/image";
 
 const menuItems = [
   { name: "Product", id: "product" },
-  { name: "Help", id: "help" },
   { name: "Pricing", id: "pricing" },
+  { name: "Help", id: "help" },
+  { name: "Changelog", id: "changelog", url: "/changelog" },
 ];
 
 function useScrollLock(lock: boolean) {
@@ -130,17 +130,27 @@ export function Navbar() {
           }`}
           open={isOpen}
         >
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className="text-xl font-medium"
-              onClick={() =>
-                handleMenuItemClick(item.id, () => setIsOpen(false))
-              }
-            >
-              {item.name}
-            </button>
-          ))}
+          {menuItems.map((item) =>
+            item.url ? (
+              <Link
+                href={item.url}
+                key={item.id}
+                className="text-xl font-medium"
+              >
+                {item.name}
+              </Link>
+            ) : (
+              <button
+                key={item.id}
+                className="text-xl font-medium"
+                onClick={() =>
+                  handleMenuItemClick(item.id, () => setIsOpen(false))
+                }
+              >
+                {item.name}
+              </button>
+            )
+          )}
           <Link href="/download" passHref>
             <Button className="h-10 px-3 -ml-3 -mt-2 text-xl">Download</Button>
           </Link>
@@ -186,15 +196,25 @@ export function Navbar() {
           </button>
 
           <div className="flex items-center gap-10">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                className="relative text-[17px] font-medium tracking-wide hover:text-primary after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1"
-                onClick={() => handleMenuItemClick(item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
+            {menuItems.map((item) =>
+              item.url ? (
+                <Link
+                  href={item.url}
+                  key={item.id}
+                  className="relative text-[17px] font-medium tracking-wide hover:text-primary after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <button
+                  key={item.id}
+                  className="relative text-[17px] font-medium tracking-wide hover:text-primary after:content-[''] after:block after:absolute after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full after:right-0 after:bottom-0 after:transition-width duration-200 p-1"
+                  onClick={() => handleMenuItemClick(item.id)}
+                >
+                  {item.name}
+                </button>
+              )
+            )}
             <Link href="/download" passHref>
               <Button className="h-10 px-3">Download</Button>
             </Link>
