@@ -82,10 +82,10 @@ export function Faqs() {
       <div className="mt-6 sm:mt-[10vh] flex flex-wrap justify-center items-center gap-2">
         <p className="text-base">Didn&apos;t find what you need?</p>
 
-        <a href="mailto:dragos@first2apply.com" className="text-foreground">
+        <a href="mailto:contact@first2apply.com" className="text-foreground">
           Email us at&nbsp;
           <span className="underline hover:text-primary">
-            dragos@first2apply.com
+            contact@first2apply.com
           </span>
         </a>
       </div>
