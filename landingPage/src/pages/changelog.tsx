@@ -52,7 +52,7 @@ export default function Changelog() {
         </h1>
 
         {changelogContent.map((release) => (
-          <section className="mt-16">
+          <section key={`release-${release.version}`} className="mt-16">
             <div className="px-10">
               <h2 className="pt-16 mb-16 text-[40px] leading-[48px] font-medium">
                 {release.version}
@@ -82,8 +82,8 @@ export default function Changelog() {
             )}
             <div className="px-10">
               {release.changes.length > 0 &&
-                release.changes.map((change) => (
-                  <div>
+                release.changes.map((change, index) => (
+                  <div key={`change-${index}`}>
                     <h4 className="my-4 font-semibold">{change.title}</h4>
                     {change.content.length > 0 && (
                       <ul className="list-disc list-inside pl-3">
@@ -95,8 +95,10 @@ export default function Changelog() {
                   </div>
                 ))}
               {release.texts.length > 0 &&
-                release.texts.map((item) => (
-                  <div className="my-4">{item.text}</div>
+                release.texts.map((item, index) => (
+                  <div key={`text-${index}`} className="my-4">
+                    {item.text}
+                  </div>
                 ))}
             </div>
           </section>
