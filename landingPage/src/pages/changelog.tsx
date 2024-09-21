@@ -8,7 +8,7 @@ type changelogContent = {
   date: Date;
   title?: string;
   image?: StaticImageData;
-  changes?: { title: string; content: string[] }[];
+  changes: { title: string; content: string[] }[];
   texts?: { text: string | JSX.Element }[];
 };
 
@@ -85,13 +85,17 @@ export default function Changelog() {
                 release.changes.map((change, index) => (
                   <div key={`change-${index}`}>
                     <h4 className="my-4 font-semibold">{change.title}</h4>
-                    {change.content.length > 0 && (
-                      <ul className="list-disc list-inside pl-3">
-                        {change.content.map((item) => (
-                          <li className="mt-2 mb-1">{item}</li>
-                        ))}
-                      </ul>
-                    )}
+
+                    <ul className="list-disc list-inside pl-3">
+                      {change.content.map((item, index) => (
+                        <li
+                          key={`change-content-${index}`}
+                          className="mt-2 mb-1"
+                        >
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               {release.texts.length > 0 &&
