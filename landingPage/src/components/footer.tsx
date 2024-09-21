@@ -196,7 +196,7 @@ export function Footer() {
               </svg>
             </button>
           </a>
-          <a href="mailto:dragos@first2apply.com">
+          <a href="mailto:contact@first2apply.com">
             <button className="w-10 h-10 rounded-full bg-[#809966]/80 hover:-translate-y-1 transition-transform duration-200 flex items-center justify-center">
               <svg
                 className="dark:hidden w-5 h-5"
