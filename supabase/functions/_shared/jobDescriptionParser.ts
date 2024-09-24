@@ -17,6 +17,7 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: [
       ".description__text .show-more-less-html__markup",
       ".jobs-box__html-content > .job-details-module__content",
+      ".jobs-description__container .jobs-box__html-content",
     ],
   },
   [SiteProvider.glassdoor]: {
