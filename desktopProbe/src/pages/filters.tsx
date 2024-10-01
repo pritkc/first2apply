@@ -33,6 +33,7 @@ export function FiltersPage() {
   const [addBlacklistedCompany, setAddBlacklistedCompany] = useState<string>('');
   const [isSubscriptionDialogOpen, setSubscriptionDialogOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showAllBlacklistedCompanies, setShowAllBlacklistedCompanies] = useState(false);
 
   /**
    * Load the advanced matching filters from the user's profile.
@@ -206,28 +207,40 @@ export function FiltersPage() {
           {blacklistedCompanies.length === 0 ? (
             <p>You haven't blacklisted any companies yet</p>
           ) : (
-            <div className="flex gap-2">
-              {blacklistedCompanies.map((company) => (
-                <Badge
-                  key={company}
-                  className="flex items-center gap-2 border border-border bg-card py-1 pl-4 pr-2 text-base hover:bg-card"
-                >
-                  {company}
-                  <TooltipProvider delayDuration={500}>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Cross2Icon
-                          className="h-4 w-4 text-foreground"
-                          onClick={() => setBlacklistedCompanies(blacklistedCompanies.filter((c) => c !== company))}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="mt-2 text-sm">
-                        Remove
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Badge>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {(showAllBlacklistedCompanies ? blacklistedCompanies : blacklistedCompanies.slice(0, 10)).map(
+                (company) => (
+                  <Badge
+                    key={company}
+                    className="flex items-center gap-2 border border-border bg-card py-1 pl-4 pr-2 text-base hover:bg-card"
+                  >
+                    {company}
+                    <TooltipProvider delayDuration={500}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Cross2Icon
+                            className="h-4 w-4 text-foreground"
+                            onClick={() => setBlacklistedCompanies(blacklistedCompanies.filter((c) => c !== company))}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="mt-2 text-sm">
+                          Remove
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Badge>
+                ),
+              )}
+              {blacklistedCompanies.length > 10 && !showAllBlacklistedCompanies && (
+                <Button variant="secondary" className="py-2" onClick={() => setShowAllBlacklistedCompanies(true)}>
+                  See All
+                </Button>
+              )}
+              {showAllBlacklistedCompanies && (
+                <Button variant="secondary" className="py-2" onClick={() => setShowAllBlacklistedCompanies(false)}>
+                  Show Less
+                </Button>
+              )}
             </div>
           )}
         </div>
