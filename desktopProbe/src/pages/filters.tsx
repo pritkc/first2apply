@@ -170,7 +170,7 @@ export function FiltersPage() {
           <div className="relative flex-1">
             <Input
               value={addBlacklistedCompany}
-              placeholder='E.g. "Luxoft"'
+              placeholder="E.g. Luxoft"
               onChange={(evt) => setAddBlacklistedCompany(evt.target.value)}
               maxLength={100}
               className="bg-card px-6 pr-20 text-base ring-ring placeholder:text-base focus-visible:ring-2"
