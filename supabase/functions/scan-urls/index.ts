@@ -4,7 +4,7 @@ import {
 } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { parseJobsListUrl } from "../_shared/jobListParser.ts";
-import { DbSchema, Link } from "../_shared/types.ts";
+import { DbSchema, JobSite, Link, SiteProvider } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import { checkUserSubscription } from "../_shared/subscription.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
@@ -99,11 +99,9 @@ Deno.serve(async (req) => {
           site,
           parseFailed: currentUrlParseFailed,
         } = await parseJobsListUrl({
-          logger,
           allJobSites,
           link,
           html: html.content,
-          isLastRetry,
         });
 
         logger.info(
@@ -112,25 +110,22 @@ Deno.serve(async (req) => {
 
         // if the parsing failed, save the html dump for debugging
         parseFailed = currentUrlParseFailed;
-        if (currentUrlParseFailed && isLastRetry) {
+        if (currentUrlParseFailed) {
           await handleParsingFailureForLink({
             logger,
             supabaseClient,
             link,
             html,
+            site,
+            isLastRetry,
           });
-        }
-
-        // if the parsing went ok, reset the failure count
-        if (!currentUrlParseFailed) {
-          await supabaseClient
-            .from("links")
-            .update({
-              scrape_failure_count: 0,
-              last_scraped_at: new Date(),
-              scrape_failure_email_sent: false,
-            })
-            .eq("id", link.id);
+        } else {
+          await handlePasringSuccessForLink({
+            logger,
+            supabaseClient,
+            link,
+            site,
+          });
         }
 
         // add the link id to the jobs
@@ -177,17 +172,16 @@ async function handleParsingFailureForLink({
   supabaseClient,
   link,
   html,
+  site,
+  isLastRetry,
 }: {
   logger: ILogger;
   supabaseClient: SupabaseClient<DbSchema, "public", DbSchema["public"]>;
   link: Link;
   html: HtmlParseRequest;
+  site: JobSite;
+  isLastRetry: boolean;
 }) {
-  // save the html dump for debugging
-  await supabaseClient
-    .from("html_dumps")
-    .insert([{ url: link.url, html: html.content }]);
-
   // increment the failure count
   const { error: linkUpdateError } = await supabaseClient
     .from("links")
@@ -197,4 +191,53 @@ async function handleParsingFailureForLink({
     logger.error(linkUpdateError.message);
     return;
   }
+
+  const isLinkInErrorMode = link.scrape_failure_count >= 5;
+  if (
+    isLastRetry &&
+    site.provider !== SiteProvider.echojobs &&
+    !isLinkInErrorMode
+  ) {
+    logger.error(
+      `[${site.provider}] no jobs found for ${link.id}, this might indicate a problem with the parser`,
+      {
+        url: link.url,
+        site: site.provider,
+      }
+    );
+
+    // save the html dump for debugging
+    await supabaseClient
+      .from("html_dumps")
+      .insert([{ url: link.url, html: html.content }]);
+  }
+}
+
+async function handlePasringSuccessForLink({
+  logger,
+  supabaseClient,
+  link,
+  site,
+}: {
+  logger: ILogger;
+  supabaseClient: SupabaseClient<DbSchema, "public", DbSchema["public"]>;
+  link: Link;
+  site: JobSite;
+}) {
+  // when the parsing went ok, reset the failure count
+  await supabaseClient
+    .from("links")
+    .update({
+      scrape_failure_count: 0,
+      last_scraped_at: new Date(),
+      scrape_failure_email_sent: false,
+    })
+    .eq("id", link.id);
+
+  logger.info(
+    `[${site.provider}] successfully parsed jobs list for link ${link.id}`,
+    {
+      site: site.provider,
+    }
+  );
 }

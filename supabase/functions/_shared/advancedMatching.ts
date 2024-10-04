@@ -4,28 +4,31 @@ import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
 import { Profile } from "./types.ts";
 import { getExceptionMessage } from "./errorUtils.ts";
+import { ILogger } from "./logger.ts";
 
 /**
  * Apply all the advanced matching rules to the given job and
  * determine if it should be excluded from the user's feed.
  */
 export async function applyAdvancedMatchingFilters({
+  logger,
   supabaseClient,
   job,
   openAiApiKey,
 }: {
+  logger: ILogger;
   supabaseClient: SupabaseClient<DbSchema, "public">;
   job: Job;
   openAiApiKey: string;
 }): Promise<JobStatus> {
-  console.log(`applying advanced matching filters to job ${job.id} ...`);
+  logger.info(`applying advanced matching filters to job ${job.id} ...`);
   // check if the user has advanced matching enabled
   const { hasAdvancedMatching } = await checkUserSubscription({
     supabaseClient,
     userId: job.user_id,
   });
   if (!hasAdvancedMatching) {
-    console.log("user does not have advanced matching enabled");
+    logger.info("user does not have advanced matching enabled");
     return "new";
   }
 
@@ -40,26 +43,26 @@ export async function applyAdvancedMatchingFilters({
   }
   const advancedMatching: AdvancedMatchingConfig = advancedMatchingArr?.[0];
   if (!advancedMatching) {
-    console.log(`advanced matching config not found for user ${job.user_id}`);
+    logger.info(`advanced matching config not found for user ${job.user_id}`);
     return "new";
   }
 
   // exclude jobs from specific companies if it fully matches the entire company name
   if (isExcludedCompany({ companyName: job.companyName, advancedMatching })) {
-    console.log(`job excluded due to company name: ${job.companyName}`);
+    logger.info(`job excluded due to company name: ${job.companyName}`);
     return "excluded_by_advanced_matching";
   }
 
   // prompt OpenAI to determine if the job should be excluded
   if (job.description && advancedMatching.chatgpt_prompt) {
-    console.log(
+    logger.info(
       "prompting OpenAI to determine if the job should be excluded ..."
     );
 
     // check if the user must be limited to a lower LLM tier
     const shouldBeThrottled = advancedMatching.ai_api_cost > 10;
     if (shouldBeThrottled) {
-      console.log("user has reached its LLM quota and will be throttled");
+      logger.info("user has reached its LLM quota and will be throttled");
     }
 
     const {
@@ -94,12 +97,12 @@ export async function applyAdvancedMatchingFilters({
     }
 
     if (jobShouldBeExcluded) {
-      console.log("job excluded by OpenAI");
+      logger.info("job excluded by OpenAI");
       return "excluded_by_advanced_matching";
     }
   }
 
-  console.log("job passed all advanced matching filters");
+  logger.info("job passed all advanced matching filters");
   return "new";
 }
 
