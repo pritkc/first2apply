@@ -5,7 +5,6 @@ import {
 import turndown from "npm:turndown@7.1.2";
 import { Job, JobType, Link, SiteProvider } from "./types.ts";
 import { JobSite } from "./types.ts";
-import { ILogger } from "./logger.ts";
 
 const turndownService = new turndown({
   bulletListMarker: "-",
@@ -111,17 +110,13 @@ export function cleanJobUrl({
  * Parse a job page from a given url.
  */
 export function parseJobsListUrl({
-  logger,
   allJobSites,
   link,
   html,
-  isLastRetry,
 }: {
-  logger: ILogger;
   allJobSites: JobSite[];
   link: Link;
   html: string;
-  isLastRetry: boolean;
 }) {
   const { url } = link;
   const site = getJobSite({ allJobSites, url });
@@ -133,27 +128,8 @@ export function parseJobsListUrl({
   }
 
   const { jobs, listFound, elementsCount } = parseSiteJobsList({ site, html });
-  logger.debug(`[${site.provider}] found ${elementsCount} elements on ${url}`);
 
   const parseFailed = !listFound || (elementsCount > 0 && jobs.length === 0);
-  const isLinkInErrorMode = link.scrape_failure_count >= 3;
-  if (
-    isLastRetry &&
-    parseFailed &&
-    site.provider !== SiteProvider.echojobs &&
-    !isLinkInErrorMode
-  ) {
-    logger.error(
-      `[${
-        site.provider
-      }] no jobs found on ${url}, this might indicate a problem with the parser: ${JSON.stringify(
-        {
-          listFound,
-          elementsCount,
-        }
-      )}`
-    );
-  }
 
   return { jobs, site, parseFailed };
 }

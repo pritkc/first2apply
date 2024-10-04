@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
           `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`,
           {
             url: job.externalUrl,
+            site: site.provider,
           }
         );
 
@@ -93,7 +94,17 @@ Deno.serve(async (req) => {
           .insert([{ url: job.externalUrl, html }]);
       }
 
+      if (jd.content) {
+        logger.info(
+          `[${site.provider}] finished parsing job description for ${job.title}`,
+          {
+            site: site.provider,
+          }
+        );
+      }
+
       const filteredJobStatus = await applyAdvancedMatchingFilters({
+        logger,
         job: updatedJob,
         supabaseClient,
         openAiApiKey:
@@ -117,10 +128,6 @@ Deno.serve(async (req) => {
     if (updateJobErr) {
       throw updateJobErr;
     }
-
-    logger.info(
-      `[${site.provider}] finished parsing job description for ${job.title}`
-    );
 
     const parseFailed = !updatedJob.description;
 
