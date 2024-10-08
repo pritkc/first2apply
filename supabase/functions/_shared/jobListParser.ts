@@ -1685,6 +1685,7 @@ export function parseUSAJobsJobs({
     const companyName = el
       .querySelector(".usajobs-search-result--core__agency")
       ?.textContent?.trim();
+    if (!companyName) return null;
 
     const location = el
       .querySelector(".usajobs-search-result--core__location")
