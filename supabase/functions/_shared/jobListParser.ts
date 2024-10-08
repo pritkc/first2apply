@@ -183,6 +183,8 @@ function parseSiteJobsList({
       return parseNaukriJobs({ siteId: site.id, html });
     case SiteProvider.robertHalf:
       return parseRobertHalfJobs({ siteId: site.id, html });
+    case SiteProvider.zipRecruiter:
+      return parseZipRecruiterJobs({ siteId: site.id, html });
   }
 }
 
@@ -1565,6 +1567,68 @@ export function parseRobertHalfJobs({
       jobType,
       description,
       tags,
+      labels: [],
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
+}
+
+/**
+ * Method used to parse a zip recruiter job page.
+ */
+export function parseZipRecruiterJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): JobSiteParseResult {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector("ul.jobList");
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".job-listing")
+  ) as Element[];
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalUrlEl = el.querySelector("a.jobList-title");
+    const externalUrl = externalUrlEl?.getAttribute("href")?.trim();
+    if (!externalUrl) return null;
+
+    const externalId = externalUrlEl?.getAttribute("id")?.trim();
+    if (!externalId) return null;
+
+    const title = externalUrlEl?.textContent?.trim();
+    if (!title) return null;
+
+    const metaEl = el.querySelector("ul.jobList-introMeta");
+    const companyName = metaEl?.querySelector("li")?.textContent?.trim();
+    if (!companyName) return null;
+
+    const location = metaEl
+      ?.querySelector("li:nth-child(2)")
+      ?.textContent?.trim();
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
       labels: [],
     };
   });
