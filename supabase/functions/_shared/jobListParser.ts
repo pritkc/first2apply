@@ -185,6 +185,8 @@ function parseSiteJobsList({
       return parseRobertHalfJobs({ siteId: site.id, html });
     case SiteProvider.zipRecruiter:
       return parseZipRecruiterJobs({ siteId: site.id, html });
+    case SiteProvider.usaJobs:
+      return parseUSAJobsJobs({ siteId: site.id, html });
   }
 }
 
@@ -1629,6 +1631,82 @@ export function parseZipRecruiterJobs({
       title,
       companyName,
       location,
+      labels: [],
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
+}
+
+/**
+ * Method used to parse a USAJobs job page.
+ */
+export function parseUSAJobsJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): JobSiteParseResult {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector(".usajobs-search-results");
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".usajobs-search-result--core")
+  ) as Element[];
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const titleElement = el.querySelector(
+      "a.usajobs-search-result--core__title"
+    );
+
+    const externalId = titleElement?.getAttribute("data-document-id")?.trim();
+    if (!externalId) return null;
+
+    const externalUrlPath = titleElement?.getAttribute("href")?.trim();
+    if (!externalUrlPath) return null;
+    const externalUrl = `https://www.usajobs.gov${externalUrlPath}`;
+
+    const title = titleElement?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector(".usajobs-search-result--core__agency")
+      ?.textContent?.trim();
+
+    const location = el
+      .querySelector(".usajobs-search-result--core__location")
+      ?.textContent?.trim();
+
+    const salary = el
+      .querySelector(".usajobs-search-result--core__item")
+      ?.textContent?.trim();
+
+    const jobType = location?.toLowerCase().includes("remote")
+      ? "remote"
+      : "onsite";
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      location,
+      salary,
+      jobType,
       labels: [],
     };
   });

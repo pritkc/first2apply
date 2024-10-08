@@ -67,6 +67,9 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
   [SiteProvider.zipRecruiter]: {
     description: ["div.job-body"],
   },
+  [SiteProvider.usaJobs]: {
+    description: ["#requirements"],
+  },
 };
 
 type JobDescription = {
@@ -120,6 +123,8 @@ export function parseJobDescription({
       return parseRobertHalfJobDescription({ html });
     case SiteProvider.zipRecruiter:
       return parseZipRecruiterJobDescription({ html });
+    case SiteProvider.usaJobs:
+      return parseUSAJobsJobDescription({ html });
   }
 }
 
@@ -483,6 +488,29 @@ function parseZipRecruiterJobDescription({
 }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.zipRecruiter,
+    html,
+  });
+
+  let description: string | undefined;
+  if (descriptionContainer) {
+    description = turndownService.turndown(descriptionContainer.innerHTML);
+  }
+
+  return {
+    content: description,
+  };
+}
+
+/**
+ * Parse a USAJobs job description from the HTML.
+ */
+function parseUSAJobsJobDescription({
+  html,
+}: {
+  html: string;
+}): JobDescription {
+  const { descriptionContainer } = extractCommonDomElements({
+    provider: SiteProvider.usaJobs,
     html,
   });
 
