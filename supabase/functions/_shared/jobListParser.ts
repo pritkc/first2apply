@@ -187,6 +187,8 @@ function parseSiteJobsList({
       return parseZipRecruiterJobs({ siteId: site.id, html });
     case SiteProvider.usaJobs:
       return parseUSAJobsJobs({ siteId: site.id, html });
+    case SiteProvider.talent:
+      return parseTalentJobs({ siteId: site.id, html });
   }
 }
 
@@ -1709,6 +1711,82 @@ export function parseUSAJobsJobs({
       salary,
       jobType,
       labels: [],
+    };
+  });
+
+  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  return {
+    jobs: validJobs,
+    listFound: true,
+    elementsCount: jobElements.length,
+  };
+}
+
+/**
+ * Method used to parse a talent job page.
+ */
+export function parseTalentJobs({
+  siteId,
+  html,
+}: {
+  siteId: number;
+  html: string;
+}): JobSiteParseResult {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  if (!document) throw new Error("Could not parse html");
+
+  const jobsList = document.querySelector(".joblist");
+  if (!jobsList)
+    return {
+      jobs: [],
+      listFound: false,
+      elementsCount: 0,
+    };
+
+  const jobElements = Array.from(
+    jobsList.querySelectorAll(".card__job")
+  ) as Element[];
+
+  const jobs = jobElements.map((el): ParsedJob | null => {
+    const externalUrlPath = el
+      .querySelector(".link-job-wrap")
+      ?.getAttribute("data-link")
+      ?.trim();
+    if (!externalUrlPath) return null;
+    const externalUrl = `https://talent.com${externalUrlPath}`;
+
+    const externalId = el.getAttribute("data-id")?.trim();
+    if (!externalId) return null;
+
+    const title = el.querySelector(".card__job-title")?.textContent?.trim();
+    if (!title) return null;
+
+    const companyName = el
+      .querySelector(".card__job-empname-label")
+      ?.textContent?.trim();
+    if (!companyName) return null;
+
+    const companyLogo = el
+      .querySelector(".card__job-logo")
+      ?.getAttribute("src")
+      ?.trim();
+
+    const location =
+      el.querySelector(".card__job-location")?.textContent?.trim() || "";
+
+    const jobType =
+      el.querySelector(".card__job-badge-remote")?.textContent?.trim() ||
+      "onsite";
+
+    return {
+      siteId,
+      externalId,
+      externalUrl,
+      title,
+      companyName,
+      companyLogo,
+      location,
+      jobType,
     };
   });
 

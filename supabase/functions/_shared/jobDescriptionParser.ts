@@ -70,6 +70,9 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
   [SiteProvider.usaJobs]: {
     description: ["#requirements"],
   },
+  [SiteProvider.talent]: {
+    description: [".job__description"],
+  },
 };
 
 type JobDescription = {
@@ -125,6 +128,8 @@ export function parseJobDescription({
       return parseZipRecruiterJobDescription({ html });
     case SiteProvider.usaJobs:
       return parseUSAJobsJobDescription({ html });
+    case SiteProvider.talent:
+      return parseTalentJobDescription({ html });
   }
 }
 
@@ -511,6 +516,25 @@ function parseUSAJobsJobDescription({
 }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.usaJobs,
+    html,
+  });
+
+  let description: string | undefined;
+  if (descriptionContainer) {
+    description = turndownService.turndown(descriptionContainer.innerHTML);
+  }
+
+  return {
+    content: description,
+  };
+}
+
+/**
+ * Parse a Talent job description from the HTML.
+ */
+function parseTalentJobDescription({ html }: { html: string }): JobDescription {
+  const { descriptionContainer } = extractCommonDomElements({
+    provider: SiteProvider.talent,
     html,
   });
 

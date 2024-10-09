@@ -15,6 +15,7 @@ export enum SiteProvider {
   robertHalf = "robertHalf",
   zipRecruiter = "zipRecruiter",
   usaJobs = "usaJobs",
+  talent = "talent",
 }
 
 export const JOB_LABELS = {
