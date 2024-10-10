@@ -135,7 +135,7 @@ export function JobsList({
           return (
             <li
               key={job.id}
-              className={cn('-mt-[1px] px-2 pt-6 xl:px-5', selectedJobId === job.id && 'bg-muted')}
+              className={cn('-mt-[1px] rounded-lg px-2 pt-6 xl:px-5', selectedJobId === job.id && 'bg-muted')}
               ref={itemRefs[index]}
               onClick={() => onSelect(job)}
             >
