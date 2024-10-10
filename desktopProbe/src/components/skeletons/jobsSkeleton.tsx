@@ -6,32 +6,37 @@ export function JobsListSkeleton() {
   return (
     <ul>
       {Array.from({ length: 10 }).map((_, index) => (
-        <li key={index} className="-mt-[1px] px-2 pt-6 xl:px-4">
-          <div className="mb-6 flex items-center gap-4">
-            {/* Company logo */}
-            <Skeleton className="h-16 min-w-16 rounded-full" />
-            <div className="grow">
-              <div className="flex flex-wrap items-center justify-between">
-                {/* Company Name */}
-                <Skeleton className="mb-3 mt-1 h-3 w-full max-w-20" />
+        <li key={index} className="-mt-[1px] px-2 pt-6 xl:px-5">
+          <div className="grow">
+            <div className="flex flex-wrap items-center justify-between">
+              {/* Company Name */}
+              <Skeleton className="my-1.5 h-3 w-full max-w-20" />
 
-                <div className="ml-auto flex gap-2">
-                  <Skeleton className="h-[22px] w-[22px]" />
-                  <Skeleton className="h-[22px] w-[22px]" />
-                </div>
+              <div className="ml-auto flex gap-2">
+                <Skeleton className="h-[22px] w-[22px]" />
+                <Skeleton className="h-[22px] w-[22px]" />
+              </div>
+            </div>
+
+            {/* Job Title */}
+            <Skeleton className="mt-2 h-5 w-full max-w-52" />
+
+            {/* Location, JobType, Salary & Tags */}
+            <Skeleton className="mt-2 h-4 w-full max-w-32" />
+
+            <div className="mt-[26px] flex items-center gap-12">
+              {/* Source */}
+              <div className="flex items-center gap-2">
+                {/* Source logo */}
+                <Skeleton className="h-6 min-w-6 rounded-full" />
+                <Skeleton className="h-3.5 w-48" />
               </div>
 
-              {/* Job Title */}
-              <Skeleton className="mt-0.5 h-5 w-full max-w-52" />
-
-              {/* Location, JobType, Salary & Tags */}
-              <Skeleton className="mt-2 h-4 w-full max-w-32" />
-
               {/* Timestamp */}
-              <Skeleton className="ml-auto mt-2.5 h-3.5 w-full max-w-28" />
+              <Skeleton className="ml-auto h-3.5 w-full max-w-28" />
             </div>
           </div>
-          <Skeleton className="h-px w-full" /> {/* Divider */}
+          <Skeleton className="mt-6 h-px w-full" /> {/* Divider */}
         </li>
       ))}
     </ul>
