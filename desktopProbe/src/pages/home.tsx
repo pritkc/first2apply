@@ -2,6 +2,7 @@ import { JobDetails } from '@/components/jobDetails';
 import { JobNotes } from '@/components/jobNotes';
 import { JobSummary } from '@/components/jobSummary';
 import { JobsList } from '@/components/jobsList';
+import { SearchBox } from '@/components/searchBox';
 import { JobsSkeleton } from '@/components/skeletons/jobsSkeleton';
 import {
   AlertDialog,
@@ -477,6 +478,8 @@ export function Home() {
                   <section className="flex">
                     {/* jobs list */}
                     <div id="jobsList" className="no-scrollbar h-[calc(100vh-100px)] w-1/2 overflow-scroll lg:w-2/5">
+                      <SearchBox />
+
                       <JobsList
                         jobs={listing.jobs}
                         selectedJobId={selectedJobId}
