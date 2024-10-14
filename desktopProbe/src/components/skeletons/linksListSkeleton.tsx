@@ -31,14 +31,17 @@ export const LinksListSkeleton: FC = () => {
             </div>
 
             {/* URL */}
-            <div className="mb-4 mt-6 space-y-1">
+            <div className="mb-4 mt-7 space-y-1">
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-full" />
             </div>
 
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-28" />
+            <div className="mt-4 flex items-center justify-between">
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-36" />
+                <Skeleton className="h-3 w-28" />
+              </div>
 
               {/* Button skeleton */}
               <Skeleton className="d h-9 w-9 rounded-full" />

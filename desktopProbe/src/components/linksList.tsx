@@ -29,7 +29,7 @@ export function LinksList({
         return (
           <li
             key={link.id}
-            className={`flex cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card px-6 pb-6 pt-8 shadow-sm ${isInFailureState(link) ? 'border-destructive' : ''}`}
+            className={`flex cursor-pointer flex-col gap-4 rounded-lg border bg-card px-6 pb-6 pt-8 shadow-sm ${isInFailureState(link) ? 'border-destructive' : 'border-border'}`}
             onClick={() => {
               onDebugLink(link.id);
             }}
@@ -51,17 +51,17 @@ export function LinksList({
               </div>
             </div>
 
-            <p className="mb-4 mt-6 grow whitespace-pre-wrap text-pretty break-all text-xs font-light text-muted-foreground">
+            <p className="mb-4 mt-6 grow whitespace-pre-wrap text-pretty break-all text-xs text-muted-foreground">
               {link.url}
             </p>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-light text-foreground/40">
+                <p className="text-xs font-light text-foreground/40">
                   {'Last checked '}
                   <ReactTimeAgo date={link.last_scraped_at} locale="en-US" />
                 </p>
-                <p className="text-sm font-light text-foreground/40">
+                <p className="text-xs font-light text-foreground/40">
                   {'Added '}
                   <ReactTimeAgo date={link.created_at} locale="en-US" />
                 </p>
