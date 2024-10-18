@@ -9,8 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
+import { Button } from "./ui/button";
 
-const tabs = ["Monthly", "Quarterly", "Biannually", "Yearly"];
+const tabs = ["Monthly", "Quarterly", "Biannually", "Yearly"] as const;
+const plans = ["Basic", "Pro"] as const;
+type Plan = (typeof plans)[number];
+type BillingCycle = (typeof tabs)[number];
 
 type PriceDetail = {
   pricePerMonth: number;
@@ -20,13 +24,28 @@ type PriceDetail = {
 };
 
 type PricingPlan = {
-  name: string;
+  name: Plan;
   description?: string;
   monthly: PriceDetail;
   quarterly: PriceDetail;
   biannually: PriceDetail;
   yearly: PriceDetail;
   benefits: string[];
+};
+
+const stripeConfig: Record<Plan, Record<BillingCycle, string>> = {
+  Basic: {
+    Monthly: "https://buy.stripe.com/4gw5mv9vadTL5q0cMN",
+    Quarterly: "https://buy.stripe.com/4gw6qz36MaHzbOofZ0",
+    Biannually: "https://buy.stripe.com/4gw4ir8r63f7bOo3cf",
+    Yearly: "https://buy.stripe.com/28oaGP7n24jb9Gg7sw",
+  },
+  Pro: {
+    Monthly: "https://buy.stripe.com/cN25mv36Mg1T9GgaEN",
+    Quarterly: "https://buy.stripe.com/4gw4irgXCbLDdWw7sD",
+    Biannually: "https://buy.stripe.com/fZe3en22I8zrg4E5kw",
+    Yearly: "https://buy.stripe.com/14k3enbDi8zr2dO6oB",
+  },
 };
 
 const pricingPlans: PricingPlan[] = [
@@ -69,7 +88,7 @@ const pricingPlans: PricingPlan[] = [
 ];
 
 export function PricingSection() {
-  const [selectedTab, setSelectedTab] = useState(tabs[0]);
+  const [selectedTab, setSelectedTab] = useState<BillingCycle>(tabs[0]);
 
   return (
     <section
@@ -149,7 +168,7 @@ export function PricingSection() {
                   )}
                 </p>
               </CardContent>
-              <CardFooter className="md:p-8 md:pt-0">
+              <CardFooter className="flex flex-col items-start md:p-8 md:pt-0">
                 <ul>
                   {plan.benefits.map((benefit, index) => (
                     <li key={index} className="flex items-center gap-2">
@@ -158,6 +177,13 @@ export function PricingSection() {
                     </li>
                   ))}
                 </ul>
+
+                {/* CTA */}
+                <a href={`${stripeConfig[plan.name][selectedTab]}`}>
+                  <Button size="lg" className="mt-10 w-40 self-center">
+                    Select
+                  </Button>
+                </a>
               </CardFooter>
             </Card>
           ))}
