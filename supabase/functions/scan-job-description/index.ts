@@ -17,6 +17,9 @@ Deno.serve(async (req) => {
     function: "scan-job-description",
   });
   try {
+    const requestId = crypto.randomUUID();
+    logger.addMeta("request_id", requestId);
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("Missing Authorization header");

@@ -29,6 +29,9 @@ Deno.serve(async (req) => {
     function: "post-scan-hook",
   });
   try {
+    const requestId = crypto.randomUUID();
+    logger.addMeta("request_id", requestId);
+
     // build the supabase client
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
