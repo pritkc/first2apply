@@ -65,7 +65,7 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: ["div[data-testid=job-description]"],
   },
   [SiteProvider.zipRecruiter]: {
-    description: ["div.job-body"],
+    description: ["div.job-body", "div.job_description"],
   },
   [SiteProvider.usaJobs]: {
     description: ["#requirements"],
