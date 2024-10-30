@@ -1682,6 +1682,12 @@ async function parseZipRecruiterJobs({
         const hashBuffer = await crypto.subtle.digest("SHA-256", hashBody);
         const externalId = encodeHex(hashBuffer);
 
+        const salary = el
+          .querySelector(
+            "article > div > div > div.flex.flex-col:nth-child(2) > div > div > p"
+          )
+          ?.textContent?.trim();
+
         return {
           siteId,
           externalId,
@@ -1690,6 +1696,7 @@ async function parseZipRecruiterJobs({
           companyName,
           companyLogo: companyLogoUrl,
           location,
+          salary,
           labels: [],
         };
       })
