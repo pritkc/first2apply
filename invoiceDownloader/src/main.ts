@@ -69,7 +69,7 @@ async function fetchAndDownloadInvoices() {
 
   let allInvoices: Stripe.Invoice[] = [];
   let hasMore = true;
-  let lastInvoiceId = undefined;
+  let lastInvoiceId: string | undefined = undefined;
 
   const to = luxon.DateTime.now()
     .setZone("Europe/Bucharest")
