@@ -1,6 +1,8 @@
 import * as luxon from "luxon";
 import Stripe from "stripe";
 import * as _ from "lodash";
+import axios from "axios";
+import xml2js from "xml2js";
 
 import {
   KeezApi,
@@ -45,12 +47,12 @@ export async function uploadInvoicesToKeez({
   await validateKeezInvoices({ keez, keezInvoices: newKeezInvoices });
 
   // testing - delete the invoices if they're already uploaded
-  await deleteInvoicesFromKeez({
-    keez,
-    keezInvoices: existingKeezInvoices.sort(
-      sortKeezInvoiceBySeriesAndNumberDesc
-    ),
-  });
+  // await deleteInvoicesFromKeez({
+  //   keez,
+  //   keezInvoices: existingKeezInvoices.sort(
+  //     sortKeezInvoiceBySeriesAndNumberDesc
+  //   ),
+  // });
 
   const { reverseKeezInvoices, existingReverseKeezInvoices } =
     await createReverseInvoices({
@@ -62,12 +64,12 @@ export async function uploadInvoicesToKeez({
   await validateKeezInvoices({ keez, keezInvoices: reverseKeezInvoices });
 
   // testing - delete the invoices if they're already uploaded
-  await deleteInvoicesFromKeez({
-    keez,
-    keezInvoices: existingReverseKeezInvoices.sort(
-      sortKeezInvoiceBySeriesAndNumberDesc
-    ),
-  });
+  // await deleteInvoicesFromKeez({
+  //   keez,
+  //   keezInvoices: existingReverseKeezInvoices.sort(
+  //     sortKeezInvoiceBySeriesAndNumberDesc
+  //   ),
+  // });
 }
 
 async function upsertKeezItems({
@@ -170,13 +172,20 @@ async function createKeezInvoiceFromStripeInvoice({
   keezTierToItemMap: Map<string, KeezItem>;
   isStorno?: boolean;
 }) {
-  const exchangeRate = await getExchangeRate(stripeInvoice.currency, "RON");
   const { series, number } = getInvoiceSeriesAndNumber(stripeInvoice);
 
   const countryCode =
     stripeInvoice.customer_address?.country ??
     throwError("Missing country code");
   const isRomanianInvoice = countryCode === "RO";
+  const exchangeRate = isRomanianInvoice
+    ? await getExchangeRate({
+        day: luxon.DateTime.fromSeconds(stripeInvoice.created).toFormat(
+          "yyyy-MM-dd"
+        ),
+        currency: stripeInvoice.currency,
+      })
+    : 1;
 
   let countyName =
     stripeInvoice.customer_address?.state ||
@@ -355,7 +364,7 @@ async function createKeezInvoiceFromStripeInvoice({
     vatOnCollection: false,
     currencyCode,
     referenceCurrencyCode,
-    exchangeRate: await getExchangeRate(stripeInvoice.currency, "RON"),
+    exchangeRate,
     paymentTypeId: 6, // stripe - https://app.keez.ro/help/api/data_payment_type.html
     partner,
     invoiceDetails,
@@ -477,46 +486,73 @@ function getInvoiceSeriesAndNumber(stripeInvoice: Stripe.Invoice) {
   return { series, number };
 }
 
-// Helper function to get exchange rates (dummy function for example purposes)
-async function getExchangeRate(
-  fromCurrency: string,
-  toCurrency: string
-): Promise<number> {
-  // Replace with actual exchange rate API call if needed
-  return 1; // Example exchange rate for non-RON currency
+// Helper function to get exchange rates
+type ExchangeRateMap = Record<
+  string,
+  Array<{
+    currency: string;
+    value: number;
+  }>
+>;
+let exchangeRateMap: ExchangeRateMap | undefined;
+async function getExchangeRateMap(): Promise<ExchangeRateMap> {
+  if (exchangeRateMap) return exchangeRateMap;
 
-  // try {
-  //   if (
-  //     moment
-  //       .utc()
-  //       .subtract(1, 'day')
-  //       .isSame(this._ronEurExchangeRateDate, 'day') &&
-  //     !!this._ronEurExchangeRate
-  //   ) {
-  //     return this._ronEurExchangeRate;
-  //   }
+  const currentYear = luxon.DateTime.now().year;
+  const BNR_CURRENCY_EXHANGE_RATE_FEED_URL = `https://bnr.ro/files/xml/years/nbrfxrates${currentYear}.xml`;
+  const result = await axios.get(BNR_CURRENCY_EXHANGE_RATE_FEED_URL);
+  const xmlStr = result.data;
 
-  //   const BNR_CURRENCY_EXHANGE_RATE_FEED_URL =
-  //     'https://bnr.ro/nbrfxrates10days.xml';
-  //   const result = await axios.get(BNR_CURRENCY_EXHANGE_RATE_FEED_URL);
-  //   const xmlStr = result.data;
+  const xml: {
+    DataSet: {
+      Body: {
+        Cube: {
+          $: {
+            date: string;
+          };
+          Rate: {
+            $: {
+              currency: string;
+            };
+            _: string;
+          }[];
+        }[];
+      }[];
+    };
+  } = await xml2js.parseStringPromise(xmlStr);
 
-  //   const xml = await xml2js.parseStringPromise(xmlStr);
-  //   const yesterdayRates = xml.DataSet.Body[0].Cube[1].Rate;
-  //   const rateDay = xml.DataSet.Body[0].Cube[1].$.date;
-  //   const eurRate = yesterdayRates.find(
-  //     (rate: any) => rate.$.currency === 'EUR'
-  //   );
-  //   if (eurRate) {
-  //     this._ronEurExchangeRate = roundFixed(parseFloat(eurRate._), 2);
-  //     this._ronEurExchangeRateDate = rateDay;
-  //     return this._ronEurExchangeRate;
-  //   } else {
-  //     throw new Error('Failed to fetch RON -> EUR exchange rate.');
-  //   }
-  // } catch (error: any) {
-  //   throw new Error(error.message);
-  // }
+  const freshExchangeRateMap: ExchangeRateMap = {};
+  xml.DataSet.Body[0].Cube.forEach((cube) => {
+    if (cube.Rate) {
+      const rates = cube.Rate.map((rate) => ({
+        currency: rate.$.currency,
+        value: parseFloat(rate._),
+      }));
+      freshExchangeRateMap[cube.$.date] = rates;
+    }
+  });
+
+  exchangeRateMap = freshExchangeRateMap;
+  return exchangeRateMap;
+}
+async function getExchangeRate({
+  day,
+  currency,
+}: {
+  day: string;
+  currency: string;
+}) {
+  const exchangeRateMap = await getExchangeRateMap();
+  const exchangeRates = exchangeRateMap[day];
+  if (!exchangeRates) {
+    throw new Error(`No exchange rates found for day ${day}`);
+  }
+
+  return (
+    exchangeRates.find(
+      (rate) => rate.currency.toLowerCase() === currency.toLowerCase()
+    )?.value ?? throwError(`No exchange rate found for RON on day ${day}`)
+  );
 }
 
 // helper function to convert a value from one currency to another
