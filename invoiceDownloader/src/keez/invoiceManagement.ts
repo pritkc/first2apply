@@ -49,7 +49,7 @@ export async function uploadInvoicesToKeez({
 
   // const invoicesToDelete = [...stripeInvoicesOrdered].reverse(); // need to delete the newest invoices first
   // await deleteInvoicesFromKeez({ keez, stripeInvoices: invoicesToDelete }); // useful for testing
-  // await validateKeezInvoices({ keez, stripeInvoices: stripeInvoicesOrdered });
+  await validateKeezInvoices({ keez, stripeInvoices: stripeInvoicesOrdered });
 }
 
 async function upsertKeezItems({
@@ -394,8 +394,6 @@ async function validateKeezInvoices({
   stripeInvoices: Stripe.Invoice[];
 }) {
   console.log(`Validating ${stripeInvoices.length} invoices in Keez ...`);
-
-  stripeInvoices = [...stripeInvoices].reverse(); // need to validate the oldest invoices first
   for (const invoice of stripeInvoices) {
     const { series, number } = getInvoiceSeriesAndNumber(invoice);
     console.log(`Validating invoice ${series}-${number}`);
@@ -409,7 +407,6 @@ async function validateKeezInvoices({
       throw new Error(`Invoice ${series}-${number} not found in Keez`);
     }
     await keez.validateInvoice(existingInvoice.externalId);
-    // break;
   }
 }
 
