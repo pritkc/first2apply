@@ -165,6 +165,42 @@ export class KeezApi {
   }
 
   /**
+   * Try to find a reverse invoice for the given invoice.
+   */
+  async getReverseInvoice({
+    series,
+    client,
+    documentDate,
+  }: {
+    series: string;
+    client: string;
+    documentDate: string;
+  }): Promise<KeezInvoice | null> {
+    const accessToken = await this._getAccessToken();
+
+    const { data: invoices } = await this._apiCall<{
+      data: KeezInvoice[];
+    }>({
+      method: "get",
+      path: `/api/v1.0/public-api/${this._config.clientId}/invoices`,
+      headers: {
+        Authorization: `${accessToken.token_type} ${accessToken.access_token}`,
+      },
+      params: {
+        filter: encodeURIComponent(
+          `series[eq]:${series} AND partnerName[like]:${client} AND documentDate[eq]:${documentDate}`
+        ),
+      },
+    });
+
+    if (invoices.length === 0) {
+      return null;
+    }
+
+    return invoices[0];
+  }
+
+  /**
    * Validate the invoice.
    */
   async validateInvoice(externalId: string): Promise<void> {
