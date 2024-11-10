@@ -64,9 +64,7 @@ async function downloadInvoicePdf({
   }
 }
 
-async function fetchAndDownloadInvoices() {
-  const stripe = new Stripe(env.stripeApiKey);
-
+async function fetchAndDownloadInvoices({ stripe }: { stripe: Stripe }) {
   let allInvoices: Stripe.Invoice[] = [];
   let hasMore = true;
   let lastInvoiceId: string | undefined = undefined;
@@ -119,7 +117,10 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function run() {
   // await sleep(5000);
   // Start the invoice fetching and downloading process
-  const stripeInvoices = await fetchAndDownloadInvoices();
+  const stripe = new Stripe(env.stripeApiKey);
+  const stripeInvoices = await fetchAndDownloadInvoices({
+    stripe,
+  });
   console.log(`Fetched ${stripeInvoices.length} invoices`);
 
   // write invoices to json file
@@ -129,6 +130,7 @@ async function run() {
   const keez = new KeezApi(env.keez);
   await uploadInvoicesToKeez({
     keez,
+    stripe,
     stripeInvoices,
   });
 }
