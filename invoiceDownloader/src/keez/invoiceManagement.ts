@@ -13,7 +13,7 @@ import {
 } from "../keezApi";
 import { throwError } from "../error";
 import { COUNTRY_NAMES_BY_CODE } from "./keezConstants";
-import { promiseAllBatched, promiseAllSequence } from "../functional";
+import { promiseAllBatched } from "../functional";
 
 export async function uploadInvoicesToKeez({
   keez,
@@ -105,7 +105,7 @@ async function upsertKeezItems({
     for (const tier of unkownTiers) {
       const newKeezItem = await keez.createItem({
         name: tier,
-        categoryExternalId: "ITSRV", // IT Services
+        categoryExternalId: "MISCSRV", // Misc Services
         currencyCode: "USD", // hard coded for now
         isActive: true,
         measureUnitId: 1,
