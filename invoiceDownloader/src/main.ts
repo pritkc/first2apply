@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as _ from "lodash";
 
-import { KeezApi } from "./keezApi";
+import { KeezApi } from "./keez/keezApi";
 import { parseEnv } from "./env";
 
 import { uploadInvoicesToKeez } from "./keez/invoiceManagement";
