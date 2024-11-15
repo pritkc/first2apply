@@ -1,4 +1,4 @@
-import { KeezApiConfig } from "./keezApi";
+import { KeezApiConfig } from "./keez/keezApi";
 
 export type Env = {
   stripeApiKey: string;

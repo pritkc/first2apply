@@ -4,16 +4,16 @@ import * as _ from "lodash";
 import axios from "axios";
 import xml2js from "xml2js";
 
+import { KeezApi } from "./keezApi";
+import { getExceptionMessage, throwError } from "../error";
+import { COUNTRY_NAMES_BY_CODE } from "./keezConstants";
+import { promiseAllBatched } from "../functional";
 import {
-  KeezApi,
   KeezInvoice,
   KeezInvoiceDetail,
   KeezItem,
   KeezParter,
-} from "../keezApi";
-import { throwError } from "../error";
-import { COUNTRY_NAMES_BY_CODE } from "./keezConstants";
-import { promiseAllBatched } from "../functional";
+} from "./keezTypes";
 
 export async function uploadInvoicesToKeez({
   keez,
@@ -28,7 +28,7 @@ export async function uploadInvoicesToKeez({
 
   console.log("uploading invoices to keez ...");
   const keezTierToItemMap = new Map<string, KeezItem>(
-    keezItems.map((item) => [item.name.toLowerCase(), item])
+    keezItems.map((item) => [item.name, item])
   );
 
   // it seems that sometimes the invoices are not ordered by number, which keez kinda requires
@@ -47,12 +47,12 @@ export async function uploadInvoicesToKeez({
   await validateKeezInvoices({ keez, keezInvoices: newKeezInvoices });
 
   // testing - delete the invoices if they're already uploaded
-  // await deleteInvoicesFromKeez({
-  //   keez,
-  //   keezInvoices: existingKeezInvoices.sort(
-  //     sortKeezInvoiceBySeriesAndNumberDesc
-  //   ),
-  // });
+  await deleteInvoicesFromKeez({
+    keez,
+    keezInvoices: existingKeezInvoices.sort(
+      sortKeezInvoiceBySeriesAndNumberDesc
+    ),
+  });
 
   const { reverseKeezInvoices, existingReverseKeezInvoices } =
     await createReverseInvoices({
@@ -64,14 +64,20 @@ export async function uploadInvoicesToKeez({
   await validateKeezInvoices({ keez, keezInvoices: reverseKeezInvoices });
 
   // testing - delete the invoices if they're already uploaded
-  // await deleteInvoicesFromKeez({
-  //   keez,
-  //   keezInvoices: existingReverseKeezInvoices.sort(
-  //     sortKeezInvoiceBySeriesAndNumberDesc
-  //   ),
-  // });
+  await deleteInvoicesFromKeez({
+    keez,
+    keezInvoices: existingReverseKeezInvoices.sort(
+      sortKeezInvoiceBySeriesAndNumberDesc
+    ),
+  });
 }
 
+const capitalize = (s: string) =>
+  s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+const toKeezItemNameCode = (tier: string, variant?: string) =>
+  `First 2 Apply ${capitalize(tier)}${
+    variant ? ` - ${variant.toLowerCase()}` : ""
+  }`;
 async function upsertKeezItems({
   keez,
   stripeInvoices,
@@ -94,18 +100,27 @@ async function upsertKeezItems({
     ...new Set(stripeItems.map((item) => item.price?.metadata.tier)),
   ].filter((s): s is string => s !== undefined);
 
-  const unkownTiers = usedTiers.filter(
-    (tier) =>
-      !keezItems.find((item) => item.name.toLowerCase() === tier.toLowerCase())
+  // we need two versions for each item, one for ro clients and one for non-ro clients
+  const usedTierCodes = usedTiers.flatMap((tier) => [
+    toKeezItemNameCode(tier),
+    toKeezItemNameCode(tier, `ro`),
+  ]);
+
+  const unkownTiers = usedTierCodes.filter(
+    (tierCode) => !keezItems.find((item) => item.name === tierCode)
   );
   if (unkownTiers.length > 0) {
     console.log(
       `unkown tiers: ${unkownTiers.join(", ")}, creating them in keez ...`
     );
     for (const tier of unkownTiers) {
+      // invoices for romanian clients have a different category
+      const categoryExternalId = tier.endsWith(" - ro")
+        ? "MISCSRV"
+        : "SRV_ELECTR";
       const newKeezItem = await keez.createItem({
         name: tier,
-        categoryExternalId: "MISCSRV", // Misc Services
+        categoryExternalId, // Misc Services
         currencyCode: "USD", // hard coded for now
         isActive: true,
         measureUnitId: 1,
@@ -226,7 +241,11 @@ async function createKeezInvoiceFromStripeInvoice({
         throw new Error(`Item ${item.id} does not have a tier`);
       }
 
-      const keezItem = keezTierToItemMap.get(tier.toLowerCase());
+      const keezItemName = toKeezItemNameCode(
+        tier,
+        isRomanianInvoice ? "ro" : ""
+      );
+      const keezItem = keezTierToItemMap.get(keezItemName);
       if (!keezItem) {
         throw new Error(`Item ${tier} not found in Keez`);
       }
@@ -468,7 +487,14 @@ async function validateKeezInvoices({
 }) {
   console.log(`Validating ${keezInvoices.length} invoices in Keez ...`);
   for (const invoice of keezInvoices) {
-    await keez.validateInvoice(invoice?.externalId ?? throwError("Missing ID"));
+    const invoiceId = invoice?.externalId ?? throwError("Missing ID");
+    try {
+      await keez.validateInvoice(invoiceId);
+    } catch (error) {
+      console.log(
+        `Error validating invoice ${invoiceId}: ${getExceptionMessage(error)}`
+      );
+    }
   }
   console.log("All invoices validated in Keez");
 }
