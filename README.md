@@ -20,6 +20,8 @@ Run `npm run package` to test a production build locally first. Don't forget to 
 
 If everything is ok, then run `npm run publish` to upload a new prod build
 
+To build the x64 version for Intel macs run `npm run publish -- --arch x64`.
+
 ### Windows
 Updates are handled via the Microsoft store so just build a new AppX and submit it there. The auto-updater only checks the `RELEASES.json` to display a notification that a new version is available
 
