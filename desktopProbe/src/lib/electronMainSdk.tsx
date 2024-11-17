@@ -12,7 +12,7 @@ import {
   Review,
   StripeConfig,
 } from '../../../supabase/functions/_shared/types';
-import { JobScannerSettings } from './types';
+import { JobScannerSettings, NewAppVersion } from './types';
 
 async function _mainProcessApiCall<T>(channel: string, params?: object): Promise<T> {
   // @ts-ignore
@@ -112,7 +112,22 @@ export async function deleteLink(linkId: number): Promise<void> {
 /**
  * List all jobs.
  */
-export async function listJobs({ status, limit, after }: { status: JobStatus; limit?: number; after?: string }) {
+export async function listJobs({
+  status,
+  search,
+  siteIds,
+  linkIds,
+  limit,
+  after,
+}: {
+  status: JobStatus;
+  search?: string;
+  siteIds?: number[];
+  linkIds?: number[];
+  limit?: number;
+  after?: string;
+}) {
+  console.log('listJobs', { status, search, siteIds, linkIds, limit, after });
   const result = await _mainProcessApiCall<{
     jobs: Job[];
     new: number;
@@ -122,6 +137,9 @@ export async function listJobs({ status, limit, after }: { status: JobStatus; li
     nextPageToken?: string;
   }>('list-jobs', {
     status,
+    search,
+    siteIds,
+    linkIds,
     limit,
     after,
   });
@@ -349,4 +367,21 @@ export async function updateAdvancedMatchingConfig(
  */
 export async function debugLink(linkId: number): Promise<void> {
   await _mainProcessApiCall('debug-link', { linkId });
+}
+
+/**
+ * Get the current state of the application.
+ */
+export async function getAppState(): Promise<{
+  isScanning: boolean;
+  newUpdate?: NewAppVersion;
+}> {
+  return await _mainProcessApiCall('get-app-state', {});
+}
+
+/**
+ * Apply the latest app update.
+ */
+export async function applyAppUpdate(): Promise<void> {
+  await _mainProcessApiCall('apply-app-update', {});
 }

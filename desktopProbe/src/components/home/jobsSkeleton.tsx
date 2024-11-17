@@ -1,7 +1,8 @@
-import { FC } from 'react';
-
 import { Skeleton } from '../ui/skeleton';
 
+/**
+ * Skeleton for the JobsList component.
+ */
 export function JobsListSkeleton() {
   return (
     <ul>
@@ -43,6 +44,9 @@ export function JobsListSkeleton() {
   );
 }
 
+/**
+ * Skeleton for the JobSummary component.
+ */
 export function JobSummarySkeleton() {
   return (
     <div className="rounded-lg border border-muted p-4 lg:p-6">
@@ -82,6 +86,9 @@ export function JobSummarySkeleton() {
   );
 }
 
+/**
+ * Skeleton for the JobDetails component.
+ */
 export function JobDetailsSkeleton() {
   return (
     <div className="space-y-1 pl-[25px] pr-2">
@@ -109,18 +116,3 @@ export function JobDetailsSkeleton() {
     </div>
   );
 }
-
-export const JobsSkeleton: FC = () => {
-  return (
-    <section className="flex">
-      <div className="no-scrollbar h-[calc(100vh-100px)] w-1/2 overflow-scroll lg:w-2/5">
-        <JobsListSkeleton />
-      </div>
-
-      <div className="h-[calc(100vh-100px)] w-1/2 animate-pulse space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4">
-        <JobSummarySkeleton />
-        <JobDetailsSkeleton />
-      </div>
-    </section>
-  );
-};

@@ -8,12 +8,15 @@ import { createRef, useEffect, useMemo, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
-import { Job } from '../../../supabase/functions/_shared/types';
+import { Job } from '../../../../supabase/functions/_shared/types';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { DeleteJobDialog } from './deleteJobDialog';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
+/**
+ * List of jobs component.
+ */
 export function JobsList({
   jobs,
   selectedJobId,
@@ -33,7 +36,7 @@ export function JobsList({
   onArchive: (job: Job) => void;
   onDelete: (job: Job) => void;
 }) {
-  const { siteLogos } = useSites();
+  const { siteLogos, siteMap } = useSites();
   const { links } = useLinks();
 
   const [jobToDelete, setJobToDelete] = useState<Job | undefined>();
@@ -60,7 +63,7 @@ export function JobsList({
     return () => clearTimeout(timer);
   }, [scrollToIndex, itemRefs]);
 
-  // Down arrow keyboard shortcut
+  // Navigate between jobs using arrow keys
   useHotkeys(
     'down',
     () => {
@@ -73,8 +76,6 @@ export function JobsList({
     },
     [selectedIndex, jobs],
   );
-
-  // Up arrow keyboard shortcut
   useHotkeys(
     'up',
     () => {
@@ -151,7 +152,7 @@ export function JobsList({
                         <TooltipTrigger>
                           <Button
                             variant="secondary"
-                            className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
+                            className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
                             onClick={(evt) => {
                               onArchive(job);
                               evt.stopPropagation();
@@ -174,7 +175,7 @@ export function JobsList({
                       <TooltipTrigger>
                         <Button
                           variant="destructive"
-                          className="h-[22px] w-[22px] bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
+                          className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
                           onClick={(evt) => {
                             // onDelete(job);
                             setJobToDelete(job);
@@ -215,12 +216,12 @@ export function JobsList({
                     </>
                   )}
                   {job.tags?.map((tag) => (
-                    <>
+                    <span key={job.id + tag}>
                       {(job.location || job.jobType || job.salary) && (
-                        <span className="text-3 mx-[14px] font-light text-foreground/40"> | </span>
+                        <span className="text-3 mx-[8px] font-light text-foreground/40"> | </span>
                       )}
-                      <span>| {tag}</span>
-                    </>
+                      <span>{tag}</span>
+                    </span>
                   ))}
                 </p>
 
@@ -238,16 +239,14 @@ export function JobsList({
 
               <div className="mt-4 flex items-center gap-12">
                 {/* Source */}
-                {fromLink && (
-                  <p className="flex items-center gap-2 text-xs leading-3 text-foreground/80">
-                    {/* Source logo */}
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={siteLogos[job.siteId]} />
-                      <AvatarFallback>LI</AvatarFallback>
-                    </Avatar>
-                    {fromLink}
-                  </p>
-                )}
+                <p className="flex items-center gap-2 text-xs leading-3 text-foreground/80">
+                  {/* Source logo */}
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={siteLogos[job.siteId]} />
+                    <AvatarFallback>LI</AvatarFallback>
+                  </Avatar>
+                  {fromLink ?? siteMap[job.siteId]?.name}
+                </p>
 
                 {/* Timestamp */}
                 <p className="ml-auto w-fit flex-shrink-0 text-xs text-foreground/80">
