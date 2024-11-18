@@ -25,7 +25,7 @@ export function BenefitsSection() {
   return (
     <section
       id="benefits"
-      className="flex flex-col items-center gap-4 mt-[10vh] mx-auto max-w-7xl px-6 sm:px-10 md:flex-row"
+      className="flex flex-col items-center gap-4 mt-[20vh] mx-auto max-w-7xl px-6 sm:px-10 md:flex-row"
     >
       <div className="w-full md:w-1/2">
         <h2 className="text-2xl font-semibold sm:text-4xl text-balance">
