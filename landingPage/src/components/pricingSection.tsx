@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -182,16 +182,12 @@ export function PricingSection() {
                 {/* CTA */}
                 <QueryParamsLink
                   baseUrl={`${stripeConfig[plan.name][selectedTab]}`}
+                  className="self-center"
                 >
-                  <Button size="lg" className="mt-10 w-40 self-center">
+                  <Button size="lg" className="mt-10 w-40">
                     Select
                   </Button>
                 </QueryParamsLink>
-                {/* <a href={`${stripeConfig[plan.name][selectedTab]}`}>
-                  <Button size="lg" className="mt-10 w-40 self-center">
-                    Select
-                  </Button>
-                </a> */}
               </CardFooter>
             </Card>
           ))}
