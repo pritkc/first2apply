@@ -65,7 +65,6 @@ Deno.serve(async (req) => {
       if (getUserIdError) {
         throw getUserIdError;
       }
-      console.log(data);
       const userId = data?.[0]?.id;
       const { data: getUserByIdData, error: getUserByIdError } =
         await supabaseClient.auth.admin.getUserById(userId);
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
         throw getUserByIdError;
       }
       const user = getUserByIdData.user;
-      console.log(`found user for customer ${customer.email}`);
+      logger.info(`found user for customer ${customer.email}`);
 
       // update the user profile
       const tier = (subscription.items.data[0].plan.metadata?.tier ??
@@ -94,7 +93,7 @@ Deno.serve(async (req) => {
       if (updateProfileError) {
         throw updateProfileError;
       }
-      console.log(`succesfully updated profile for user ${user.email}`);
+      logger.info(`succesfully updated profile for user ${user.email}`);
     }
 
     return new Response(JSON.stringify({}), {
@@ -102,7 +101,9 @@ Deno.serve(async (req) => {
     });
     // http://dragos.beastx.ro:54321/functions/v1/handle-stripe-webhook
   } catch (error) {
-    console.error(getExceptionMessage(error));
+    logger.error(
+      `error running handle stripe webhook: ${getExceptionMessage(error)}`
+    );
     return new Response(
       JSON.stringify({ errorMessage: getExceptionMessage(error, true) }),
       {
