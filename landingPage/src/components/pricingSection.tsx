@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -197,6 +198,12 @@ export function PricingSection() {
       <p className="mt-[5vh] text-xl sm:text-2xl font-medium text-center text-balance">
         You get a 7 DAYS FREE trial. No credit card required.
       </p>
+
+      <Link href="/download" className="flex justify-center">
+        <Button size="lg" variant="secondary" className="w-full xs:w-fit mt-6">
+          Download for free
+        </Button>
+      </Link>
     </section>
   );
 }

@@ -2,7 +2,7 @@ export function ExplainerSection() {
   return (
     <section
       id="explainer"
-      className="max-w-7xl mx-auto px-6 sm:px-10 mt-[10vh] md:-mt-[2vh]"
+      className="max-w-7xl mx-auto px-6 sm:px-10 mt-[10vh] md:mt-[0vh]"
     >
       <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold md:text-center">
         Apply to more jobs in less time

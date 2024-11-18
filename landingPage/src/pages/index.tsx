@@ -94,13 +94,13 @@ export default function Home() {
       <DefaultLayout>
         <ProductSection />
         <ExplainerSection />
-        <FeedbackSection />
         <BenefitsSection />
         <AlertsSection />
         <OrganizationSection />
         <AdvancedMatchingSection />
-        <PricingSection />
         <BottomCta />
+        <FeedbackSection />
+        <PricingSection />
         <Faqs />
       </DefaultLayout>
     </>

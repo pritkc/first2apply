@@ -16,13 +16,11 @@ export function BottomCta() {
         Apply.
       </p>
 
-      <div className="flex flex-col items-center gap-4 mt-6 md:mt-12">
-        <Link href="/download">
-          <Button size="lg" className="w-full xs:w-fit">
-            Download for free
-          </Button>
-        </Link>
-      </div>
+      <Link href="/download" className="flex justify-center mt-6 md:mt-12">
+        <Button size="lg" className="w-full xs:w-fit">
+          Download for free
+        </Button>
+      </Link>
     </section>
   );
 }
