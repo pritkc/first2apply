@@ -59,13 +59,13 @@ export function ProductSection() {
             src={trackBlackImage}
             alt="paperfly track black"
             priority={true}
-            className="z-10 dark:hidden absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-10 dark:hidden absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-40 lg:ml-44"
           />
           <Image
             src={trackWhiteImage}
             alt="paperfly track white"
             priority={true}
-            className="z-10 hidden dark:block absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-28 lg:ml-8"
+            className="z-10 hidden dark:block absolute top-2 md:left-1/2 md:-translate-x-1/2 h-auto lg:h-[40vh] max-h-[315px] w-96 lg:w-auto md:ml-40 lg:ml-44"
           />
         </div>
       </div>
