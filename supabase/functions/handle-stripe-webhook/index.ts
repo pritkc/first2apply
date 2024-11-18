@@ -66,6 +66,10 @@ Deno.serve(async (req) => {
         throw getUserIdError;
       }
       const userId = data?.[0]?.id;
+      if (!userId) {
+        throw new Error(`No user found for email ${customer.email}`);
+      }
+
       const { data: getUserByIdData, error: getUserByIdError } =
         await supabaseClient.auth.admin.getUserById(userId);
       if (getUserByIdError) {
