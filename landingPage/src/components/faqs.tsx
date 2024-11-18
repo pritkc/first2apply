@@ -28,7 +28,7 @@ export function Faqs() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="item-2" className="border-b-0 sm:py-2">
+        <AccordionItem value="item-2" className="sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
             Does the app automatically apply to jobs for me?
           </AccordionTrigger>
@@ -39,7 +39,7 @@ export function Faqs() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="item-3" className="border-b-0 sm:py-2">
+        <AccordionItem value="item-3" className="sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
             Can it filter out jobs that I&apos;m not interested in?
           </AccordionTrigger>
