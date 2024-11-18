@@ -13,6 +13,20 @@ type ChangelogContent = {
 
 const changelogContent: ChangelogContent[] = [
   {
+    version: "1.8.0",
+    date: new Date("2024-11-17"),
+    changes: [
+      {
+        title: "New Features",
+        content: [
+          "Search detected jobs by title or company",
+          "Filter jobs by the source site or by search items",
+          "Show loading indicator when the app is searching for jobs",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.7.0",
     date: new Date("2024-09-16"),
     changes: [
