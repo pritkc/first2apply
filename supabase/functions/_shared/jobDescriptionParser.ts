@@ -406,6 +406,10 @@ function parseRemotiveJobDescription({
   let description: string | undefined;
   if (descriptionContainer) {
     description = turndownService.turndown(descriptionContainer.innerHTML);
+  } else {
+    // quite often, remotive redirects to an indeed job page so try to parse the description from there
+    const { content } = parseIndeedJobDescription({ html });
+    description = content;
   }
 
   return {
