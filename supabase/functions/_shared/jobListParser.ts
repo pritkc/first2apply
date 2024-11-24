@@ -302,7 +302,7 @@ export function parseLinkedInJobs({
       if (!title) return null;
 
       const companyName = el
-        .querySelector(".job-card-container__primary-description")
+        .querySelector(".artdeco-entity-lockup__subtitle > span")
         ?.textContent?.trim();
       if (!companyName) return null;
 
