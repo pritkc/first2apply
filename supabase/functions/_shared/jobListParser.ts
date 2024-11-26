@@ -226,7 +226,7 @@ export function parseLinkedInJobs({
   let jobsList = document.querySelector(".jobs-search__results-list");
   if (!jobsList) {
     // check if the user is logged into LinkedIn because then it has a totally different layout
-    jobsList = document.querySelector(".scaffold-layout__list-container");
+    jobsList = document.querySelector(".scaffold-layout__list");
     isLoggedIn = true;
   }
 
@@ -313,7 +313,7 @@ export function parseLinkedInJobs({
           ?.getAttribute("src") || undefined;
       const rawLocation = el
         .querySelector(
-          "ul.job-card-container__metadata-wrapper > li.job-card-container__metadata-item "
+          "ul.job-card-container__metadata-wrapper > li.ozVyfYLPxTeVaPmuuWTtpUfNweVZyKil"
         )
         ?.textContent?.trim();
 
