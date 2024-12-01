@@ -43,6 +43,7 @@ export type JobSite = {
   blacklisted_paths: string[];
   created_at: Date;
   logo_url: string;
+  deprecated: boolean;
 };
 
 export type Link = {
