@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactElement } from "react";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -8,7 +8,7 @@ import {
 type Review = {
   title: string;
   details: string;
-  source: string;
+  source: ReactElement;
 };
 
 const reviews: Review[] = [
@@ -16,7 +16,21 @@ const reviews: Review[] = [
     title: "Helped me find a job within a few days of installing!",
     details:
       "After being able to only send out about 5-10 applications a day, which usually took me about 3 hours of parsing through a bunch of suggestions that simply weren't relevant to me, this app immensely increased my productivity! I was able to send out about 30-40 applications most days, in the course of about 2 hours. It also found jobs that I would've otherwise not seen! But most importantly, it allowed me to be one of the first applicants (I believe I was within the first 5) to a particular job, which I am sure was instrumental in me then landing that position!",
-    source: "MS Store Reviews",
+    source: (
+      <a href="https://apps.microsoft.com/detail/9nk18wv87sv2?hl=en-us&gl=US">
+        MS Store Reviews
+      </a>
+    ),
+  },
+  {
+    title: "Where can I leave a review for First2Apply?",
+    details:
+      "I want to leave a review as this App has been a powerful tool for me over the past several months. I just recommended it to my FB group for women in tech and I know several have downloaded it. I want to spread the word further. I start a new role on 12/2/24 and it was because I was one of the first resume's in the recruiters pile. Wouldn't have happened without this application. Where can I leave a review? Everyone whose searching for work should be using First2Apply. For real.",
+    source: (
+      <a href="https://www.reddit.com/r/first2apply/comments/1gugtme/where_can_i_leave_a_review_for_first2apply/">
+        Reddit
+      </a>
+    ),
   },
 ];
 
@@ -66,7 +80,7 @@ export function FeedbackSection() {
             </button>
             <button onClick={handleNextReview} className="flex items-center">
               <ChevronRightIcon className="w-auto h-5 text-primary" />
-              <span className="ml-10 hidden sm:block text-primary">
+              <span className="ml-1 hidden sm:block text-primary">
                 Next Review
               </span>
             </button>
