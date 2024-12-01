@@ -3,14 +3,19 @@ import { CORS_HEADERS } from "../_shared/cors.ts";
 import { DbSchema, Job } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import { cleanJobUrl } from "../_shared/jobListParser.ts";
+import { createLoggerWithMeta } from "../_shared/logger.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
+  const logger = createLoggerWithMeta({
+    function: "create-link",
+  });
   try {
     const { title, url } = await req.json();
+    logger.info(`Creating link: ${title} - ${url}`);
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -31,6 +36,12 @@ Deno.serve(async (req) => {
 
     // insert a new link in the db
     const { cleanUrl, site } = cleanJobUrl({ url, allJobSites });
+    // check if the site is deprecated
+    if (site.deprecated) {
+      throw new Error(
+        `Site ${site.name} is deprecated and no longer supported. Please contact our support team if you need help.`
+      );
+    }
     const { data: createdLinks, error } = await supabaseClient
       .from("links")
       .insert({
@@ -47,11 +58,13 @@ Deno.serve(async (req) => {
     // but need to still return an empty array for compatibility
     const newJobs: Job[] = [];
 
+    logger.info(`successfully created link: ${link.id}`);
+
     return new Response(JSON.stringify({ link, newJobs }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (error) {
-    console.error(getExceptionMessage(error));
+    logger.error(getExceptionMessage(error));
     return new Response(
       JSON.stringify({ errorMessage: getExceptionMessage(error, true) }),
       {

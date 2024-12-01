@@ -97,6 +97,13 @@ Deno.serve(async (req) => {
           logger.error(`link not found: ${html.linkId}`);
           return [];
         }
+        // ignore links for sites that are deprecated
+        const targetSite = allJobSites.find((site) => site.id === link.site_id);
+        if (targetSite?.deprecated) {
+          logger.info(`skip parsing for deprecated site ${targetSite.name}`);
+          return [];
+        }
+
         const {
           jobs,
           site,
