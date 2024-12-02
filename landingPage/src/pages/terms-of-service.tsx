@@ -8,7 +8,7 @@ export default function TermsOfService() {
           Terms and Conditions for using First 2 Apply
         </h1>
         <h2 className="mt-2 sm:mt-4 text-sm lg:text-xl text-foreground/70 font-medium sm:text-center sm:text-balance sm:tracking-wide">
-          Last updated: 07.02.2024
+          Last updated: 02.12.2024
         </h2>
 
         <h3 className="mt-[10vh] text-lg lg:text-2xl font-medium">
@@ -46,10 +46,18 @@ export default function TermsOfService() {
           maintaining their job alert preferences within the app. This includes
           accurately configuring links to desired job sites, specifying relevant
           job search filters, and ensuring their computer and application
-          settings allow for proper functioning of the service. Users are also
-          expected to abide by any applicable laws and regulations while using
-          the service and to respect the terms of use of any third-party job
-          sites accessed through First 2 Apply.
+          settings allow for the proper functioning of the service.
+        </p>
+        <p>
+          Please note that First 2 Apply is an automation tool, and its usage
+          may potentially violate the terms of service of certain job board
+          sites. Users acknowledge that by employing First 2 Apply, they assume
+          all associated risks, including the possibility of having their
+          accounts restricted or banned on those platforms. First 2 Apply is not
+          liable for any consequences arising from such actions. Users are also
+          expected to abide by applicable laws and regulations while using the
+          service and to respect the terms of use of any third-party job sites
+          accessed through First 2 Apply.
         </p>
 
         <h3 className="mt-[5vh] text-lg lg:text-2xl font-medium">
@@ -57,14 +65,15 @@ export default function TermsOfService() {
         </h3>
         <p>
           In addition to collecting user emails for account management, First 2
-          Apply securely stores your saved job search links on our servers to
-          personalize and enhance your service experience. This data is strictly
-          for the purpose of delivering relevant job alerts and is not used for
-          any other form of tracking. We guarantee that this information is
-          never shared with third parties. We are dedicated to maintaining the
-          confidentiality and security of your personal information, ensuring
-          transparency and respect for your privacy in all our data handling
-          practices.
+          Apply securely stores your saved job search links and scraped jobs on
+          our servers. This allows us to personalize and enhance your service
+          experience, including synchronizing your job feed if you reinstall the
+          app on another device. This data is strictly used for delivering
+          relevant job alerts and ensuring a seamless user experience. We
+          guarantee that this information is never shared with third parties. We
+          are dedicated to maintaining the confidentiality and security of your
+          personal information, ensuring transparency and respect for your
+          privacy in all our data handling practices.
         </p>
 
         <h3 className="mt-[5vh] text-lg font-medium">Pricing and Payment:</h3>
@@ -74,7 +83,12 @@ export default function TermsOfService() {
           app is free to use. Users are encouraged to take advantage of this
           introductory offer while the service remains available at no cost.
           Stay updated with our website for future pricing structures and
-          payment options.
+          payment options.Current pricing details for First 2 Apply are
+          available on our website. Users can purchase a subscription securely
+          through our payment system, powered by Stripe. Subscriptions grant
+          access to our full range of services. Stay informed by checking our
+          website for updates on pricing and any future changes to our payment
+          options.
         </p>
 
         <h3 className="mt-[5vh] text-lg font-medium">Service Availability:</h3>
