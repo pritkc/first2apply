@@ -1147,9 +1147,7 @@ export function parseRemotiveJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList =
-    document.querySelector("#initial_job_list > ul") ||
-    document.querySelector("#hits > ul");
+  const jobsList = document.querySelector("#hits > ul");
   if (!jobsList) {
     return {
       jobs: [],

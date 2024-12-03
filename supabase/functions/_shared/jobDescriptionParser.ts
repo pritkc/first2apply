@@ -75,7 +75,9 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: ["#requirements"],
   },
   [SiteProvider.talent]: {
-    description: [".job__description"],
+    description: [
+      ".sc-e78c1cd5-10.sc-e78c1cd5-11.sc-207c7d5e-10.dwTTNY.gdYndp.jkXeTb > p",
+    ],
   },
 };
 
@@ -398,18 +400,34 @@ function parseRemotiveJobDescription({
 }: {
   html: string;
 }): JobDescription {
-  const { descriptionContainer } = extractCommonDomElements({
-    provider: SiteProvider.remotive,
-    html,
-  });
+  const parseOwnHtml = ({ html }: { html: string }) => {
+    const { descriptionContainer } = extractCommonDomElements({
+      provider: SiteProvider.remotive,
+      html,
+    });
+    let description: string | undefined;
+    if (descriptionContainer) {
+      description =
+        turndownService.turndown(descriptionContainer.innerHTML) ||
+        "job might be archived";
+    }
+    return { content: description };
+  };
 
+  // quite often, remotive redirects to an indeed job page so try to parse the description from there
   let description: string | undefined;
-  if (descriptionContainer) {
-    description = turndownService.turndown(descriptionContainer.innerHTML);
-  } else {
-    // quite often, remotive redirects to an indeed job page so try to parse the description from there
-    const { content } = parseIndeedJobDescription({ html });
-    description = content;
+  const parsers = [
+    parseOwnHtml, // try to parse the description from the remotive page first
+    parseIndeedJobDescription,
+    parseLinkedinJobDescription,
+    parseTalentJobDescription,
+  ];
+  for (const parser of parsers) {
+    const { content } = parser({ html });
+    if (content) {
+      description = content;
+      break;
+    }
   }
 
   return {
