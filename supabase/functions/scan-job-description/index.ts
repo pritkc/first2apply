@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
       retryCount?: number;
     } = await req.json();
     const { jobId, html, maxRetries, retryCount } = body;
+    logger.info(`processing job description for ${jobId}  ...`);
 
     // find the job and its site
     const { data: job, error: findJobErr } = await supabaseClient
