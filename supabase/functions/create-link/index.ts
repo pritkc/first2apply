@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
     function: "create-link",
   });
   try {
-    const { title, url } = await req.json();
-    logger.info(`Creating link: ${title} - ${url}`);
+    const requestId = crypto.randomUUID();
+    logger.addMeta("request_id", requestId);
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -26,6 +26,18 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } }
     );
+
+    const { data: userData, error: getUserError } =
+      await supabaseClient.auth.getUser();
+    if (getUserError) {
+      throw new Error(getUserError.message);
+    }
+    const user = userData?.user;
+    logger.addMeta("user_id", user?.id ?? "");
+    logger.addMeta("user_email", user?.email ?? "");
+
+    const { title, url } = await req.json();
+    logger.info(`Creating link: ${title} - ${url}`);
 
     // list all job sites from db
     const { data, error: selectError } = await supabaseClient
