@@ -32,6 +32,23 @@ const reviews: Review[] = [
       </a>
     ),
   },
+  {
+    title: "First 2 Apply worked for me!",
+    details: `I GOT A JOB! It took a long time to find the right program that didn't \"mass apply\" and that gave you results quickly and orderly.
+
+The application helped me a lot to be able to filter and apply quickly and efficiently. My trick was to use the application to search and find jobs quickly then use Simplify to be able to tailor my resume quickly.
+      
+It was a win-win and I HIGHLY recommend this program. It was a game changer getting ahead of a lot of applications and having the frequent notifications when things came in were great. I think this is how I was able to increase my interview rate and I was able to finally land a job after 12 months and thousands of applications. For the record, I applied to 329 jobs manually with this program.
+      
+They listen to feedback as well and are very quick with any issues you might have. I think this is the best app out there to get
+      
+Thank you again. I will be recommending this program!`,
+    source: (
+      <a href="https://www.reddit.com/r/first2apply/comments/1h83xgm/first_2_apply_worked_for_me/">
+        Reddit
+      </a>
+    ),
+  },
 ];
 
 export function FeedbackSection() {
