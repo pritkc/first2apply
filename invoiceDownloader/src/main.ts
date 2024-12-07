@@ -1,9 +1,6 @@
 import * as dotenv from "dotenv";
-import axios from "axios";
 import { Stripe } from "stripe";
 import * as luxon from "luxon";
-import * as fs from "fs";
-import * as path from "path";
 import * as _ from "lodash";
 
 import { KeezApi } from "./keez/keezApi";
@@ -14,55 +11,6 @@ import { uploadInvoicesToKeez } from "./keez/invoiceManagement";
 dotenv.config();
 
 const env = parseEnv();
-
-async function downloadInvoicePdf({
-  invoiceUrl,
-  invoiceNumber,
-  isPaid,
-}: {
-  invoiceUrl: string;
-  invoiceNumber: string;
-  isPaid: boolean;
-}) {
-  const response = await axios({
-    url: invoiceUrl,
-    method: "GET",
-    responseType: "stream", // Download the PDF as a stream
-  });
-
-  // Ensure the folder exists
-  const folderPath = "./invoices";
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath);
-  }
-
-  // Define the PDF path and write the file
-  const filePath = path.join(folderPath, `${invoiceNumber}.pdf`);
-  const writer = fs.createWriteStream(filePath);
-
-  // Stream the PDF to the file system
-  response.data.pipe(writer);
-
-  const downloadPromise = new Promise((resolve, reject) => {
-    writer.on("finish", () => resolve(filePath));
-    writer.on("error", reject);
-  });
-
-  await downloadPromise;
-  console.log(`Invoice ${invoiceNumber} saved to ${filePath}`);
-
-  if (!isPaid) {
-    console.log(`Invoice ${invoiceNumber} is unpaid`);
-    // copy pdf to unpaid folder
-    const unpaidFolderPath = "./invoices/unpaid";
-    if (!fs.existsSync(unpaidFolderPath)) {
-      fs.mkdirSync(unpaidFolderPath);
-    }
-
-    const unpaidFilePath = path.join(unpaidFolderPath, `${invoiceNumber}.pdf`);
-    fs.copyFileSync(filePath, unpaidFilePath);
-  }
-}
 
 async function fetchAndDownloadInvoices({ stripe }: { stripe: Stripe }) {
   let allInvoices: Stripe.Invoice[] = [];
