@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import * as _ from "lodash";
 import axios from "axios";
 import xml2js from "xml2js";
+import fs from "fs";
+import path from "path";
 
 import { KeezApi } from "./keezApi";
 import { getExceptionMessage, throwError } from "../error";
@@ -45,14 +47,22 @@ export async function uploadInvoicesToKeez({
     keezTierToItemMap,
   });
   await validateKeezInvoices({ keez, keezInvoices: newKeezInvoices });
-
-  // testing - delete the invoices if they're already uploaded
-  await deleteInvoicesFromKeez({
-    keez,
-    keezInvoices: existingKeezInvoices.sort(
-      sortKeezInvoiceBySeriesAndNumberDesc
-    ),
+  const allKeezInvoices = existingKeezInvoices.concat(newKeezInvoices);
+  await promiseAllBatched(allKeezInvoices, 10, async (invoice) => {
+    await downloadInvoicePdf({
+      keez,
+      invoiceId: invoice.externalId ?? throwError("Missing ID"),
+      invoiceNumber: `${invoice.series}-${invoice.number}`,
+    });
   });
+
+  // // testing - delete the invoices if they're already uploaded
+  // await deleteInvoicesFromKeez({
+  //   keez,
+  //   keezInvoices: existingKeezInvoices.sort(
+  //     sortKeezInvoiceBySeriesAndNumberDesc
+  //   ),
+  // });
 
   const { reverseKeezInvoices, existingReverseKeezInvoices } =
     await createReverseInvoices({
@@ -62,14 +72,23 @@ export async function uploadInvoicesToKeez({
       keezTierToItemMap,
     });
   await validateKeezInvoices({ keez, keezInvoices: reverseKeezInvoices });
-
-  // testing - delete the invoices if they're already uploaded
-  await deleteInvoicesFromKeez({
-    keez,
-    keezInvoices: existingReverseKeezInvoices.sort(
-      sortKeezInvoiceBySeriesAndNumberDesc
-    ),
+  const allReverseKeezInvoices =
+    existingReverseKeezInvoices.concat(reverseKeezInvoices);
+  await promiseAllBatched(allReverseKeezInvoices, 10, async (invoice) => {
+    await downloadInvoicePdf({
+      keez,
+      invoiceId: invoice.externalId ?? throwError("Missing ID"),
+      invoiceNumber: `${invoice.series}-${invoice.number}`,
+    });
   });
+
+  // // testing - delete the invoices if they're already uploaded
+  // await deleteInvoicesFromKeez({
+  //   keez,
+  //   keezInvoices: existingReverseKeezInvoices.sort(
+  //     sortKeezInvoiceBySeriesAndNumberDesc
+  //   ),
+  // });
 }
 
 const capitalize = (s: string) =>
@@ -206,7 +225,7 @@ async function createKeezInvoiceFromStripeInvoice({
     stripeInvoice.customer_address?.state ||
     stripeInvoice.customer_address?.city ||
     "";
-  if (countyName === "bucharest") {
+  if (countyName.toLowerCase().trim() === "bucharest") {
     countyName = "Bucuresti"; // București
   }
   const partner: KeezParter = {
@@ -704,4 +723,28 @@ function sortKeezInvoiceBySeriesAndNumberDesc(a: KeezInvoice, b: KeezInvoice) {
   }
 
   return b.number - a.number;
+}
+
+async function downloadInvoicePdf({
+  keez,
+  invoiceId,
+  invoiceNumber,
+}: {
+  keez: KeezApi;
+  invoiceId: string;
+  invoiceNumber: string;
+}) {
+  const pdf = await keez.downloadInvoicePdf(invoiceId);
+
+  // Ensure the folder exists
+  const folderPath = "./invoices";
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath);
+  }
+
+  // Define the PDF path and write the file
+  const filePath = path.join(folderPath, `${invoiceNumber}.pdf`);
+  fs.writeFileSync(filePath, pdf, { encoding: "binary" });
+
+  console.log(`Invoice ${invoiceNumber} saved to ${filePath}`);
 }

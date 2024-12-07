@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { ResponseType } from "axios";
 import urljoin from "url-join";
 import { KeezInvoice, KeezItem } from "./keezTypes";
 
@@ -225,21 +225,14 @@ export class KeezApi {
   /**
    * Download the invoice PDF.
    */
-  async downloadInvoicePdf(
-    invoiceId: string
-  ): Promise<{ fileName: string; buffer: Buffer }> {
-    const { data: pdfBuffer } = await this._apiCall<{
-      data: Buffer;
-    }>({
+  async downloadInvoicePdf(invoiceId: string): Promise<Buffer> {
+    const pdfBuffer = await this._apiCall<Buffer>({
       method: "get",
       path: `/api/v1.0/public-api/${this._config.clientId}/invoices/${invoiceId}/pdf`,
-      // responseType: "arraybuffer",
+      responseType: "arraybuffer",
     });
 
-    return {
-      fileName: `${invoiceId}.pdf`,
-      buffer: pdfBuffer,
-    };
+    return pdfBuffer;
   }
 
   /**
@@ -281,12 +274,14 @@ export class KeezApi {
     headers,
     body,
     params,
+    responseType,
   }: {
     method?: "get" | "post" | "put" | "delete" | "patch";
     path: string;
     headers?: Record<string, string>;
     body?: any;
     params?: Record<string, string>;
+    responseType?: ResponseType;
   }): Promise<T> {
     try {
       const accessToken = await this._getAccessToken();
@@ -300,6 +295,7 @@ export class KeezApi {
         },
         data: body,
         params,
+        responseType,
       });
 
       return res.data;
