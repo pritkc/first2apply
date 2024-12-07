@@ -28,7 +28,6 @@ export class F2aSupabaseApi {
    * Login using an email and password.
    */
   async loginWithEmail({ email, password }: { email: string; password: string }) {
-    const { data } = await this._supabase.from('profile').select('*').eq('id', '1').single();
     return this._supabaseApiCall(() => this._supabase.auth.signInWithPassword({ email, password }));
   }
 
