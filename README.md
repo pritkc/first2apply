@@ -1,13 +1,33 @@
-# first2apply
+# First 2 Apply
 
-## Init project
-`npx supabase init`
+First 2 Apply (https://first2apply.com/) is an open-source job board aggregator that centralizes listings from platforms like LinkedIn, Indeed, Dice, and more, helping job seekers find opportunities faster.
 
-To stop containers
-`npx supabase stop`
+## Project Setup
+The project has 2 main components:
+- supabase backend
+- desktop probe 
 
-## Run edge functions with hot reload
-`npx supabase functions serve`
+Create `.env` files in both folders by coping the existing `.env.example` ones.
+
+To set up the project using Supabase:
+```
+npx supabase init
+```
+
+You should now be able to visit the Supabase dashboard by visiting http://localhost:54323/
+All required tables should already be configured.
+
+Then import the [sites_rows.csv](./supabase/sites_rows.csv) file into the `sites` table in the supabase manager.
+
+Run edge functions with hot reload:
+```
+npx supabase functions serve
+```
+
+Finally, navigate to the `desktopProbe` folder and run:
+```
+npm run start
+```
 
 ## Release
 
@@ -31,5 +51,3 @@ Add a new version entry to the releases json file from S3.
 
 ### Linux
 We have to manually upload the `.deb` file to S3 and also manually update the `RELEASES.json` file with the new version.
-
-## Payments (Stripe)
