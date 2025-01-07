@@ -63,18 +63,16 @@ export function Faqs() {
             can keep your computer awake while the app is in use.
           </AccordionContent>
         </AccordionItem>
+
         <AccordionItem value="item-5" className="border-b-0 sm:py-2">
           <AccordionTrigger className="text-lg font-normal text-left hover:no-underline hover:text-primary">
             How will I see new job alerts when I&apos;m not in front on my
             computer?
           </AccordionTrigger>
           <AccordionContent className="text-base font-light">
-            Currently, the app delivers real-time desktop notifications to alert
-            you about new job postings. We understand the importance of staying
-            informed while away from your computer, and we are actively
-            developing an email notification feature. This forthcoming update
-            will ensure you receive timely job alerts, even when you&apos;re
-            mobile.
+            The app is designed to send you email notifications for new found
+            jobs. This way you can apply to jobs even when you are not in front
+            of your computer.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
