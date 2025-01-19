@@ -226,7 +226,9 @@ export function parseLinkedInJobs({
   let jobsList = document.querySelector(".jobs-search__results-list");
   if (!jobsList) {
     // check if the user is logged into LinkedIn because then it has a totally different layout
-    jobsList = document.querySelector(".scaffold-layout__list");
+    jobsList =
+      document.querySelector("ul li[data-occludable-job-id]")?.closest("ul") ??
+      null;
     isLoggedIn = true;
   }
 
