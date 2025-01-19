@@ -56,10 +56,8 @@ export function HelpPage() {
             How will I see new job alerts when I'm not in front on my computer?
           </AccordionTrigger>
           <AccordionContent className="text-base font-light">
-            Currently, the app delivers real-time desktop notifications to alert you about new job postings. We
-            understand the importance of staying informed while away from your computer, and we are actively developing
-            an email notification feature. This forthcoming update will ensure you receive timely job alerts, even when
-            you're mobile.
+            The app is designed to send you email notifications for new found jobs. This way you can apply to jobs even
+            when you are not in front of your computer. You can disable the email notifications in the app settings.
           </AccordionContent>
         </AccordionItem>
 
