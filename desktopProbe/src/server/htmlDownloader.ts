@@ -102,7 +102,11 @@ export class HtmlDownloader {
         // scroll to bottom a few times to trigger infinite loading
         for (let i = 0; i < scrollTimes; i++) {
           await window.webContents.executeJavaScript(
-            'window.scrollTo({left:0, top: document.body.scrollHeight, behavior: "instant"});',
+            `
+              Array.from(document.querySelectorAll('*'))
+                .filter(el => el.scrollHeight > el.clientHeight)
+                .forEach(el => el.scrollTop = el.scrollHeight);
+            `,
           );
           await sleep(2_000);
 
