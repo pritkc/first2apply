@@ -40,7 +40,10 @@ export function CreateLink() {
   const { toast } = useToast();
 
   // sort sites by name
-  const sortedSites = sites.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedSites = sites
+    .sort((a, b) => a.name.localeCompare(b.name))
+    // also filter out deprecated sites
+    .filter((site) => site.deprecated === false);
 
   const [isOpen, setIsOpen] = useState(false);
   const form = useForm<FormValues>({
