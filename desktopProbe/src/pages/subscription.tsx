@@ -1,11 +1,11 @@
 import { PricingOptions } from '@/components/pricingOptions';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
 import { openExternalUrl } from '@/lib/electronMainSdk';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import urljoin from 'url-join';
 
 import { StripeBillingPlan, SubscriptionTier } from '../../../supabase/functions/_shared/types';
 
@@ -61,7 +61,10 @@ export function SubscriptionPage() {
         return;
       }
 
-      openExternalUrl(checkoutLink);
+      // add the user email as a query parameter
+      const url = urljoin(checkoutLink, `?prefilled_email=${user.email}`);
+
+      openExternalUrl(url);
     } catch (error) {
       handleError({ error, title: 'Failed to open checkout page' });
     }
