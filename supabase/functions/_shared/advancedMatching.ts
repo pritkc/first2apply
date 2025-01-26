@@ -1,5 +1,5 @@
 import { AzureOpenAI } from "npm:openai";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
 import { Profile } from "./types.ts";
