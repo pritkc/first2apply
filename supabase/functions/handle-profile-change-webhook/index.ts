@@ -4,7 +4,7 @@ import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import {
   SupabaseClient,
   createClient,
-} from "https://esm.sh/@supabase/supabase-js@2.39.0";
+} from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { DbSchema, Profile } from "../_shared/types.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
 import { MailerLiteApi } from "../_shared/mailerLiteApi.ts";

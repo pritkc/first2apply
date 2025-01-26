@@ -2,7 +2,7 @@ import Stripe from "npm:stripe@^15.1.0";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { DbSchema, SubscriptionTier } from "../_shared/types.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
 

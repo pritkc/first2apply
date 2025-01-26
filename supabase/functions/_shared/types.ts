@@ -163,6 +163,7 @@ export type DbSchema = {
         Row: JobSite;
         Insert: Pick<JobSite, "name" | "urls">;
         Update: never;
+        Relationships: [];
       };
       links: {
         Row: Link;
@@ -172,6 +173,7 @@ export type DbSchema = {
           last_scraped_at?: Date;
           scrape_failure_email_sent?: boolean;
         };
+        Relationships: [];
       };
       jobs: {
         Row: Job;
@@ -194,16 +196,19 @@ export type DbSchema = {
           | Pick<Job, "status">
           | Pick<Job, "description">
           | Pick<Job, "labels">;
+        Relationships: [];
       };
       reviews: {
         Row: Review;
         Insert: Pick<Review, "title" | "description" | "rating">;
         Update: Pick<Review, "title" | "description" | "rating">;
+        Relationships: [];
       };
       html_dumps: {
         Row: HtmlDump;
         Insert: Pick<HtmlDump, "url" | "html">;
         Update: never;
+        Relationships: [];
       };
       profiles: {
         Row: Profile;
@@ -216,11 +221,13 @@ export type DbSchema = {
           | "subscription_tier"
           | "is_trial"
         >;
+        Relationships: [];
       };
       notes: {
         Row: Note;
         Insert: Pick<Note, "job_id" | "text" | "files">;
         Update: Partial<Pick<Note, "text" | "files">>;
+        Relationships: [];
       };
       advanced_matching: {
         Row: AdvancedMatchingConfig;
@@ -234,6 +241,7 @@ export type DbSchema = {
             "blacklisted_companies" | "chatgpt_prompt"
           >
         >;
+        Relationships: [];
       };
     };
     Views: {};
