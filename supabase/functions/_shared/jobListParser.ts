@@ -51,7 +51,9 @@ export function getJobSite({
 }): JobSite | undefined {
   const getUrlDomain = (url: string) => {
     const hostname = new URL(url).hostname;
-    const [_, domain] = hostname.split(".").reverse();
+    const parts = hostname.split(".").reverse();
+    while (parts.length > 3) parts.shift();
+    const [_, domain] = parts;
     return domain;
   };
 
@@ -600,6 +602,19 @@ export function parseGlassDoorJobs({
   }
 
   const jobsList = document.querySelector(".JobsList_jobsList__lqjTr");
+  // make sure we are not hitting the similar jobs section
+  if (
+    jobsList &&
+    jobsList.parentElement?.parentElement?.getAttribute("data-test") ===
+      "related-jobs-list"
+  ) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   if (!jobsList) {
     return {
       jobs: [],
