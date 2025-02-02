@@ -88,11 +88,19 @@ export class JobScanner {
    */
   async scanLinks({ links }: { links: Link[] }) {
     try {
-      this._runningScansCount++;
-      this._logger.info('scanning links...');
+      this._logger.info('scanning links ...');
+
+      // if the scanner hasn't finished scanning the previous links, skip this scan
+      if (this.isScanning()) {
+        this._logger.info('skipping scan because the scanner is processing other links');
+        return;
+      }
+
       this._analytics.trackEvent('scan_links_start', {
         links_count: links.length,
       });
+
+      this._runningScansCount++;
 
       await Promise.all(
         links.map(async (link) => {
