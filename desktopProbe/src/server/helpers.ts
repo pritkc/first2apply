@@ -51,3 +51,10 @@ export function chunk<T>(array: T[], size = 1): T[][] {
 export function sleep(timeout: number) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
+
+/**
+ * Method used to wait a random amount of time between a min and max value
+ */
+export function waitRandomBetween(min: number, max: number) {
+  return new Promise((resolve) => setTimeout(resolve, Math.random() * (max - min) + min));
+}

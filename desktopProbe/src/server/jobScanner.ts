@@ -7,7 +7,7 @@ import path from 'path';
 import { Job, Link } from '../../../supabase/functions/_shared/types';
 import { getExceptionMessage } from '../lib/error';
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from '../lib/types';
-import { chunk, promiseAllSequence } from './helpers';
+import { chunk, promiseAllSequence, waitRandomBetween } from './helpers';
 import { HtmlDownloader } from './htmlDownloader';
 import { ILogger } from './logger';
 import { F2aSupabaseApi } from './supabaseApi';
@@ -105,7 +105,7 @@ export class JobScanner {
 
                 // add a random delay before moving on to the next link
                 // to avoid being rate limited by cloudflare
-                await waitRandomBetween(300, 2000);
+                await waitRandomBetween(1000, 4000);
 
                 const { newJobs, parseFailed } = await this._supabaseApi.scanHtmls([
                   { linkId: link.id, content: html, maxRetries, retryCount },
@@ -410,7 +410,3 @@ class ScannerDebugWindow {
     this._window?.loadURL(url);
   }
 }
-
-// method used to wait a random amount of time between a min and max value
-const waitRandomBetween = (min: number, max: number) =>
-  new Promise((resolve) => setTimeout(resolve, Math.random() * (max - min) + min));
