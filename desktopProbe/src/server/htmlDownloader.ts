@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { backOff } from 'exponential-backoff';
 
-import { sleep } from './helpers';
+import { sleep, waitRandomBetween } from './helpers';
 import { ILogger } from './logger';
 import { WorkerQueue } from './workerQueue';
 
@@ -95,7 +95,7 @@ export class HtmlDownloader {
         // handle 429 status code
         if (statusCode === 429) {
           this._logger.debug(`429 status code detected: ${url}`);
-          await sleep(5_000);
+          await waitRandomBetween(30_000, 45_000);
           throw new Error('rate limit exceeded');
         }
 
