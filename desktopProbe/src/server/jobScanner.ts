@@ -75,6 +75,12 @@ export class JobScanner {
    * Scan all links for the current user.
    */
   async scanAllLinks() {
+    // if the scanner hasn't finished scanning the previous links, skip this scan
+    if (this.isScanning()) {
+      this._logger.info('skipping scheduled scan because the scanner is processing other links');
+      return;
+    }
+
     // fetch all links from the database
     const links = (await this._supabaseApi.listLinks()) ?? [];
     this._logger.info(`found ${links?.length} links`);
@@ -89,17 +95,9 @@ export class JobScanner {
   async scanLinks({ links }: { links: Link[] }) {
     try {
       this._logger.info('scanning links ...');
-
-      // if the scanner hasn't finished scanning the previous links, skip this scan
-      if (this.isScanning()) {
-        this._logger.info('skipping scan because the scanner is processing other links');
-        return;
-      }
-
       this._analytics.trackEvent('scan_links_start', {
         links_count: links.length,
       });
-
       this._runningScansCount++;
 
       await Promise.all(
