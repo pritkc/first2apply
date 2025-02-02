@@ -1,8 +1,16 @@
 import { LABEL_COLOR_CLASSES } from '@/lib/labels';
-import { BackpackIcon, CookieIcon, ExternalLinkIcon, ListBulletIcon, TrashIcon } from '@radix-ui/react-icons';
+import {
+  ArchiveIcon,
+  BackpackIcon,
+  CheckIcon,
+  CookieIcon,
+  ListBulletIcon,
+  ResetIcon,
+  TrashIcon,
+} from '@radix-ui/react-icons';
 import React from 'react';
 
-import { JOB_LABELS, Job, JobLabel } from '../../../../supabase/functions/_shared/types';
+import { JOB_LABELS, Job, JobLabel, JobStatus } from '../../../../supabase/functions/_shared/types';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -18,18 +26,14 @@ function isJobLabel(value: any): value is JobLabel {
  */
 export function JobSummary({
   job,
-  onApply,
-  onArchive,
-  onDelete,
-  onUpdateLabels,
   onView,
+  onUpdateJobStatus,
+  onUpdateLabels,
 }: {
   job: Job;
-  onApply: (job: Job) => void;
-  onArchive: (job: Job) => void;
-  onDelete: (job: Job) => void;
-  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
   onView: (job: Job) => void;
+  onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
+  onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
 }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
@@ -87,52 +91,82 @@ export function JobSummary({
 
       {/* Action buttons */}
       <div className="mt-6 flex flex-wrap gap-2 lg:mt-10">
+        {/* Open button */}
+        <Button
+          size="lg"
+          className="w-24 text-sm"
+          onClick={() => {
+            onView(job);
+          }}
+        >
+          Open
+        </Button>
+
         {/* Apply button */}
         {job.status !== 'applied' && (
-          <Button
-            size="lg"
-            className="w-24 text-sm"
-            onClick={() => {
-              onApply(job);
-            }}
-          >
-            Apply
-          </Button>
+          <TooltipProvider delayDuration={500}>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                  onClick={() => onUpdateJobStatus(job.id, 'applied')}
+                >
+                  <CheckIcon className="h-5 w-auto" />
+                </Button>
+              </TooltipTrigger>
+
+              <TooltipContent side="bottom" className="text-base">
+                Mark job as Applied
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {/* Back to new button */}
+        {job.status !== 'new' && (
+          <TooltipProvider delayDuration={500}>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                  onClick={() => onUpdateJobStatus(job.id, 'new')}
+                >
+                  <ResetIcon className="h-4 w-auto" />
+                </Button>
+              </TooltipTrigger>
+
+              <TooltipContent side="bottom" className="text-base">
+                Move job back to New
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
 
         {/* Archive button */}
         {job.status !== 'archived' && (
-          <Button
-            size="lg"
-            variant="secondary"
-            className="w-24 text-sm"
-            onClick={() => {
-              onArchive(job);
-            }}
-          >
-            Archive
-          </Button>
+          <TooltipProvider delayDuration={500}>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                  onClick={() => onUpdateJobStatus(job.id, 'archived')}
+                >
+                  <ArchiveIcon className="h-4 w-auto" />
+                </Button>
+              </TooltipTrigger>
+
+              <TooltipContent side="bottom" className="text-base">
+                Archieve
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
-
-        {/* Open job button */}
-        <TooltipProvider delayDuration={500}>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
-                onClick={() => onView(job)}
-              >
-                <ExternalLinkIcon className="h-4 w-auto" />
-              </Button>
-            </TooltipTrigger>
-
-            <TooltipContent side="bottom" className="text-base">
-              See job page
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
 
         {/* Delete button */}
         <TooltipProvider delayDuration={500}>
@@ -158,7 +192,7 @@ export function JobSummary({
           isOpen={isDeleteDialogOpen}
           job={job}
           onClose={() => setIsDeleteDialogOpen(false)}
-          onDelete={onDelete}
+          onDelete={() => onUpdateJobStatus(job.id, 'deleted')}
         />
 
         {/* Label selector */}

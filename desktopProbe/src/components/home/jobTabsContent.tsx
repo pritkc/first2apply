@@ -200,22 +200,6 @@ export function JobTabsContent({
     }
   };
 
-  const onApplyToJob = async (job: Job) => {
-    try {
-      await openExternalUrl(job.externalUrl);
-      await updateJobLabels({ jobId: job.id, labels: ['Submitted'] });
-      await updateListedJobStatus(job.id, 'applied');
-      selectNextJob(job.id);
-      toast({
-        title: 'Job applied',
-        description: 'The job has been automatically marked as applied.',
-        variant: 'success',
-      });
-    } catch (error) {
-      handleError({ error, title: 'Failed to apply to job' });
-    }
-  };
-
   const onUpdateJobLabels = async (jobId: number, labels: JobLabel[]) => {
     try {
       const updatedJob = await updateJobLabels({ jobId, labels });
@@ -365,17 +349,9 @@ export function JobTabsContent({
                     <>
                       <JobSummary
                         job={selectedJob}
-                        onApply={(j) => {
-                          onApplyToJob(j);
-                        }}
-                        onArchive={(j) => {
-                          onUpdateJobStatus(j.id, 'archived');
-                        }}
-                        onDelete={(j) => {
-                          onUpdateJobStatus(j.id, 'deleted');
-                        }}
-                        onUpdateLabels={onUpdateJobLabels}
                         onView={onViewJob}
+                        onUpdateJobStatus={onUpdateJobStatus}
+                        onUpdateLabels={onUpdateJobLabels}
                       />
                       <JobDetails job={selectedJob} isScrapingDescription={!!selectedJob.isLoadingJD}></JobDetails>
                       <hr className="border-t border-muted" />
