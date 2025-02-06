@@ -491,8 +491,8 @@ export function parseWeWorkRemotelyJobs({
     };
   }
 
-  const jobsList = document.querySelector("#job_list");
-  if (!jobsList) {
+  const jobsLists = document.querySelectorAll("section.jobs");
+  if (!jobsLists.length) {
     return {
       jobs: [],
       listFound: false,
@@ -500,9 +500,16 @@ export function parseWeWorkRemotelyJobs({
     };
   }
 
-  const jobElements = Array.from(
-    jobsList.querySelectorAll("ul > li")
-  ) as Element[];
+  const jobElements: Element[] = [];
+  jobsLists.forEach((l) => {
+    const jobs = Array.from(
+      (l as Element).querySelectorAll("ul > li")
+    ) as Element[];
+    jobElements.push(...jobs);
+  });
+  // const jobElements = Array.from(
+  //   jobsList
+  // ).map(l => l.querySelectorAll("ul > li")) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const linkToJob = el.querySelector(":scope > a");
@@ -520,11 +527,13 @@ export function parseWeWorkRemotelyJobs({
       .getAttribute("href")
       ?.trim()}`;
 
-    const title = linkToJob.querySelector("span.title")?.textContent?.trim();
+    const title = linkToJob
+      .querySelector(".new-listing__header__title")
+      ?.textContent?.trim();
     if (!title) return null;
 
     const companyName = linkToJob
-      .querySelector("span.company")
+      .querySelector(".new-listing__company-name")
       ?.textContent?.trim();
     if (!companyName) return null;
 
@@ -538,7 +547,7 @@ export function parseWeWorkRemotelyJobs({
         .trim() || undefined;
 
     const location = linkToJob
-      .querySelector("span.region")
+      .querySelector(".new-listing__company-headquarters")
       ?.textContent?.trim()
       .split("/")
       .map((s) =>
@@ -550,6 +559,10 @@ export function parseWeWorkRemotelyJobs({
       )
       .join("/");
 
+    const tags = Array.from(
+      el.querySelectorAll(".new-listing__categories__category")
+    ).map((t) => t.textContent?.trim() || "");
+
     return {
       siteId,
       externalId,
@@ -560,6 +573,7 @@ export function parseWeWorkRemotelyJobs({
       jobType: "remote",
       location,
       labels: [],
+      tags,
     };
   });
 
