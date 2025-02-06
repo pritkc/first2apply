@@ -162,7 +162,7 @@ export function JobSummary({
               </TooltipTrigger>
 
               <TooltipContent side="bottom" className="text-base">
-                Archieve
+                Archive
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
