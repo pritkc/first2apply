@@ -99,6 +99,7 @@ export class JobScanner {
         links_count: links.length,
       });
       this._runningScansCount++;
+      const start = new Date().getTime();
 
       await Promise.all(
         links.map(async (link) => {
@@ -108,10 +109,6 @@ export class JobScanner {
               scrollTimes: 5,
               callback: async ({ html, maxRetries, retryCount }) => {
                 if (!this._isRunning) return []; // stop if the scanner is closed
-
-                // add a random delay before moving on to the next link
-                // to avoid being rate limited by cloudflare
-                await waitRandomBetween(1000, 4000);
 
                 const { newJobs, parseFailed } = await this._supabaseApi.scanHtmls([
                   { linkId: link.id, content: html, maxRetries, retryCount },
@@ -124,6 +121,10 @@ export class JobScanner {
 
                   throw new Error(`failed to parse html for link ${link.id}`);
                 }
+
+                // add a random delay before moving on to the next link
+                // to avoid being rate limited by cloudflare
+                await waitRandomBetween(1000, 4000);
 
                 return newJobs;
               },
@@ -167,7 +168,9 @@ export class JobScanner {
       if (!this._isRunning) return;
       this.showNewJobsNotification({ newJobs });
 
-      this._logger.info('scan complete');
+      const end = new Date().getTime();
+      const took = (end - start) / 1000;
+      this._logger.info(`scan complete in ${took.toFixed(0)} seconds`);
       this._analytics.trackEvent('scan_links_complete', {
         links_count: links.length,
         new_jobs_count: newJobs.length,
@@ -188,10 +191,6 @@ export class JobScanner {
     const jobChunks = chunk(jobs, 10);
     const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
       if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
-
-      // add a random delay before moving on to the next link
-      // to avoid being rate limited by cloudflare
-      await waitRandomBetween(300, 1000);
 
       return Promise.all(
         chunkOfJobs.map(async (job) => {
@@ -221,6 +220,10 @@ export class JobScanner {
 
                   throw new Error(`failed to parse job description for ${job.id}`);
                 }
+
+                // add a random delay before moving on to the next link
+                // to avoid being rate limited by cloudflare
+                await waitRandomBetween(300, 1000);
 
                 return updatedJob;
               },
