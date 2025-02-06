@@ -92,10 +92,11 @@ export class HtmlDownloader {
         });
         await window.loadURL(url);
 
-        // handle 429 status code
-        if (statusCode === 429) {
+        // handle rate limits
+        const title = await window.webContents.executeJavaScript('document.title');
+        if (statusCode === 429 || title?.toLowerCase().startsWith('just a moment')) {
           this._logger.debug(`429 status code detected: ${url}`);
-          await waitRandomBetween(30_000, 45_000);
+          await waitRandomBetween(110_000, 130_000);
           throw new Error('rate limit exceeded');
         }
 
@@ -149,19 +150,31 @@ class BrowserWindowPool {
    */
   constructor(instances: number) {
     for (let i = 0; i < instances; i++) {
+      const window = new BrowserWindow({
+        show: false,
+        // set the window size
+        width: 1600,
+        height: 1200,
+        webPreferences: {
+          // disable the same origin policy
+          webSecurity: false,
+          partition: `persist:scraper`,
+        },
+      });
+
+      // disable LinkedIn's passkey request, because it triggers an annoying popup
+      window.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+        // if the request url matches the url which appears to be sending the passkey request
+        if (details.url.includes('checkpoint/pk/initiateLogin')) {
+          // never call the callback to block the request
+        } else {
+          callback({});
+        }
+      });
+
       this._pool.push({
         id: i,
-        window: new BrowserWindow({
-          show: false,
-          // set the window size
-          width: 1600,
-          height: 1200,
-          webPreferences: {
-            // disable the same origin policy
-            webSecurity: false,
-            partition: `persist:scraper`,
-          },
-        }),
+        window,
         isAvailable: true,
       });
     }
