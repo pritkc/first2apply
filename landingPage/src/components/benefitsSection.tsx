@@ -8,15 +8,14 @@ const sites = [
   "Indeed",
   "Dice",
   "Glassdoor",
-  "BuildIn",
+  "BuiltIn",
   "Remotive",
   "Remote IO",
   "RemoteOK",
   "WeWorkRemotely",
   "FlexJobs",
-  "BestJobs",
-  "EchoJobs",
   "Robert Half",
+  "USA Jobs",
 ];
 
 export function BenefitsSection() {
