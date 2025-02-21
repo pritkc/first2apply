@@ -28,21 +28,24 @@ export function Navbar() {
   const hasUpdate = !!newUpdate;
 
   const navItems = [
-    { name: 'Jobs', path: '/', icon: <HomeIcon className="h-7 w-7" /> },
+    { name: 'Jobs', path: '/', icon: <HomeIcon className="h-6 w-6 md:h-7 md:w-7" />, isMobile: true },
     {
       name: 'Searches',
       path: '/links',
-      icon: <MagnifyingGlassIcon className="h-7 w-7" />,
+      icon: <MagnifyingGlassIcon className="h-6 w-6 md:h-7 md:w-7" />,
+      isMobile: true,
     },
     {
       name: 'Filters',
       path: '/filters',
-      icon: <Crosshair2Icon className="h-7 w-7" />,
+      icon: <Crosshair2Icon className="h-6 w-6 md:h-7 md:w-7" />,
+      isMobile: true,
     },
     {
       name: 'Feedback',
       path: '/feedback',
-      icon: <ChatBubbleIcon className="h-7 w-7" />,
+      icon: <ChatBubbleIcon className="h-6 w-6 md:h-7 md:w-7" />,
+      isMobile: false,
     },
     {
       name: 'Settings',
@@ -50,40 +53,17 @@ export function Navbar() {
 
       icon: (
         <div className="relative">
-          <GearIcon className="h-7 w-7" />
+          <GearIcon className="h-6 w-6 md:h-7 md:w-7" />
           {hasUpdate && <div className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-destructive"></div>}
         </div>
       ),
+      isMobile: true,
     },
     {
       name: 'Help',
       path: '/help',
-      icon: <QuestionMarkCircledIcon className="h-7 w-7" />,
-    },
-  ];
-
-  const navItemsMobile = [
-    { name: 'Jobs', path: '/', icon: <HomeIcon className="h-6 w-6" /> },
-    {
-      name: 'Searches',
-      path: '/links',
-      icon: <MagnifyingGlassIcon className="h-6 w-6" />,
-    },
-    {
-      name: 'Filters',
-      path: '/filters',
-      icon: <Crosshair2Icon className="h-6 w-6" />,
-    },
-    {
-      name: 'Settings',
-      path: '/settings',
-
-      icon: (
-        <div className="relative">
-          <GearIcon className="h-6 w-6" />
-          {hasUpdate && <div className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-destructive"></div>}
-        </div>
-      ),
+      icon: <QuestionMarkCircledIcon className="h-6 w-6 md:h-7 md:w-7" />,
+      isMobile: false,
     },
   ];
 
@@ -91,64 +71,46 @@ export function Navbar() {
     isScanning ? <RefreshCw className="h-7 w-7 animate-spin" /> : <Icons.logo className="h-7 w-7"></Icons.logo>;
 
   return (
-    <>
-      {/* Navbar for screens larger than md */}
-      <header className="sticky top-0 z-50 hidden h-14 w-full border-b border-muted-foreground/10 bg-gradient-to-b from-background to-background/80 backdrop-blur-sm md:block">
-        <nav className="mx-auto flex h-full w-full max-w-[1536px] items-center justify-between p-5">
-          <div className="flex items-center gap-6">
-            <Link href={isScanning ? '/links' : '/'} className="flex items-center gap-2">
-              <Logo />
-              <span className="text-lg font-bold tracking-tight">{isScanning ? 'scanning ...' : 'first 2 apply'}</span>
-            </Link>
+    <header className="fixed bottom-0 z-50 h-14 w-full border-t border-muted-foreground/10 bg-background md:sticky md:top-0 md:border-b md:bg-gradient-to-b md:from-background md:to-background/80 md:backdrop-blur-sm">
+      <nav className="mx-auto flex h-full w-full max-w-md items-center justify-between md:max-w-[1536px] md:p-5">
+        <div className="flex flex-1 items-center justify-between gap-2 px-2 xxs:gap-4 xxs:px-8 md:flex-none md:gap-6 md:px-0">
+          <Link href={isScanning ? '/links' : '/'} className="hidden items-center gap-2 md:flex">
+            <Logo />
+            <span className="text-lg font-bold tracking-tight">{isScanning ? 'scanning ...' : 'first 2 apply'}</span>
+          </Link>
 
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.path}
-                className={`after:transition-width relative flex items-center gap-3 p-1 duration-200 after:absolute after:bottom-0 after:right-0 after:block after:h-0.5 after:w-0 after:bg-primary after:transition-all after:content-[''] hover:text-primary hover:after:w-full ${
-                  pathname === item.path && 'text-primary'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-
-          {/* theme toggle */}
-          <TooltipProvider delayDuration={500}>
-            <Tooltip>
-              <TooltipTrigger>
-                <button
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="flex items-center gap-3 p-1 hover:text-primary"
-                >
-                  {theme === 'dark' ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
-                </button>
-              </TooltipTrigger>
-
-              <TooltipContent side="right" className="text-base">
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </nav>
-      </header>
-
-      {/* Navbar for screens smaller than md */}
-      <nav className="fixed bottom-0 z-50 h-14 w-full border-t border-muted-foreground/10 bg-background md:hidden">
-        <div className="mx-auto flex h-full w-full max-w-md items-center justify-between gap-2 px-2 xxs:gap-4 xxs:px-8">
-          {navItemsMobile.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 ${pathname === item.path && 'text-primary'}`}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 md:flex-none md:flex-row md:gap-3 md:p-1 md:duration-200 md:after:absolute md:after:bottom-0 md:after:right-0 md:after:block md:after:h-0.5 md:after:w-0 md:after:bg-primary md:after:transition-all md:after:content-[''] md:hover:text-primary md:hover:after:w-full ${
+                pathname === item.path && 'text-primary'
+              } ${!item.isMobile && 'hidden md:block'}`}
             >
-              {item.icon}
-              <p className="text-[10px]">{item.name}</p>
+              <div className="md:hidden">{item.icon}</div>
+              <p className="text-[10px] md:text-base">{item.name}</p>
             </Link>
           ))}
         </div>
+
+        {/* theme toggle */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger className="hidden md:block">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-3 p-1 hover:text-primary"
+              >
+                {theme === 'dark' ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
+              </button>
+            </TooltipTrigger>
+
+            <TooltipContent side="right" className="text-base">
+              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </nav>
-    </>
+    </header>
   );
 }
