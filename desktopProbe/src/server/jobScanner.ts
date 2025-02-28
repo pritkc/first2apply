@@ -399,7 +399,7 @@ class ScannerDebugWindow {
       width: 1600,
       height: 1200,
       webPreferences: {
-        webSecurity: false,
+        webSecurity: true,
         partition: `persist:scraper`,
       },
     });

@@ -96,7 +96,7 @@ export class HtmlDownloader {
         const title = await window.webContents.executeJavaScript('document.title');
         if (statusCode === 429 || title?.toLowerCase().startsWith('just a moment')) {
           this._logger.debug(`429 status code detected: ${url}`);
-          await waitRandomBetween(110_000, 130_000);
+          await waitRandomBetween(20_000, 40_000);
           throw new Error('rate limit exceeded');
         }
 
@@ -157,7 +157,7 @@ class BrowserWindowPool {
         height: 1200,
         webPreferences: {
           // disable the same origin policy
-          webSecurity: false,
+          webSecurity: true,
           partition: `persist:scraper`,
         },
       });

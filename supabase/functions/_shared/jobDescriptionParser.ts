@@ -31,7 +31,7 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     description: [".description"],
   },
   [SiteProvider.weworkremotely]: {
-    description: ["#job-listing-show-container"],
+    description: [".lis-container__job__content__description"],
   },
   [SiteProvider.flexjobs]: {
     description: ["#job-description"], // paywalled
