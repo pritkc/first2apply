@@ -50,7 +50,7 @@ export function getJobSite({
   url: string;
 }): JobSite | undefined {
   const getUrlDomain = (url: string) => {
-    const hostname = new URL(url).hostname;
+    const hostname = new URL(url).hostname.replace("emplois.", "");
     const parts = hostname.split(".").reverse();
     while (parts.length > 3) parts.shift();
     const [_, domain] = parts;
@@ -316,9 +316,7 @@ export function parseLinkedInJobs({
           ?.querySelector("img")
           ?.getAttribute("src") || undefined;
       const rawLocation = el
-        .querySelector(
-          "ul.job-card-container__metadata-wrapper > li.ozVyfYLPxTeVaPmuuWTtpUfNweVZyKil"
-        )
+        .querySelector(".artdeco-entity-lockup__caption")
         ?.textContent?.trim();
 
       const location = rawLocation
@@ -332,11 +330,31 @@ export function parseLinkedInJobs({
         ? "hybrid"
         : "onsite";
 
-      const tags: string[] = [];
-      const easyApplyEl = el.querySelector(".job-card-container__apply-method");
-      if (easyApplyEl?.textContent?.trim().toLowerCase() === "easy apply") {
-        tags.push("easy apply");
-      }
+      const benefitTags: string[] =
+        el
+          .querySelector(".artdeco-entity-lockup__metadata")
+          ?.textContent.trim()
+          .split("·")
+          .map((p) => p.trim()) ?? [];
+
+      // bottom tags
+      const footerTagEls = el.querySelectorAll(
+        ".job-card-list__footer-wrapper.job-card-container__footer-wrapper > li"
+      );
+      const footerTags = Array.from(footerTagEls)
+        .map((el) => {
+          // Remove children with class 'visually-hidden'
+          const element = el as Element;
+          element
+            .querySelectorAll(".visually-hidden")
+            .forEach((hiddenEl) =>
+              hiddenEl.parentElement?.removeChild(hiddenEl)
+            );
+
+          return el.textContent?.trim().toLowerCase();
+        })
+        .filter((p) => !p.includes("viewed"));
+      const tags = [...benefitTags, ...footerTags];
 
       return {
         siteId,
