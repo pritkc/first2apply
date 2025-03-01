@@ -5,7 +5,7 @@ import { ScheduledTask, schedule } from 'node-cron';
 import path from 'path';
 
 import { Job, Link } from '../../../supabase/functions/_shared/types';
-import { getExceptionMessage } from '../lib/error';
+import { getExceptionMessage, throwError } from '../lib/error';
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from '../lib/types';
 import { chunk, promiseAllSequence, waitRandomBetween } from './helpers';
 import { HtmlDownloader } from './htmlDownloader';
@@ -26,6 +26,13 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
  * Class used to manage a cron job that periodically scans links.
  */
 export class JobScanner {
+  private _logger: ILogger;
+  private _supabaseApi: F2aSupabaseApi;
+  private _normalHtmlDownloader: HtmlDownloader;
+  private _incognitoHtmlDownloader: HtmlDownloader;
+  private _onNavigate: (_: { path: string }) => void;
+  private _analytics: IAnalyticsClient;
+
   private _isRunning = true;
   // do not use the default settings directly
   private _settings: JobScannerSettings = {
@@ -38,13 +45,28 @@ export class JobScanner {
   private _notificationsMap: Map<string, Notification> = new Map();
   private _runningScansCount = 0;
 
-  constructor(
-    private _logger: ILogger,
-    private _supabaseApi: F2aSupabaseApi,
-    private _htmlDownloader: HtmlDownloader,
-    private _onNavigate: (_: { path: string }) => void,
-    private _analytics: IAnalyticsClient,
-  ) {
+  constructor({
+    logger,
+    supabaseApi,
+    normalHtmlDownloader,
+    incognitoHtmlDownloader,
+    onNavigate,
+    analytics,
+  }: {
+    logger: ILogger;
+    supabaseApi: F2aSupabaseApi;
+    normalHtmlDownloader: HtmlDownloader;
+    incognitoHtmlDownloader: HtmlDownloader;
+    onNavigate: (_: { path: string }) => void;
+    analytics: IAnalyticsClient;
+  }) {
+    this._logger = logger;
+    this._supabaseApi = supabaseApi;
+    this._normalHtmlDownloader = normalHtmlDownloader;
+    this._incognitoHtmlDownloader = incognitoHtmlDownloader;
+    this._onNavigate = onNavigate;
+    this._analytics = analytics;
+
     // used for testing
     // fs.unlinkSync(settingsPath);
 
@@ -92,7 +114,7 @@ export class JobScanner {
   /**
    * Perform a scan of a list links.
    */
-  async scanLinks({ links }: { links: Link[] }) {
+  async scanLinks({ links, sendNotification = true }: { links: Link[]; sendNotification?: boolean }) {
     try {
       this._logger.info('scanning links ...');
       this._analytics.trackEvent('scan_links_start', {
@@ -103,7 +125,7 @@ export class JobScanner {
 
       await Promise.all(
         links.map(async (link) => {
-          const newJobs = await this._htmlDownloader
+          const newJobs = await this._normalHtmlDownloader
             .loadUrl({
               url: link.url,
               scrollTimes: 5,
@@ -159,14 +181,17 @@ export class JobScanner {
       // run post scan hook
       const newJobIds = newJobs.map((job) => job.id);
       await this._supabaseApi
-        .runPostScanHook({ newJobIds, areEmailAlertsEnabled: this._settings.areEmailAlertsEnabled })
+        .runPostScanHook({
+          newJobIds: sendNotification ? newJobIds : [], // hacky way to supress email alerts
+          areEmailAlertsEnabled: this._settings.areEmailAlertsEnabled,
+        })
         .catch((error) => {
           this._logger.error(`failed to run post scan hook: ${getExceptionMessage(error)}`);
         });
 
       // fire a notification if there are new jobs
       if (!this._isRunning) return;
-      this.showNewJobsNotification({ newJobs });
+      if (sendNotification) this.showNewJobsNotification({ newJobs });
 
       const end = new Date().getTime();
       const took = (end - start) / 1000;
@@ -188,59 +213,89 @@ export class JobScanner {
   async scanJobs(jobs: Job[]): Promise<Job[]> {
     this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
 
-    const jobChunks = chunk(jobs, 10);
-    const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
-      if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
+    // figure out which jobs can be scanned in incognito mode
+    const sites = await this._supabaseApi.listSites();
+    const sitesMap = new Map(sites.map((site) => [site.id, site]));
+    const incognitoJobsToScan = jobs.filter((job) => sitesMap.get(job.siteId)?.incognito_support);
+    const normalJobsToScan = jobs.filter((job) => !sitesMap.get(job.siteId)?.incognito_support);
 
-      return Promise.all(
-        chunkOfJobs.map(async (job) => {
-          try {
-            return await this._htmlDownloader.loadUrl({
-              url: job.externalUrl,
-              scrollTimes: 1,
-              callback: async ({ html, maxRetries, retryCount }) => {
-                this._logger.info(`downloaded html for ${job.title}`, {
-                  jobId: job.id,
-                });
+    const scanJobDescriptions = async ({
+      jobsToScan,
+      htmlDownloader,
+    }: {
+      jobsToScan: Job[];
+      htmlDownloader: HtmlDownloader;
+    }) => {
+      const jobChunks = chunk(jobsToScan, 10);
+      const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
+        if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
 
-                // stop if the scanner is closed
-                if (!this._isRunning) return job;
-
-                const { job: updatedJob, parseFailed } = await this._supabaseApi.scanJobDescription({
-                  jobId: job.id,
-                  html,
-                  maxRetries,
-                  retryCount,
-                });
-
-                if (parseFailed) {
-                  this._logger.debug(`failed to parse job description: ${job.title}`, {
+        return Promise.all(
+          chunkOfJobs.map(async (job) => {
+            try {
+              return await htmlDownloader.loadUrl({
+                url: job.externalUrl,
+                scrollTimes: 1,
+                callback: async ({ html, maxRetries, retryCount }) => {
+                  this._logger.info(`downloaded html for ${job.title}`, {
                     jobId: job.id,
                   });
 
-                  throw new Error(`failed to parse job description for ${job.id}`);
-                }
+                  // stop if the scanner is closed
+                  if (!this._isRunning) return job;
 
-                // add a random delay before moving on to the next link
-                // to avoid being rate limited by cloudflare
-                await waitRandomBetween(300, 1000);
+                  const { job: updatedJob, parseFailed } = await this._supabaseApi.scanJobDescription({
+                    jobId: job.id,
+                    html,
+                    maxRetries,
+                    retryCount,
+                  });
 
-                return updatedJob;
-              },
-            });
-          } catch (error) {
-            if (this._isRunning)
-              this._logger.error(`failed to scan job description: ${getExceptionMessage(error)}`, {
-                jobId: job.id,
+                  if (parseFailed) {
+                    this._logger.debug(`failed to parse job description: ${job.title}`, {
+                      jobId: job.id,
+                    });
+
+                    throw new Error(`failed to parse job description for ${job.id}`);
+                  }
+
+                  // add a random delay before moving on to the next link
+                  // to avoid being rate limited by cloudflare
+                  await waitRandomBetween(300, 1000);
+
+                  return updatedJob;
+                },
               });
+            } catch (error) {
+              if (this._isRunning)
+                this._logger.error(`failed to scan job description: ${getExceptionMessage(error)}`, {
+                  jobId: job.id,
+                });
 
-            // intetionally return initial job if there is an error
-            // in order to continue scanning the rest of the jobs
-            return job;
-          }
-        }),
-      );
-    }).then((r) => r.flat());
+              // intetionally return initial job if there is an error
+              // in order to continue scanning the rest of the jobs
+              return job;
+            }
+          }),
+        );
+      }).then((r) => r.flat());
+
+      return updatedJobs;
+    };
+
+    const [scannedNormalJobs, scannedIncognitoJobs] = await Promise.all([
+      scanJobDescriptions({
+        jobsToScan: normalJobsToScan,
+        htmlDownloader: this._normalHtmlDownloader,
+      }),
+      scanJobDescriptions({
+        jobsToScan: incognitoJobsToScan,
+        htmlDownloader: this._incognitoHtmlDownloader,
+      }),
+    ]);
+
+    const allScannedJobs = [...scannedIncognitoJobs, ...scannedNormalJobs];
+    const updatedJobs = jobs.map((job) => allScannedJobs.find((j) => j.id === job.id) ?? throwError('job not found')); // preserve the order
 
     this._logger.info('finished scanning job descriptions');
 
