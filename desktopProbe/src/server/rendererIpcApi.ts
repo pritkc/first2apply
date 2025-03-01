@@ -72,7 +72,7 @@ export function initRendererIpcApi({
       });
 
       // intentionally not awaited to not have the user wait until JDs are in
-      jobScanner.scanLinks({ links: [link] }).catch((error) => {
+      jobScanner.scanLinks({ links: [link], sendNotification: false }).catch((error) => {
         console.error(getExceptionMessage(error));
       });
 
