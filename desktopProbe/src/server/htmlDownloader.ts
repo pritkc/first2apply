@@ -13,17 +13,32 @@ const KNOWN_AUTHWALLS = ['authwall', 'login'];
 export class HtmlDownloader {
   private _isRunning = false;
   private _pool: BrowserWindowPool | undefined;
+  private _logger: ILogger;
+  private _numInstances: number;
+  private _incognitoMode: boolean;
 
   /**
    * Class constructor.
    */
-  constructor(private _logger: ILogger) {}
+  constructor({
+    logger,
+    numInstances,
+    incognitoMode,
+  }: {
+    logger: ILogger;
+    numInstances: number;
+    incognitoMode: boolean;
+  }) {
+    this._logger = logger;
+    this._numInstances = numInstances;
+    this._incognitoMode = incognitoMode;
+  }
 
   /**
    * Initialize the headless window.
    */
   init() {
-    this._pool = new BrowserWindowPool(2);
+    this._pool = new BrowserWindowPool(this._numInstances, this._incognitoMode);
     this._isRunning = true;
   }
 
@@ -106,7 +121,13 @@ export class HtmlDownloader {
             `
               Array.from(document.querySelectorAll('*'))
                 .filter(el => el.scrollHeight > el.clientHeight)
-                .forEach(el => el.scrollTop = el.scrollHeight);
+                .forEach(el => {
+                  // Smooth scroll to the bottom
+                  el.scrollTo({
+                    top: el.scrollHeight,
+                    behavior: 'smooth'
+                  });
+                });
             `,
           );
           await sleep(2_000);
@@ -148,7 +169,7 @@ class BrowserWindowPool {
   /**
    * Class constructor.
    */
-  constructor(instances: number) {
+  constructor(instances: number, incognitoMode: boolean) {
     for (let i = 0; i < instances; i++) {
       const window = new BrowserWindow({
         show: false,
@@ -156,9 +177,8 @@ class BrowserWindowPool {
         width: 1600,
         height: 1200,
         webPreferences: {
-          // disable the same origin policy
           webSecurity: true,
-          partition: `persist:scraper`,
+          partition: incognitoMode ? `incognito` : `persist:scraper`,
         },
       });
 
