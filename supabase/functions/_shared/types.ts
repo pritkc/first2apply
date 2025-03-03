@@ -44,6 +44,7 @@ export type JobSite = {
   created_at: Date;
   logo_url: string;
   deprecated: boolean;
+  incognito_support: boolean;
 };
 
 export type Link = {

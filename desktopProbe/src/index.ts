@@ -9,6 +9,7 @@ import { ENV } from './env';
 import { getExceptionMessage } from './lib/error';
 import { AmplitudeAnalyticsClient } from './server/amplitude';
 import { F2aAutoUpdater } from './server/autoUpdater';
+import { promiseAllSequence } from './server/helpers';
 import { HtmlDownloader } from './server/htmlDownloader';
 import { JobScanner } from './server/jobScanner';
 import { logger } from './server/logger';
@@ -157,7 +158,18 @@ const analytics = new AmplitudeAnalyticsClient();
 const autoUpdater = new F2aAutoUpdater(logger, quit, analytics);
 const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
 const supabaseApi = new F2aSupabaseApi(supabase);
-const htmlDownloader = new HtmlDownloader(logger);
+const htmlDownloaders = [
+  new HtmlDownloader({
+    logger,
+    numInstances: 2,
+    incognitoMode: false,
+  }),
+  new HtmlDownloader({
+    logger,
+    numInstances: 1,
+    incognitoMode: true,
+  }),
+];
 let jobScanner: JobScanner | undefined;
 let trayMenu: TrayMenu | undefined;
 
@@ -216,10 +228,18 @@ async function bootstrap() {
     autoUpdater.start();
 
     // init the HTML downloader
-    htmlDownloader.init();
+    htmlDownloaders.forEach((htmlDownloader) => htmlDownloader.init());
+    const [normalHtmlDownloader, incognitoHtmlDownloader] = htmlDownloaders;
 
     // init the job scanner
-    jobScanner = new JobScanner(logger, supabaseApi, htmlDownloader, navigate, analytics);
+    jobScanner = new JobScanner({
+      logger,
+      supabaseApi,
+      normalHtmlDownloader,
+      incognitoHtmlDownloader,
+      onNavigate: navigate,
+      analytics,
+    });
 
     // init the renderer IPC API
     initRendererIpcApi({ supabaseApi, jobScanner, autoUpdater, nodeEnv: ENV.nodeEnv });
@@ -310,7 +330,7 @@ async function quit() {
     jobScanner?.close();
     logger.info(`closed job scanner`);
 
-    await htmlDownloader.close();
+    await promiseAllSequence(htmlDownloaders, (htmlDownloader) => htmlDownloader.close());
     logger.info(`closed html downloader`);
 
     trayMenu?.close();
