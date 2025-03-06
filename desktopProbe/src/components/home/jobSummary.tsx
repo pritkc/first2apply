@@ -4,6 +4,7 @@ import {
   BackpackIcon,
   CheckIcon,
   CookieIcon,
+  InfoCircledIcon,
   ListBulletIcon,
   ResetIcon,
   TrashIcon,
@@ -89,8 +90,22 @@ export function JobSummary({
         )}
       </div>
 
+      {/* Filtered out job explainer */}
+      {job.status === 'excluded_by_advanced_matching' && (
+        <div className="mt-6 rounded-md bg-destructive/10 p-4">
+          <div className="flex items-center gap-2">
+            <InfoCircledIcon className="h-auto w-5" />
+            <p className="font-medium">Why was this job excluded?</p>
+          </div>
+          <p className="mt-1">
+            The job requires JavaScript and Node.js, which are not explicitly excluded technologies, but the job title
+            includes 'JavaScript Engineer', which may imply a focus on Java, leading to ambiguity.
+          </p>
+        </div>
+      )}
+
       {/* Action buttons */}
-      <div className="mt-6 flex flex-wrap gap-2 lg:mt-10">
+      <div className={`mt-6 flex flex-wrap gap-2 ${job.status !== 'excluded_by_advanced_matching' && 'lg:mt-10'}`}>
         {/* Open button */}
         <Button
           size="lg"
