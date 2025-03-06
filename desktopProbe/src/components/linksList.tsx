@@ -1,11 +1,12 @@
 import { useSites } from '@/hooks/sites';
-import { QuestionMarkCircledIcon, TrashIcon } from '@radix-ui/react-icons';
+import { CopyIcon, QuestionMarkCircledIcon, TrashIcon } from '@radix-ui/react-icons';
 import { useMemo } from 'react';
 import ReactTimeAgo from 'react-time-ago';
 
 import { Link } from '../../../supabase/functions/_shared/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const scrapeFailureThreshold = 3;
 
@@ -82,6 +83,26 @@ export function LinksList({
                     <QuestionMarkCircledIcon className="h-5 w-5 text-primary" />
                   </Button>
                 )}
+
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        variant="secondary"
+                        size="default"
+                        className="ml-2 rounded-full bg-secondary/50 px-[9px] py-2 text-sm transition-colors duration-200 ease-in-out hover:bg-secondary focus:bg-secondary"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          navigator.clipboard.writeText(link.url);
+                        }}
+                      >
+                        <CopyIcon className="h-[18px] w-[18px]" />
+                      </Button>
+                    </TooltipTrigger>
+
+                    <TooltipContent side="left">Copy URL</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
                 <Button
                   variant="destructive"
