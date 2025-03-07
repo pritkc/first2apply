@@ -151,12 +151,25 @@ export class JobScanner {
                 return newJobs;
               },
             })
-            .catch((error): Job[] => {
-              const errorMessage = getExceptionMessage(error);
-              if (this._isRunning)
+            .catch(async (error): Promise<Job[]> => {
+              if (this._isRunning) {
+                const errorMessage = getExceptionMessage(error);
                 this._logger.error(`failed to scan link: ${errorMessage}`, {
                   linkId: link.id,
                 });
+
+                // when dealing with rate limits, bump the number of failed attempts for the link
+                await this._supabaseApi
+                  .increaseScrapeFailureCount({
+                    linkId: link.id,
+                    failures: link.scrape_failure_count + 1,
+                  })
+                  .catch((error) => {
+                    this._logger.error(`failed to increase scrape failure count: ${getExceptionMessage(error)}`, {
+                      linkId: link.id,
+                    });
+                  });
+              }
 
               // intetionally return an empty array if there is an error
               // in order to continue scanning the rest of the links
