@@ -169,7 +169,7 @@ async function promptOpenAI({
   const openai = new AzureOpenAI({
     apiKey: openAiApiKey,
     endpoint: "https://first2apply.openai.azure.com/",
-    apiVersion: "2024-08-01-preview",
+    apiVersion: "2024-10-21",
   });
 
   const llmConfig = {
