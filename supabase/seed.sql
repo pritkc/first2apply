@@ -51,6 +51,7 @@ public.jobs (
   description text null,
   labels text[] not null default '{}'::text[],
   link_id bigint null,
+  exclude_reason text null,
   constraint jobs_pkey primary key (id),
   constraint jobs_user_id_externalid_key unique (user_id, "externalId"),
   constraint jobs_user_id_fkey foreign key (user_id) references auth.users (id) on delete restrict,

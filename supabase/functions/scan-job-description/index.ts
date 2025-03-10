@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      const filteredJobStatus = await applyAdvancedMatchingFilters({
+      const { newStatus, excludeReason } = await applyAdvancedMatchingFilters({
         logger,
         job: updatedJob,
         supabaseClient,
@@ -116,7 +116,11 @@ Deno.serve(async (req) => {
           throwError("missing OPENAI_API_KEY"),
       });
 
-      updatedJob = { ...updatedJob, status: filteredJobStatus };
+      updatedJob = {
+        ...updatedJob,
+        status: newStatus,
+        exclude_reason: excludeReason,
+      };
     }
 
     logger.info(`[${site.provider}] ${updatedJob.status} ${job.title}`);
@@ -127,6 +131,7 @@ Deno.serve(async (req) => {
         description: updatedJob.description,
         status: updatedJob.status,
         updated_at: new Date(),
+        exclude_reason: updatedJob.exclude_reason,
       })
       .eq("id", jobId)
 

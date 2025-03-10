@@ -1,10 +1,12 @@
-import { AzureOpenAI } from "npm:openai";
+import { AzureOpenAI } from "npm:openai@4.86.2";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
 import { Profile } from "./types.ts";
-import { getExceptionMessage } from "./errorUtils.ts";
+import { getExceptionMessage, throwError } from "./errorUtils.ts";
 import { ILogger } from "./logger.ts";
+import { zodResponseFormat } from "npm:openai@4.86.2/helpers/zod";
+import { z } from "npm:zod";
 
 /**
  * Apply all the advanced matching rules to the given job and
@@ -20,7 +22,7 @@ export async function applyAdvancedMatchingFilters({
   supabaseClient: SupabaseClient<DbSchema, "public">;
   job: Job;
   openAiApiKey: string;
-}): Promise<JobStatus> {
+}): Promise<{ newStatus: JobStatus; excludeReason?: string }> {
   logger.info(`applying advanced matching filters to job ${job.id} ...`);
   // check if the user has advanced matching enabled
   const { hasAdvancedMatching } = await checkUserSubscription({
@@ -29,7 +31,7 @@ export async function applyAdvancedMatchingFilters({
   });
   if (!hasAdvancedMatching) {
     logger.info("user does not have advanced matching enabled");
-    return "new";
+    return { newStatus: "new" };
   }
 
   // load the advanced matching config for this user
@@ -44,13 +46,16 @@ export async function applyAdvancedMatchingFilters({
   const advancedMatching: AdvancedMatchingConfig = advancedMatchingArr?.[0];
   if (!advancedMatching) {
     logger.info(`advanced matching config not found for user ${job.user_id}`);
-    return "new";
+    return { newStatus: "new" };
   }
 
   // exclude jobs from specific companies if it fully matches the entire company name
   if (isExcludedCompany({ companyName: job.companyName, advancedMatching })) {
     logger.info(`job excluded due to company name: ${job.companyName}`);
-    return "excluded_by_advanced_matching";
+    return {
+      newStatus: "excluded_by_advanced_matching",
+      excludeReason: `${job.companyName} is blacklisted.`,
+    };
   }
 
   // prompt OpenAI to determine if the job should be excluded
@@ -59,28 +64,12 @@ export async function applyAdvancedMatchingFilters({
       "prompting OpenAI to determine if the job should be excluded ..."
     );
 
-    // check if the user must be limited to a lower LLM tier
-    const shouldBeThrottled = advancedMatching.ai_api_cost > 10;
-    if (shouldBeThrottled) {
-      logger.info("user has reached its LLM quota and will be throttled");
-    }
-
-    const {
-      jobShouldBeExcluded,
-      message,
-      inputTokensUsed,
-      outputTokensUsed,
-      cost,
-    } = await promptOpenAI({
-      prompt: advancedMatching.chatgpt_prompt,
-      job,
-      openAiApiKey,
-      shouldBeThrottled,
-    });
-
-    console.debug(message);
-    console.debug(`Tokens used: ${inputTokensUsed} ${outputTokensUsed}`);
-    console.debug(`Estimated cost: $${cost.toFixed(8)}`);
+    const { exclusionDecision, inputTokensUsed, outputTokensUsed, cost } =
+      await promptOpenAI({
+        prompt: advancedMatching.chatgpt_prompt,
+        job,
+        openAiApiKey,
+      });
 
     // persist the cost of the OpenAI API call
     const { error: countUsageError } = await supabaseClient.rpc(
@@ -96,14 +85,17 @@ export async function applyAdvancedMatchingFilters({
       console.error(getExceptionMessage(countUsageError));
     }
 
-    if (jobShouldBeExcluded) {
-      logger.info("job excluded by OpenAI");
-      return "excluded_by_advanced_matching";
+    if (exclusionDecision.excluded) {
+      logger.info(`job excluded by OpenAI: ${exclusionDecision.reason}`);
+      return {
+        newStatus: "excluded_by_advanced_matching",
+        excludeReason: exclusionDecision.reason,
+      };
     }
   }
 
   logger.info("job passed all advanced matching filters");
-  return "new";
+  return { newStatus: "new" };
 }
 
 /**
@@ -169,34 +161,25 @@ async function promptOpenAI({
   prompt,
   job,
   openAiApiKey,
-  shouldBeThrottled,
 }: {
   prompt: string;
   job: Job;
   openAiApiKey: string;
-  shouldBeThrottled: boolean;
 }) {
   const openai = new AzureOpenAI({
     apiKey: openAiApiKey,
     endpoint: "https://first2apply.openai.azure.com/",
-    apiVersion: "2024-02-15-preview",
+    apiVersion: "2024-10-21",
   });
 
-  shouldBeThrottled = false; // bypass throttling for now
-  const llmConfig = shouldBeThrottled
-    ? {
-        model: "gpt-3.5-turbo-0125",
-        costPerMillionInputTokens: 0.5,
-        costPerMillionOutputTokens: 1.5,
-      }
-    : {
-        model: "gpt-4o",
-        costPerMillionInputTokens: 5,
-        costPerMillionOutputTokens: 15,
-      };
+  const llmConfig = {
+    model: "gpt-4o",
+    costPerMillionInputTokens: 2.5,
+    costPerMillionOutputTokens: 10,
+  };
 
   const response = await openai.chat.completions.create({
-    model: "f2agpt4o", // custom azure deployment
+    model: llmConfig.model,
     messages: [
       {
         role: "system",
@@ -211,13 +194,20 @@ async function promptOpenAI({
       },
     ],
     temperature: 0,
-    max_tokens: 1,
+    max_tokens: 1000,
     top_p: 0,
     frequency_penalty: 0,
     presence_penalty: 0,
+    response_format: zodResponseFormat(JobExclusionFormat, "JobExclusion"),
   });
 
-  const message = response.choices[0].message.content?.trim();
+  const choice = response.choices[0];
+  if (choice.finish_reason !== "stop") {
+    throw new Error(`OpenAI response did not finish: ${choice.finish_reason}`);
+  }
+  const exclusionDecision = JobExclusionFormat.parse(
+    JSON.parse(choice.message.content ?? throwError("missing content"))
+  );
 
   const inputTokensUsed = response.usage?.prompt_tokens ?? 0;
   const outputTokensUsed = response.usage?.completion_tokens ?? 0;
@@ -226,8 +216,7 @@ async function promptOpenAI({
     (llmConfig.costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
 
   return {
-    jobShouldBeExcluded: message === "Yes",
-    message,
+    exclusionDecision,
     inputTokensUsed,
     outputTokensUsed,
     cost,
@@ -259,7 +248,7 @@ Based on my requirements, should this job be excluded from my feed?`;
 
 const SYSTEM_PROMPT = `You are an assistant which helps users with their job search. You will have to analyze a job and decide if it should be discarded based on the user's requirements.
 Following are the rules for filtering jobs: 
-- regarding excluded keywords like tech stack or skills, if at least one of them is mentioned, the job should be excluded. If none of them are mentioned, the job should be included.
+- if the user wants to avoid certain technologies or skills, the job should only be excluded if it explicitly mentions any of them.
 - if the user is requesting a minimum salary, it should be fine if the job just says: "Up to x amount" or "Depending on experience". Also the currency can be ignored.
 - if the job does not mention a salary range, ignore salary requirements by the user (this rule can be overridden by the user if they want to exclude jobs without a salary range).
 - only consider a job description unsuitable based on remoteness if the user explicitly restricts their interest to certain locations (e.g., "fully remote jobs in the UK") and the description specifies otherwise (e.g., "remote only in Belgium")
@@ -271,4 +260,14 @@ Following are the rules for filtering jobs:
 - technological tools: only jobs mandating undesired technologies should be disqualified, absence of mention should be neutral.
 - working hours: absence of detailed working hours should not disqualify a job unless specific hours are a user requirement.
 - for experience, interpret any specified maximum or minimum years of experience in relation to what is stated in the job description. If the job specifies an experience range, the job should be considered a match if the user's requirement fits within this range or if the user's requirement aligns with the maximum experience mentioned. Absence of experience details in the job description should not disqualify the job unless the user explicitly requires experience details to be mentioned.
-Answer only with 'yes' or 'no' based on the user's requirements.`;
+
+Really important, if there are any ambiguities between the user's requirements and the job, never exclude it.
+
+Reply with a JSON object containing the following fields:
+- excluded: boolean (true if the job should be excluded, false otherwise)
+- reason: string (the reason why the job should be excluded; leave this field empty if the job should not be excluded)`;
+
+const JobExclusionFormat = z.object({
+  excluded: z.boolean(),
+  reason: z.string().optional(),
+});

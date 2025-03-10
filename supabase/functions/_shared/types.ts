@@ -94,6 +94,8 @@ export type Job = {
   updated_at: Date;
 
   link_id?: number;
+
+  exclude_reason?: string;
 };
 
 export type Review = {
