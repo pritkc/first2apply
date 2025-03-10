@@ -2,6 +2,7 @@
 
 import { Icons } from '@/components/icons';
 import { useAppState } from '@/hooks/appState';
+import { useSession } from '@/hooks/session';
 import {
   ChatBubbleIcon,
   Crosshair2Icon,
@@ -23,6 +24,7 @@ export function Navbar() {
   // Hook to get the current location
   const { theme, setTheme } = useTheme();
   const { isScanning, newUpdate } = useAppState();
+  const { isLoggedIn } = useSession();
   const pathname = usePathname();
 
   const hasUpdate = !!newUpdate;
@@ -70,8 +72,11 @@ export function Navbar() {
   const Logo = () =>
     isScanning ? <RefreshCw className="h-7 w-7 animate-spin" /> : <Icons.logo className="h-7 w-7"></Icons.logo>;
 
+  // If the user is not logged in, hide navbar
+  if (!isLoggedIn) return null;
+
   return (
-    <header className="fixed bottom-0 z-50 h-14 w-full border-t border-muted-foreground/10 bg-background md:sticky md:top-0 md:border-b md:bg-gradient-to-b md:from-background md:to-background/80 md:backdrop-blur-sm">
+    <header className="fixed bottom-0 z-50 h-14 w-full border-t border-muted-foreground/10 bg-background md:top-0 md:border-b md:bg-gradient-to-b md:from-background md:to-background/80 md:backdrop-blur-sm">
       <nav className="mx-auto flex h-full w-full max-w-md items-center justify-between md:max-w-[1536px] md:p-5">
         <div className="flex flex-1 items-center justify-between gap-2 px-2 xxs:gap-4 xxs:px-8 md:flex-none md:gap-6 md:px-0">
           <Link href={isScanning ? '/links' : '/'} className="hidden items-center gap-2 md:flex">
