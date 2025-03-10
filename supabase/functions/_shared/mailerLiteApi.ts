@@ -74,4 +74,31 @@ export class MailerLiteApi {
       );
     }
   }
+
+  /**
+   * Add subscriber to a group.
+   */
+  async addSubscriberToGroup({
+    subscriberId,
+    groupId,
+  }: {
+    subscriberId: number;
+    groupId: string;
+  }) {
+    const response = await fetch(
+      `https://connect.mailerlite.com/api/subscribers/${subscriberId}/groups/${groupId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this._apiKey}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to add subscriber to group: ${await response.text()}`
+      );
+    }
+  }
 }

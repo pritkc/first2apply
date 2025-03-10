@@ -34,6 +34,7 @@ type DeletePayload = {
 type WebhookPayload = InsertPayload | UpdatePayload | DeletePayload;
 
 const trialGroupId = "129230534205245257";
+const payingCustomersGroupId = "148205894191024107";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -105,13 +106,21 @@ Deno.serve(async (req) => {
         },
       });
 
-      // if the user is no longer on trial, remove from trial group
       if (!record.is_trial) {
+        // if the user is no longer on trial, remove from trial group and add to paying customers group
         await mailerLiteApi.removeSubscriberFromGroup({
           subscriberId: subscriber.id,
           groupId: trialGroupId,
         });
         logger.info(`User ${email} removed from trial group in MailerLite`);
+
+        await mailerLiteApi.addSubscriberToGroup({
+          subscriberId: subscriber.id,
+          groupId: payingCustomersGroupId,
+        });
+        logger.info(
+          `User ${email} added to paying customers group in MailerLite`
+        );
       }
 
       logger.info(`User ${email} updated in MailerLite`);

@@ -481,4 +481,13 @@ export class F2aSupabaseApi {
 
     return updatedConfig;
   }
+
+  /**
+   * Increase scrape failure count for a link.
+   */
+  async increaseScrapeFailureCount({ linkId, failures }: { linkId: number; failures: number }) {
+    await this._supabaseApiCall(async () =>
+      this._supabase.from('links').update({ scrape_failure_count: failures }).eq('id', linkId),
+    );
+  }
 }
