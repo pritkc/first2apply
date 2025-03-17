@@ -46,7 +46,9 @@ export async function uploadInvoicesToKeez({
     stripeInvoicesOrdered,
     keezTierToItemMap,
   });
-  await validateKeezInvoices({ keez, keezInvoices: newKeezInvoices });
+  let allKeezInvoicesToValidate = existingKeezInvoices.concat(newKeezInvoices);
+  await validateKeezInvoices({ keez, keezInvoices: allKeezInvoicesToValidate });
+
   const allKeezInvoices = existingKeezInvoices.concat(newKeezInvoices);
   await promiseAllBatched(allKeezInvoices, 10, async (invoice) => {
     await downloadInvoicePdf({
@@ -71,7 +73,7 @@ export async function uploadInvoicesToKeez({
       stripeInvoices: stripeInvoicesOrdered,
       keezTierToItemMap,
     });
-  await validateKeezInvoices({ keez, keezInvoices: reverseKeezInvoices });
+
   const allReverseKeezInvoices =
     existingReverseKeezInvoices.concat(reverseKeezInvoices);
   await promiseAllBatched(allReverseKeezInvoices, 10, async (invoice) => {
@@ -228,15 +230,14 @@ async function createKeezInvoiceFromStripeInvoice({
   if (countyName.toLowerCase().trim() === "bucharest") {
     countyName = "Bucuresti"; // București
   }
+  const countryName =
+    COUNTRY_NAMES_BY_CODE[countryCode] ?? throwError("Unknown country");
   const partner: KeezParter = {
     partnerName: stripeInvoice.customer_name || throwError("Unnamed Customer"),
     isLegalPerson: false,
     countryCode,
-    countryName:
-      COUNTRY_NAMES_BY_CODE[countryCode] ?? throwError("Unknown country"),
-    cityName:
-      stripeInvoice.customer_address?.city || throwError("Missing city name"),
-    // countyCode: "RO-DJ",
+    countryName,
+    cityName: stripeInvoice.customer_address?.city || countryName,
     countyName,
     addressDetails: `${stripeInvoice.customer_address?.line1} ${
       stripeInvoice.customer_address?.line2 || ""
@@ -253,6 +254,8 @@ async function createKeezInvoiceFromStripeInvoice({
   }
 
   const multiplier = isStorno ? -1 : 1;
+  const vatAmountCurrency = multiplier * (stripeInvoice.tax ?? 0);
+  const vatPercent = vatAmountCurrency > 0 ? 19 : 0; // hard coded for now to romanian VAT
   const invoiceDetails = stripeInvoice.lines.data.map(
     (item): KeezInvoiceDetail => {
       const tier = item.price?.metadata.tier;
@@ -281,14 +284,24 @@ async function createKeezInvoiceFromStripeInvoice({
 
       const unitPriceCurrency =
         item.price?.unit_amount ?? throwError("Missing unit price");
-      const vatAmountCurrency = item.tax_amounts.reduce(
-        (acc, tax) => acc + tax.amount,
-        0
-      );
-      const vatPercent = vatAmountCurrency > 0 ? 19 : 0; // hard coded for now to romanian VAT
-
-      const itemAmount = item.amount;
       const quantity = item.quantity ?? throwError("Missing quantity");
+      const originalNetAmountCurrency = item.amount; // total item price without discount
+
+      const discountAmountCurrency =
+        item.discount_amounts?.reduce(
+          (acc, discount) => acc + discount.amount,
+          0
+        ) ?? 0;
+      const netAmountCurrency =
+        originalNetAmountCurrency - discountAmountCurrency;
+
+      const originalVatAmountCurrency =
+        originalNetAmountCurrency * (vatPercent / 100);
+      const vatAmountCurrency = netAmountCurrency * (vatPercent / 100);
+      const discountVatAmountCurrency =
+        originalVatAmountCurrency - vatAmountCurrency;
+      const hasDiscount = discountAmountCurrency !== 0;
+
       return {
         itemExternalId:
           keezItem.externalId ?? throwError("Missing external ID"),
@@ -306,6 +319,31 @@ async function createKeezInvoiceFromStripeInvoice({
           })
         ),
 
+        netAmountCurrency: fromCents(netAmountCurrency),
+        netAmount: fromCents(
+          convertCurrency({
+            value: netAmountCurrency,
+            exchangeRate,
+            decimals: 2,
+          })
+        ),
+        grossAmountCurrency: fromCents(netAmountCurrency + vatAmountCurrency),
+        grossAmount: fromCents(
+          convertCurrency({
+            value: netAmountCurrency + vatAmountCurrency,
+            exchangeRate,
+            decimals: 2,
+          })
+        ),
+        originalNetAmountCurrency: fromCents(originalNetAmountCurrency),
+        originalNetAmount: fromCents(
+          convertCurrency({
+            value: originalNetAmountCurrency,
+            exchangeRate,
+            decimals: 2,
+          })
+        ),
+
         // VAT
         vatPercent,
         vatAmountCurrency: fromCents(vatAmountCurrency),
@@ -316,40 +354,47 @@ async function createKeezInvoiceFromStripeInvoice({
             decimals: 2,
           })
         ),
-        originalVatAmountCurrency: fromCents(vatAmountCurrency),
+        originalVatAmountCurrency: fromCents(originalVatAmountCurrency),
         originalVatAmount: fromCents(
           convertCurrency({
-            value: vatAmountCurrency,
+            value: originalVatAmountCurrency,
             exchangeRate,
             decimals: 2,
           })
         ),
 
-        netAmountCurrency: fromCents(itemAmount),
-        netAmount: fromCents(
-          convertCurrency({
-            value: itemAmount,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
-        originalNetAmountCurrency: fromCents(itemAmount),
-        originalNetAmount: fromCents(
-          convertCurrency({
-            value: itemAmount,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
+        // Discount
+        ...(hasDiscount && {
+          discountType: "Value",
+          discountValueOnNet: true,
 
-        grossAmountCurrency: fromCents(itemAmount + vatAmountCurrency),
-        grossAmount: fromCents(
-          convertCurrency({
-            value: itemAmount + vatAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
+          discountNetValueCurrency: fromCents(discountAmountCurrency),
+          discountNetValue: fromCents(
+            convertCurrency({
+              value: discountAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+          discountVatValueCurrency: fromCents(discountVatAmountCurrency),
+          discountVatValue: fromCents(
+            convertCurrency({
+              value: discountVatAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+          discountGrossValueCurrency: fromCents(
+            discountAmountCurrency + discountVatAmountCurrency
+          ),
+          discountGrossValue: fromCents(
+            convertCurrency({
+              value: discountAmountCurrency + discountVatAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+        }),
 
         exciseAmountCurrency: 0,
         exciseAmount: 0,
@@ -360,13 +405,13 @@ async function createKeezInvoiceFromStripeInvoice({
     comments.push(`Discount: ${stripeInvoice.discount.coupon.name}`);
   }
 
-  const vatAmountCurrency = multiplier * (stripeInvoice.tax ?? 0);
   const discountAmountCurrency =
     multiplier *
     (stripeInvoice.total_discount_amounts?.reduce(
       (acc, discount) => acc + discount.amount,
       0
     ) ?? 0);
+  const discountVatAmountCurrency = (discountAmountCurrency * vatPercent) / 100;
   const hasDiscount = discountAmountCurrency !== 0;
 
   const netAmountCurrency =
@@ -375,6 +420,8 @@ async function createKeezInvoiceFromStripeInvoice({
   const originalNetAmountCurrency =
     multiplier * (stripeInvoice.subtotal_excluding_tax ?? 0);
   const grossAmountCurrency = multiplier * (stripeInvoice.total ?? 0);
+  const originalVatAmountCurrency =
+    multiplier * originalNetAmountCurrency * (vatPercent / 100);
 
   // for romanian invoices, the reference currency HAS to be RON
   const currencyCode = isRomanianInvoice
@@ -407,39 +454,7 @@ async function createKeezInvoiceFromStripeInvoice({
     partner,
     invoiceDetails,
 
-    // Totals
-    ...(hasDiscount && {
-      discountType: "Value",
-      discountValueOnNet: true,
-      discountVatValue: 0,
-      discountVatValueCurrency: 0,
-
-      discountAmountCurrency: fromCents(discountAmountCurrency),
-      discountValue: fromCents(
-        convertCurrency({
-          value: discountAmountCurrency,
-          exchangeRate,
-          decimals: 2,
-        })
-      ),
-      discountGrossValueCurrency: fromCents(discountAmountCurrency),
-      discountGrossValue: fromCents(
-        convertCurrency({
-          value: discountAmountCurrency,
-          exchangeRate,
-          decimals: 2,
-        })
-      ),
-      discountNetValueCurrency: fromCents(discountAmountCurrency),
-      discountNetValue: fromCents(
-        convertCurrency({
-          value: discountAmountCurrency,
-          exchangeRate,
-          decimals: 2,
-        })
-      ),
-    }),
-
+    // Amounts
     netAmountCurrency: fromCents(netAmountCurrency),
     netAmount: fromCents(
       convertCurrency({
@@ -457,23 +472,6 @@ async function createKeezInvoiceFromStripeInvoice({
       })
     ),
 
-    vatAmountCurrency: fromCents(vatAmountCurrency),
-    vatAmount: fromCents(
-      convertCurrency({
-        value: vatAmountCurrency,
-        exchangeRate,
-        decimals: 2,
-      })
-    ),
-    originalVatAmountCurrency: fromCents(vatAmountCurrency),
-    originalVatAmount: fromCents(
-      convertCurrency({
-        value: vatAmountCurrency,
-        exchangeRate,
-        decimals: 2,
-      })
-    ),
-
     grossAmountCurrency: fromCents(grossAmountCurrency),
     grossAmount: fromCents(
       convertCurrency({
@@ -482,6 +480,58 @@ async function createKeezInvoiceFromStripeInvoice({
         decimals: 2,
       })
     ),
+
+    // VAT
+    vatAmountCurrency: fromCents(vatAmountCurrency),
+    vatAmount: fromCents(
+      convertCurrency({
+        value: vatAmountCurrency,
+        exchangeRate,
+        decimals: 2,
+      })
+    ),
+    originalVatAmountCurrency: fromCents(originalVatAmountCurrency),
+    originalVatAmount: fromCents(
+      convertCurrency({
+        value: originalVatAmountCurrency,
+        exchangeRate,
+        decimals: 2,
+      })
+    ),
+
+    // Discount
+    ...(hasDiscount && {
+      discountType: "Value",
+      discountValueOnNet: true,
+
+      discountNetValueCurrency: fromCents(discountAmountCurrency),
+      discountNetValue: fromCents(
+        convertCurrency({
+          value: discountAmountCurrency,
+          exchangeRate,
+          decimals: 2,
+        })
+      ),
+      discountVatValueCurrency: fromCents(discountVatAmountCurrency),
+      discountVatValue: fromCents(
+        convertCurrency({
+          value: discountVatAmountCurrency,
+          exchangeRate,
+          decimals: 2,
+        })
+      ),
+
+      discountGrossValueCurrency: fromCents(
+        discountAmountCurrency + discountVatAmountCurrency
+      ),
+      discountGrossValue: fromCents(
+        convertCurrency({
+          value: discountAmountCurrency + discountVatAmountCurrency,
+          exchangeRate,
+          decimals: 2,
+        })
+      ),
+    }),
 
     exciseAmountCurrency: 0,
     exciseAmount: 0,
