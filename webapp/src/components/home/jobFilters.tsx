@@ -1,8 +1,8 @@
-import { debounce } from "lodash";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { debounce } from 'lodash';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { JobFiltersMenu, JobFiltersType } from "./jobFilters/jobFiltersMenu";
-import { SearchBox } from "./jobFilters/searchBox";
+import { JobFiltersMenu, JobFiltersType } from './jobFilters/jobFiltersMenu';
+import { SearchBox } from './jobFilters/searchBox';
 
 /**
  * Job filters component.
@@ -29,7 +29,7 @@ export function JobFilters({
     debounce((value: string, currentFilters: JobFiltersType) => {
       onSearchJobs({ search: value, filters: currentFilters });
     }, 350),
-    [filters]
+    [filters],
   );
 
   // Emit search on inputValue change, debounced
@@ -43,7 +43,7 @@ export function JobFilters({
   }, [filters]);
 
   return (
-    <div className="flex items-center justify-center gap-2 pr-2">
+    <div className="flex items-center justify-center gap-2 bg-background py-2 pr-2">
       <SearchBox inputValue={inputValue} setInputValue={setInputValue} />
 
       <JobFiltersMenu
@@ -57,10 +57,7 @@ export function JobFilters({
   );
 }
 
-const useDidMountEffect = (
-  effect: React.EffectCallback,
-  deps?: React.DependencyList
-) => {
+const useDidMountEffect = (effect: React.EffectCallback, deps?: React.DependencyList) => {
   const isFirstRender = useRef(true);
 
   useEffect(() => {

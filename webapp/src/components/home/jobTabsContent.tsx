@@ -1,8 +1,8 @@
-import { TabsContent } from "@/components/ui/tabs";
-import { toast } from "@/components/ui/use-toast";
-import { useAppState } from "@/hooks/appState";
-import { useError } from "@/hooks/error";
-import { useSession } from "@/hooks/session";
+import { TabsContent } from '@/components/ui/tabs';
+import { toast } from '@/components/ui/use-toast';
+import { useAppState } from '@/hooks/appState';
+import { useError } from '@/hooks/error';
+import { useSession } from '@/hooks/session';
 import {
   getJobById,
   listJobs,
@@ -10,37 +10,24 @@ import {
   scanJob,
   updateJobLabels,
   updateJobStatus,
-} from "@/lib/electronMainSdk";
-import { useEffect, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
+} from '@/lib/electronMainSdk';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 
-import {
-  Job,
-  JobLabel,
-  JobStatus,
-} from "../../../../supabase/functions/_shared/types";
-import { JobDetails } from "./jobDetails";
-import { JobFilters } from "./jobFilters";
-import { JobFiltersType } from "./jobFilters/jobFiltersMenu";
-import { JobNotes } from "./jobNotes";
-import { JobSummary } from "./jobSummary";
-import { JobListing } from "./jobTabs";
-import { JobsList } from "./jobsList";
-import {
-  JobDetailsSkeleton,
-  JobSummarySkeleton,
-  JobsListSkeleton,
-} from "./jobsSkeleton";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Job, JobLabel, JobStatus } from '../../../../supabase/functions/_shared/types';
+import { JobDetails } from './jobDetails';
+import { JobFilters } from './jobFilters';
+import { JobFiltersType } from './jobFilters/jobFiltersMenu';
+import { JobNotes } from './jobNotes';
+import { JobSummary } from './jobSummary';
+import { JobListing } from './jobTabs';
+import { JobsList } from './jobsList';
+import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
 const JOB_BATCH_SIZE = 30;
-const ALL_JOB_STATUSES: JobStatus[] = [
-  "new",
-  "applied",
-  "archived",
-  "excluded_by_advanced_matching",
-];
+const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 /**
  * Job tabs content component.
@@ -73,12 +60,11 @@ export function JobTabsContent({
   const statusIndex = ALL_JOB_STATUSES.indexOf(status);
 
   // Navigate between tabs using arrow keys
-  useHotkeys("left", () => {
-    const nextIndex =
-      (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
+  useHotkeys('left', () => {
+    const nextIndex = (statusIndex - 1 + ALL_JOB_STATUSES.length) % ALL_JOB_STATUSES.length;
     router.push(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
   });
-  useHotkeys("right", () => {
+  useHotkeys('right', () => {
     const nextIndex = (statusIndex + 1) % ALL_JOB_STATUSES.length;
     router.push(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
   });
@@ -89,7 +75,7 @@ export function JobTabsContent({
       try {
         // check subscription status
         if (isSubscriptionExpired) {
-          router.push("/subscription");
+          router.push('/subscription');
           return;
         }
 
@@ -103,7 +89,7 @@ export function JobTabsContent({
           linkIds,
           limit: JOB_BATCH_SIZE,
         });
-        console.log("found jobs", result.jobs.length);
+        console.log('found jobs', result.jobs.length);
 
         setListing({
           ...result,
@@ -118,7 +104,7 @@ export function JobTabsContent({
           setSelectedJobId(undefined);
         }
       } catch (error) {
-        handleError({ error, title: "Failed to load jobs" });
+        handleError({ error, title: 'Failed to load jobs' });
       }
     };
     asyncLoad();
@@ -170,27 +156,21 @@ export function JobTabsContent({
       const tabToIncrement = newStatus;
 
       const newCount =
-        tabToIncrement === "new"
-          ? listing.new + 1
-          : tabToDecrement === "new"
-          ? listing.new - 1
-          : listing.new;
+        tabToIncrement === 'new' ? listing.new + 1 : tabToDecrement === 'new' ? listing.new - 1 : listing.new;
       const appliedCount =
-        tabToIncrement === "applied"
+        tabToIncrement === 'applied'
           ? listing.applied + 1
-          : tabToDecrement === "applied"
-          ? listing.applied - 1
-          : listing.applied;
+          : tabToDecrement === 'applied'
+            ? listing.applied - 1
+            : listing.applied;
       const archivedCount =
-        tabToIncrement === "archived"
+        tabToIncrement === 'archived'
           ? listing.archived + 1
-          : tabToDecrement === "archived"
-          ? listing.archived - 1
-          : listing.archived;
+          : tabToDecrement === 'archived'
+            ? listing.archived - 1
+            : listing.archived;
       const filteredCount =
-        tabToDecrement === "excluded_by_advanced_matching"
-          ? listing.filtered - 1
-          : listing.filtered;
+        tabToDecrement === 'excluded_by_advanced_matching' ? listing.filtered - 1 : listing.filtered;
 
       return {
         ...listing,
@@ -206,8 +186,7 @@ export function JobTabsContent({
   // Select the next job in the list
   const selectNextJob = (jobId: number) => {
     const currentJobIndex = listing.jobs.findIndex((job) => job.id === jobId);
-    const nextJob =
-      listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
+    const nextJob = listing.jobs[currentJobIndex + 1] ?? listing.jobs[currentJobIndex - 1];
     if (nextJob) {
       scanJobAndSelect(nextJob);
     } else {
@@ -220,23 +199,23 @@ export function JobTabsContent({
       await updateListedJobStatus(jobId, newStatus);
       selectNextJob(jobId);
     } catch (error) {
-      handleError({ error, title: "Failed to update job status" });
+      handleError({ error, title: 'Failed to update job status' });
     }
   };
 
   const onApplyToJob = async (job: Job) => {
     try {
       await openExternalUrl(job.externalUrl);
-      await updateJobLabels({ jobId: job.id, labels: ["Submitted"] });
-      await updateListedJobStatus(job.id, "applied");
+      await updateJobLabels({ jobId: job.id, labels: ['Submitted'] });
+      await updateListedJobStatus(job.id, 'applied');
       selectNextJob(job.id);
       toast({
-        title: "Job applied",
-        description: "The job has been automatically marked as applied.",
-        variant: "success",
+        title: 'Job applied',
+        description: 'The job has been automatically marked as applied.',
+        variant: 'success',
       });
     } catch (error) {
-      handleError({ error, title: "Failed to apply to job" });
+      handleError({ error, title: 'Failed to apply to job' });
     }
   };
 
@@ -248,7 +227,7 @@ export function JobTabsContent({
         jobs: listing.jobs.map((job) => (job.id === jobId ? updatedJob : job)),
       }));
     } catch (error) {
-      handleError({ error, title: "Failed to update job label" });
+      handleError({ error, title: 'Failed to update job label' });
     }
   };
 
@@ -270,7 +249,7 @@ export function JobTabsContent({
         hasMore: result.jobs.length === JOB_BATCH_SIZE,
       }));
     } catch (error) {
-      handleError({ error, title: "Failed to load more jobs" });
+      handleError({ error, title: 'Failed to load more jobs' });
     }
   };
 
@@ -282,9 +261,7 @@ export function JobTabsContent({
       try {
         // Set the job as loading
         setListing((listing) => {
-          const jobs = listing.jobs.map((j) =>
-            j.id === job.id ? { ...job, isLoadingJD: true } : j
-          );
+          const jobs = listing.jobs.map((j) => (j.id === job.id ? { ...job, isLoadingJD: true } : j));
           return { ...listing, jobs };
         });
 
@@ -298,13 +275,11 @@ export function JobTabsContent({
 
         // Update the job in the list
         setListing((listing) => {
-          const jobs = listing.jobs.map((j) =>
-            j.id === updatedJob.id ? updatedJob : j
-          );
+          const jobs = listing.jobs.map((j) => (j.id === updatedJob.id ? updatedJob : j));
           return { ...listing, jobs };
         });
       } catch (error) {
-        handleError({ error, title: "Failed to scan job" });
+        handleError({ error, title: 'Failed to scan job' });
       }
     }
   };
@@ -322,17 +297,9 @@ export function JobTabsContent({
   }, [selectedJobId]);
 
   // Update the query params when the search input changes
-  const onSearchJobs = ({
-    search,
-    filters,
-  }: {
-    search: string;
-    filters: JobFiltersType;
-  }) => {
+  const onSearchJobs = ({ search, filters }: { search: string; filters: JobFiltersType }) => {
     router.push(
-      `?status=${status}&search=${search}&site_ids=${filters.sites.join(
-        ","
-      )}&link_ids=${filters.links.join(",")}`
+      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}`,
     );
   };
 
@@ -340,48 +307,34 @@ export function JobTabsContent({
     <>
       {ALL_JOB_STATUSES.map((statusItem) => {
         return (
-          <TabsContent
-            key={statusItem}
-            value={statusItem}
-            className="focus-visible:ring-0"
-          >
+          <TabsContent key={statusItem} value={statusItem} className="border-t-[1px] border-muted focus-visible:ring-0">
             <section className="flex">
               {/* Jobs list, search and filters side */}
-              <div
-                id="jobsList"
-                className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-3 overflow-y-scroll lg:w-2/5"
-              >
-                <div className="sticky top-0 z-50 bg-background pb-2">
-                  <JobFilters
-                    search={search}
-                    siteIds={siteIds}
-                    linkIds={linkIds}
-                    onSearchJobs={onSearchJobs}
-                  />
-                </div>
+              <div id="jobsList" className="w-full md:w-1/2 lg:w-2/5">
+                <JobFilters search={search} siteIds={siteIds} linkIds={linkIds} onSearchJobs={onSearchJobs} />
 
                 {listing.isLoading || statusItem !== status ? (
                   <JobsListSkeleton />
                 ) : listing.jobs.length > 0 ? (
-                  <JobsList
-                    jobs={listing.jobs}
-                    selectedJobId={selectedJobId}
-                    hasMore={listing.hasMore}
-                    parentContainerId="jobsList"
-                    onLoadMore={onLoadMore}
-                    onSelect={(job) => scanJobAndSelect(job)}
-                    onArchive={(j) => {
-                      onUpdateJobStatus(j.id, "archived");
-                    }}
-                    onDelete={(j) => {
-                      onUpdateJobStatus(j.id, "deleted");
-                    }}
-                  />
+                  <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
+                    <JobsList
+                      jobs={listing.jobs}
+                      selectedJobId={selectedJobId}
+                      hasMore={listing.hasMore}
+                      parentContainerId="jobsList"
+                      onLoadMore={onLoadMore}
+                      onSelect={(job) => scanJobAndSelect(job)}
+                      onArchive={(j) => {
+                        onUpdateJobStatus(j.id, 'archived');
+                      }}
+                      onDelete={(j) => {
+                        onUpdateJobStatus(j.id, 'deleted');
+                      }}
+                    />
+                  </div>
                 ) : (
                   <p className="px-4 pt-20 text-center">
-                    {search ||
-                    (siteIds && siteIds.length > 0) ||
-                    (linkIds && linkIds.length > 0) ? (
+                    {search || (siteIds && siteIds.length > 0) || (linkIds && linkIds.length > 0) ? (
                       <NoSearchResults />
                     ) : (
                       "No new job listings right now, but don't worry! We're on the lookout and will update you as soon as we find anything."
@@ -392,16 +345,16 @@ export function JobTabsContent({
 
               {/* Job description side */}
               {listing.isLoading || statusItem !== status ? (
-                <div className="no-scrollbar h-[calc(100vh-100px)] w-1/2 animate-pulse space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4">
+                <div className="no-scrollbar hidden h-[calc(100vh-207px)] w-1/2 animate-pulse space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 md:block md:h-[calc(100vh-215px)] lg:w-3/5 lg:space-y-5 lg:pl-4">
                   <JobSummarySkeleton />
                   <JobDetailsSkeleton />
                 </div>
               ) : listing.jobs.length > 0 ? (
                 <div
                   ref={jobDescriptionRef}
-                  className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-4 overflow-y-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4"
+                  className="no-scrollbar hidden h-[calc(100vh-207px)] w-1/2 space-y-4 overflow-y-scroll border-l-[1px] border-muted pl-2 md:block md:h-[calc(100vh-215px)] lg:w-3/5 lg:space-y-5 lg:pl-4"
                 >
-                  {/* {selectedJob && (
+                  {selectedJob && (
                     <>
                       <JobSummary
                         job={selectedJob}
@@ -409,27 +362,24 @@ export function JobTabsContent({
                           onApplyToJob(j);
                         }}
                         onArchive={(j) => {
-                          onUpdateJobStatus(j.id, "archived");
+                          onUpdateJobStatus(j.id, 'archived');
                         }}
                         onDelete={(j) => {
-                          onUpdateJobStatus(j.id, "deleted");
+                          onUpdateJobStatus(j.id, 'deleted');
                         }}
                         onUpdateLabels={onUpdateJobLabels}
                         onView={onViewJob}
                       />
-                      <JobDetails
-                        job={selectedJob}
-                        isScrapingDescription={!!selectedJob.isLoadingJD}
-                      ></JobDetails>
+                      <JobDetails job={selectedJob} isScrapingDescription={!!selectedJob.isLoadingJD}></JobDetails>
                       <hr className="border-t border-muted" />
                       {selectedJobId && <JobNotes jobId={selectedJobId} />}
                     </>
-                  )} */}
+                  )}
                 </div>
               ) : (
                 <div
                   ref={jobDescriptionRef}
-                  className="flex h-[calc(100vh-100px)] w-1/2 items-center justify-center space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4"
+                  className="hidden h-[calc(100vh-207px)] w-1/2 items-center justify-center space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 md:flex md:h-[calc(100vh-215px)] lg:w-3/5 lg:space-y-5 lg:pl-4"
                 >
                   {/* Light mode svg */}
                   <svg
@@ -659,11 +609,10 @@ const NoSearchResults = () => {
 
   return isScanning ? (
     <span>
-      There aren't any jobs that match your search. We are currently scanning
-      your saved{" "}
+      There aren't any jobs that match your search. We are currently scanning your saved{' '}
       <Link className="text-primary" href={`/links`}>
         Job Searches
-      </Link>{" "}
+      </Link>{' '}
       for any new jobs. Please check back in a few minutes.
     </span>
   ) : (

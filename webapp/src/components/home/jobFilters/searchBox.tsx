@@ -18,7 +18,7 @@ export function SearchBox({
   return (
     <div className="relative h-12 flex-grow">
       <Input
-        className="h-full w-full overflow-x-scroll rounded-md px-11 focus-visible:outline-none focus-visible:ring-0"
+        className="h-full w-full overflow-x-scroll rounded-md pl-11 focus-visible:outline-none focus-visible:ring-0 xs:pr-11"
         placeholder="Search by title or company name ..."
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
