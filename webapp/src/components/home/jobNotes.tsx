@@ -31,7 +31,7 @@ export function JobNotes({ jobId }: { jobId: number }) {
 
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [newNote, setNewNote] = useState<Note | undefined>();
   const [noteToDelete, setNoteToDelete] = useState<Note | undefined>();
 
