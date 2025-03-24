@@ -193,6 +193,11 @@ async function sendNewJobLinksEmail({
     return;
   }
 
+  if (newJobIds.length === 0) {
+    logger.info(`no new jobs to send email for`);
+    return;
+  }
+
   if (!user.email) {
     logger.info(`user email not set`);
     return;
@@ -207,11 +212,6 @@ async function sendNewJobLinksEmail({
     logger.error(
       `failed to load new jobs: ${getExceptionMessage(newJobsError)}`
     );
-    return;
-  }
-
-  if (newJobs.length === 0) {
-    logger.info(`no new jobs to send email for`);
     return;
   }
 
