@@ -107,6 +107,13 @@ export function cleanJobUrl({
     cleanUrl = parsedUrl.toString();
   }
 
+  // for linkedin, automatically sort by most recent
+  if (site.provider === SiteProvider.linkedin) {
+    const parsedUrl = new URL(cleanUrl);
+    parsedUrl.searchParams.set("sortBy", "DD");
+    cleanUrl = parsedUrl.toString();
+  }
+
   return { cleanUrl, site };
 }
 
