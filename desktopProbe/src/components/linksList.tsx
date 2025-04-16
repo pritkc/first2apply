@@ -52,9 +52,9 @@ export function LinksList({
               </div>
             </div>
 
-            <p className="mb-4 mt-6 grow whitespace-pre-wrap text-pretty break-all text-xs text-muted-foreground">
+            {/* <p className="mb-4 mt-6 grow whitespace-pre-wrap text-pretty break-all text-xs text-muted-foreground">
               {link.url}
-            </p>
+            </p> */}
 
             <div className="flex items-center justify-between">
               <div>
