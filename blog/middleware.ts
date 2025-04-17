@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const referrer = request.headers.get('referer') || ''
+  const allowIndex = request.headers.get('x-f2a-allowindex') === 'yes'
 
   // Check if the referrer contains "vercel"
-  if (referrer.includes('vercel')) {
+  if (!allowIndex) {
     const response = NextResponse.next()
     response.headers.set('X-Robots-Tag', 'noindex')
     return response
