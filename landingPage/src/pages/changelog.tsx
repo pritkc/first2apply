@@ -2,6 +2,7 @@ import { DefaultLayout } from "@/components/defaultLayout";
 import ReactTimeAgo from "react-time-ago";
 import Image, { StaticImageData } from "next/image";
 import alert from "../../public/assets/alert.png";
+import { F2aHead } from "@/components/head";
 
 type ChangelogContent = {
   version: string;
@@ -139,60 +140,68 @@ const changelogContent: ChangelogContent[] = [
 
 export default function Changelog() {
   return (
-    <DefaultLayout>
-      <div className="w-full max-w-[936px] min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)] mx-auto px-4 sm:px-12 py-[72px] md:pt-16">
-        <h1 className="pb-6 sm:pb-1 text-6xl sm:text-7xl sm:leading-[72px] font-bold sm:tracking-wide text-center">
-          Changelog
-        </h1>
+    <>
+      <F2aHead
+        title="Changelog - First 2 Apply"
+        description="Discover the latest updates and improvements to First 2 Apply. Stay informed about new features and enhancements."
+        path="/changelog"
+      />
 
-        {changelogContent.map((release) => (
-          <section key={`release-${release.version}`} className="mt-16">
-            <div className="px-10">
-              <h2 className="pt-16 mb-4 text-[40px] leading-[48px] font-medium">
-                {release.version}
-              </h2>
+      <DefaultLayout>
+        <div className="w-full max-w-[936px] min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)] mx-auto px-4 sm:px-12 py-[72px] md:pt-16">
+          <h1 className="pb-6 sm:pb-1 text-6xl sm:text-7xl sm:leading-[72px] font-bold sm:tracking-wide text-center">
+            Changelog
+          </h1>
 
-              <p className="my-4 text-muted-foreground text-sm leading-7 tracking-wide">
-                <ReactTimeAgo date={release.date} locale="en-US" /> &nbsp; •
-                &nbsp;
-                {new Intl.DateTimeFormat("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }).format(release.date)}
-              </p>
-            </div>
-            {release.image && (
-              <Image
-                src={release.image}
-                alt={`release ${release.version} image`}
-                className="my-8 w-full"
-              />
-            )}
-            <div className="px-10">
-              {release.changes?.map((change, index) => (
-                <div key={`change-${index}`}>
-                  <h4 className="my-4 font-semibold">{change.title}</h4>
+          {changelogContent.map((release) => (
+            <section key={`release-${release.version}`} className="mt-16">
+              <div className="px-10">
+                <h2 className="pt-16 mb-4 text-[40px] leading-[48px] font-medium">
+                  {release.version}
+                </h2>
 
-                  <ul className="list-disc list-inside pl-3">
-                    {change.content.map((item, index) => (
-                      <li key={`change-content-${index}`} className="mt-2 mb-1">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-              {release.texts?.map((item, index) => (
-                <div key={`text-${index}`} className="my-4">
-                  {item.text}
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </DefaultLayout>
+                <p className="my-4 text-muted-foreground text-sm leading-7 tracking-wide">
+                  <ReactTimeAgo date={release.date} locale="en-US" /> &nbsp; •
+                  &nbsp;
+                  {new Intl.DateTimeFormat("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }).format(release.date)}
+                </p>
+              </div>
+              {release.image && (
+                <Image
+                  src={release.image}
+                  alt={`release ${release.version} image`}
+                  className="my-8 w-full"
+                />
+              )}
+              <div className="px-10">
+                {release.changes?.map((change, index) => (
+                  <div key={`change-${index}`}>
+                    <h4 className="my-4 font-semibold">{change.title}</h4>
+
+                    <ul className="list-disc list-inside pl-3">
+                      {change.content.map((item, index) => (
+                        <li key={`change-content-${index}`} className="mt-2 mb-1">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {release.texts?.map((item, index) => (
+                  <div key={`text-${index}`} className="my-4">
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </DefaultLayout>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { DefaultLayout } from "@/components/defaultLayout";
+import { F2aHead } from "@/components/head";
 import { Button } from "@/components/ui/button";
 import { sendGTMEvent } from "@next/third-parties/google";
 import Head from "next/head";
@@ -6,70 +7,13 @@ import Head from "next/head";
 export default function Download() {
   return (
     <>
-      <Head>
-        <title>Download First 2 Apply</title>
-        <meta
-          name="description"
-          content="Experience the convenience of monitoring and managing job
+      <F2aHead
+        title="Download First 2 Apply"
+        description="Experience the convenience of monitoring and managing job
           applications from top platforms, all in one place. Dive into a 7-day
           free trial, no credit card required."
-        />
-        <meta property="og:title" content="Download First 2 Apply" />
-        <meta
-          property="og:description"
-          content="Experience the convenience of monitoring and managing job
-          applications from top platforms, all in one place. Dive into a 7-day
-          free trial, no credit card required."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="/preview-image.jpeg" />
-        <meta property="og:url" content="https://www.first2apply.com" />
-        <meta property="og:site_name" content="First 2 Apply" />
-        <meta
-          property="og:see_also"
-          content="https://www.facebook.com/first2apply"
-        />
-
-        <meta
-          property="og:see_also"
-          content="https://www.linkedin.com/company/first2apply/"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="76x76"
-          href="/favicons/apple-touch-icon.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/favicons/favicon-32x32.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/favicons/favicon-16x16.png"
-        />
-        <link rel="manifest" href="/favicons/site.webmanifest" />
-        <link
-          rel="mask-icon"
-          href="/favicons/safari-pinned-tab.svg"
-          color="#5bbad5"
-        />
-        <meta name="msapplication-TileColor" content="#000000" />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: light)"
-          content="#fff"
-        />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: dark)"
-          content="#000"
-        />
-        <link rel="alternate" type="application/rss+xml" href="/feed.xml" />
-      </Head>
+        path="/download"
+      />
 
       <DefaultLayout>
         <section className="w-full max-w-7xl min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)] mx-auto px-6 sm:px-10 pb-14 md:pb-16 flex flex-col items-center justify-center">
