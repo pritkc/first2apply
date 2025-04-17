@@ -10,7 +10,6 @@ import { F2aHead } from '@/components/head';
 import { OrganizationSection } from '@/components/organizationSection';
 import { PricingSection } from '@/components/pricingSection';
 import { ProductSection } from '@/components/productSection';
-import Head from 'next/head';
 
 export default function Home() {
   return (
@@ -20,7 +19,7 @@ export default function Home() {
         description="Land more interviews by being the first to know when new jobs are posted. Stop wasting time manually browsing LinkedIn, Indeed, Dice or other job boards."
         path="/"
       />
-      
+
       <DefaultLayout>
         <ProductSection />
         <ExplainerSection />
