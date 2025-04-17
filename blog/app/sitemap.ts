@@ -12,13 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: post.lastmod || post.date,
     }))
 
-  const routes = ['', 'tags', 'articles', 'about'].map((route) => {
+  const routes = ['/', '/tags', '/articles', '/about'].map((route) => {
     // make sure there is no end slash
     if (route.endsWith('/')) {
       route = route.slice(0, -1)
     }
     return {
-      url: `${siteUrl}/${route}`,
+      url: `${siteUrl}${route}`,
       lastModified: new Date().toISOString().split('T')[0],
     }
   })
