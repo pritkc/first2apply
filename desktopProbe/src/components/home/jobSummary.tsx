@@ -4,6 +4,7 @@ import {
   BackpackIcon,
   CheckIcon,
   CookieIcon,
+  CopyIcon,
   InfoCircledIcon,
   ListBulletIcon,
   ResetIcon,
@@ -16,6 +17,7 @@ import { Avatar, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { toast } from '../ui/use-toast';
 import { DeleteJobDialog } from './deleteJobDialog';
 
 function isJobLabel(value: any): value is JobLabel {
@@ -179,6 +181,34 @@ export function JobSummary({
             </Tooltip>
           </TooltipProvider>
         )}
+
+        {/* Copy url button */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  navigator.clipboard.writeText(job.externalUrl);
+                  toast({
+                    title: 'Job URL copied to clipboard',
+                    description: 'You can now paste it anywhere.',
+                    variant: 'success',
+                  });
+                }}
+              >
+                <CopyIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Copy URL
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Delete button */}
         <TooltipProvider delayDuration={500}>

@@ -12,7 +12,7 @@ import {
   Review,
   StripeConfig,
 } from '../../../supabase/functions/_shared/types';
-import { JobScannerSettings, NewAppVersion } from './types';
+import { JobBoardModalResponse, JobScannerSettings, NewAppVersion } from './types';
 
 async function _mainProcessApiCall<T>(channel: string, params?: object): Promise<T> {
   // @ts-ignore
@@ -86,8 +86,29 @@ export async function getUser(): Promise<User | null> {
 /**
  * Function used to create a new link.
  */
-export async function createLink({ title, url }: { title: string; url: string }): Promise<Link> {
+export async function createLink({ title, url, html }: { title: string; url: string; html: string }): Promise<Link> {
   const { link } = await _mainProcessApiCall<{ link: Link }>('create-link', {
+    title,
+    url,
+    html,
+  });
+  return link;
+}
+
+/**
+ * Update an existing link.
+ */
+export async function updateLink({
+  linkId,
+  title,
+  url,
+}: {
+  linkId: number;
+  title: string;
+  url: string;
+}): Promise<Link> {
+  const link = await _mainProcessApiCall<Link>('update-link', {
+    linkId,
     title,
     url,
   });
@@ -386,4 +407,26 @@ export async function getAppState(): Promise<{
  */
 export async function applyAppUpdate(): Promise<void> {
   await _mainProcessApiCall('apply-app-update', {});
+}
+
+/**
+ * Open the job board modal.
+ */
+export async function openJobBoardModal(jobSite: JobSite): Promise<void> {
+  await _mainProcessApiCall('open-job-board-modal', { jobSite });
+}
+
+/**
+ * Finish the job board modal and get the html content.
+ */
+export async function finishJobBoardModal(): Promise<JobBoardModalResponse> {
+  const jobSearchInfo = await _mainProcessApiCall<JobBoardModalResponse>('finish-job-board-modal', {});
+  return jobSearchInfo;
+}
+
+/**
+ * Close the job board modal and get the html content.
+ */
+export async function closeJobBoardModal() {
+  await _mainProcessApiCall<JobBoardModalResponse>('close-job-board-modal', {});
 }

@@ -1,3 +1,5 @@
+import { JobSite } from '../../../supabase/functions/_shared/types';
+
 export const AVAILABLE_CRON_RULES = [
   {
     name: 'Every 30 minutes',
@@ -37,4 +39,11 @@ export type NewAppVersion = {
   name: string;
   url: string;
   message: string;
+};
+
+export type JobBoardModalResponse = {
+  url: string;
+  title: string;
+  html: string;
+  site: JobSite;
 };

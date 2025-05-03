@@ -6,6 +6,7 @@ import os from 'os';
 import { Job } from '../../../supabase/functions/_shared/types';
 import { getExceptionMessage } from '../lib/error';
 import { F2aAutoUpdater } from './autoUpdater';
+import { JobBoardModal } from './jobBoardModal';
 import { JobScanner } from './jobScanner';
 import { getStripeConfig } from './stripeConfig';
 import { F2aSupabaseApi } from './supabaseApi';
@@ -31,11 +32,13 @@ export function initRendererIpcApi({
   supabaseApi,
   jobScanner,
   autoUpdater,
+  jobBoardModal,
   nodeEnv,
 }: {
   supabaseApi: F2aSupabaseApi;
   jobScanner: JobScanner;
   autoUpdater: F2aAutoUpdater;
+  jobBoardModal: JobBoardModal;
   nodeEnv: string;
 }) {
   ipcMain.handle('get-os-type', (event) =>
@@ -64,20 +67,25 @@ export function initRendererIpcApi({
 
   ipcMain.handle('get-user', async (event) => _apiCall(() => supabaseApi.getUser()));
 
-  ipcMain.handle('create-link', async (event, { title, url }) =>
+  ipcMain.handle('create-link', async (event, { title, url, html }) =>
     _apiCall(async () => {
-      const { link } = await supabaseApi.createLink({
+      const { link, newJobs } = await supabaseApi.createLink({
         title,
         url,
+        html,
       });
 
       // intentionally not awaited to not have the user wait until JDs are in
-      jobScanner.scanLinks({ links: [link], sendNotification: false }).catch((error) => {
+      jobScanner.scanJobs(newJobs).catch((error) => {
         console.error(getExceptionMessage(error));
       });
 
       return { link };
     }),
+  );
+
+  ipcMain.handle('update-link', async (event, { linkId, title, url }) =>
+    _apiCall(() => supabaseApi.updateLink({ linkId, title, url })),
   );
 
   ipcMain.handle('list-links', async (event, { title, url }) => _apiCall(() => supabaseApi.listLinks()));
@@ -229,4 +237,14 @@ export function initRendererIpcApi({
   );
 
   ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.startDebugWindow({ linkId })));
+
+  ipcMain.handle('open-job-board-modal', async (event, { jobSite }) => {
+    return _apiCall(async () => jobBoardModal.open(jobSite));
+  });
+  ipcMain.handle('finish-job-board-modal', async (event) => {
+    return _apiCall(() => jobBoardModal.finish());
+  });
+  ipcMain.handle('close-job-board-modal', async (event) => {
+    return _apiCall(async () => jobBoardModal.close());
+  });
 }
