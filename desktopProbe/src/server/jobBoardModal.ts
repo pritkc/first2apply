@@ -101,6 +101,7 @@ export class JobBoardModal {
 
     if (this._searchView) {
       this._mainWindow.contentView.removeChildView(this._searchView);
+      this._searchView.webContents.close();
       this._searchView = undefined;
     }
   }
