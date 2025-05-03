@@ -172,6 +172,8 @@ export type DbSchema = {
         Row: Link;
         Insert: Pick<Link, "url" | "title" | "site_id">;
         Update: {
+          title?: string;
+          url?: string;
           scrape_failure_count?: number;
           last_scraped_at?: Date;
           scrape_failure_email_sent?: boolean;

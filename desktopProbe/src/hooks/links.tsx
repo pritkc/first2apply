@@ -1,4 +1,4 @@
-import { createLink, deleteLink, listLinks } from '@/lib/electronMainSdk';
+import { createLink, deleteLink, listLinks, updateLink } from '@/lib/electronMainSdk';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 import { Link } from '../../../supabase/functions/_shared/types';
@@ -9,7 +9,12 @@ import { useSession } from './session';
 type LinksContextType = {
   isLoading: boolean;
   links: Link[];
-  createLink: (newLink: Pick<Link, 'title' | 'url'>) => Promise<Link>;
+  createLink: (
+    newLink: Pick<Link, 'title' | 'url'> & {
+      html: string;
+    },
+  ) => Promise<Link>;
+  updateLink: (linkId: number, data: { title: string; url: string }) => Promise<void>;
   removeLink: (linkId: number) => Promise<void>;
   reloadLinks: () => Promise<void>;
 };
@@ -20,6 +25,9 @@ export const LinksContext = createContext<LinksContextType>({
   links: [],
   createLink: async () => {
     throw new Error('createLink not implemented');
+  },
+  updateLink: async () => {
+    throw new Error('updateLink not implemented');
   },
   removeLink: async () => {
     throw new Error('removeLink not implemented');
@@ -63,10 +71,24 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
   }, [isLoggedIn]);
 
   // Create a new link
-  const onCreateLink = async (newLink: Pick<Link, 'title' | 'url'>) => {
+  const onCreateLink = async (
+    newLink: Pick<Link, 'title' | 'url'> & {
+      html: string;
+    },
+  ) => {
     const createdLink = await createLink(newLink);
     setLinks((currentLinks) => [createdLink, ...currentLinks]);
     return createdLink;
+  };
+
+  // Update an existing link
+  const onUpdateLink = async (linkId: number, data: { title: string; url: string }) => {
+    const updatedLink = await updateLink({
+      linkId,
+      title: data.title,
+      url: data.url,
+    });
+    setLinks((currentLinks) => currentLinks.map((link) => (link.id === linkId ? { ...link, ...updatedLink } : link)));
   };
 
   // Remove an existing link
@@ -86,6 +108,7 @@ export const LinksProvider = ({ children }: React.PropsWithChildren<{}>) => {
         isLoading,
         links,
         createLink: onCreateLink,
+        updateLink: onUpdateLink,
         removeLink: onRemoveLink,
         reloadLinks: onReloadLinks,
       }}
