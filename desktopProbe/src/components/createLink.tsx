@@ -199,7 +199,7 @@ const JobBrowserOverlay = ({
 
   return (
     <div
-      className={`fixed left-0 top-0 z-50 flex h-[50px] w-full items-center justify-between border-b border-muted-foreground/20 bg-background px-5`}
+      className={`fixed left-0 top-0 z-50 flex h-[50px] w-full items-center justify-between border-b border-primary-foreground/50 bg-background px-5`}
     >
       <Button variant="outline" onClick={onCancel}>
         Cancel
