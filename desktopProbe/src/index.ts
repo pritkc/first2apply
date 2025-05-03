@@ -11,6 +11,7 @@ import { AmplitudeAnalyticsClient } from './server/amplitude';
 import { F2aAutoUpdater } from './server/autoUpdater';
 import { promiseAllSequence } from './server/helpers';
 import { HtmlDownloader } from './server/htmlDownloader';
+import { JobBoardModal } from './server/jobBoardModal';
 import { JobScanner } from './server/jobScanner';
 import { logger } from './server/logger';
 import { initRendererIpcApi } from './server/rendererIpcApi';
@@ -46,7 +47,7 @@ if (process.defaultApp) {
 
 let mainWindow: BrowserWindow | null = null;
 let trayIconNotificationShown = false;
-const createMainWindow = (): void => {
+const createMainWindow = () => {
   // Create the browser window.
   if (mainWindow) return;
   const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
@@ -56,6 +57,7 @@ const createMainWindow = (): void => {
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       additionalArguments: [theme],
+      partition: `persist:scraper`,
     },
     autoHideMenuBar: true,
   });
@@ -80,6 +82,8 @@ const createMainWindow = (): void => {
       shell.openExternal(url);
     }
   });
+
+  return mainWindow;
 };
 
 // This method will be called when Electron has finished
@@ -172,6 +176,7 @@ const htmlDownloaders = [
 ];
 let jobScanner: JobScanner | undefined;
 let trayMenu: TrayMenu | undefined;
+const jobBoardModal = new JobBoardModal();
 
 function navigate({ path }: { path: string }) {
   logger.info(`sending nav event to ${path}`);
@@ -242,7 +247,7 @@ async function bootstrap() {
     });
 
     // init the renderer IPC API
-    initRendererIpcApi({ supabaseApi, jobScanner, autoUpdater, nodeEnv: ENV.nodeEnv });
+    initRendererIpcApi({ supabaseApi, jobScanner, autoUpdater, jobBoardModal, nodeEnv: ENV.nodeEnv });
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });
@@ -303,7 +308,8 @@ async function bootstrap() {
   }
 
   // create the main window after everything is setup
-  createMainWindow();
+  const mainWindow = createMainWindow();
+  jobBoardModal.setMainWindow(mainWindow);
 
   // handle deep links on macOS and linux
   app.on('open-url', (event, url) => {

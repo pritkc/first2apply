@@ -11,29 +11,27 @@ import { useToast } from '@/components/ui/use-toast';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
 import { useSites } from '@/hooks/sites';
-import { openExternalUrl } from '@/lib/electronMainSdk';
+import { closeJobBoardModal, finishJobBoardModal, openJobBoardModal } from '@/lib/electronMainSdk';
+import { JobBoardModalResponse } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { InfoCircledIcon } from '@radix-ui/react-icons/dist';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
+import { JobSite, Link } from '../../../supabase/functions/_shared/types';
 import { Icons } from './icons';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
 import { Input } from './ui/input';
 
-// Schema definition for form validation using Zod
-const schema = z.object({
-  title: z.string().min(1, { message: 'This field cannot be blank' }).max(80),
-  url: z.string().url().min(1, { message: 'This field cannot be blank' }),
-});
-
-// Types for form values
-type FormValues = z.infer<typeof schema>;
-
 export function CreateLink() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [jobBoardModalResponse, setJobBoardModalResponse] = useState<JobBoardModalResponse>();
+  const [isJobBoardModalOpen, setIsJobBoardModalOpen] = useState(false);
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
+
   const { handleError } = useError();
   const { createLink } = useLinks();
   const { sites } = useSites();
@@ -46,55 +44,241 @@ export function CreateLink() {
     .filter((site) => site.deprecated === false);
 
   const [isOpen, setIsOpen] = useState(false);
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      title: '',
-      url: '',
-    },
-    mode: 'onChange',
-  });
 
   // Handler for form submission
-  const onSubmit = async (values: FormValues) => {
-    if (!values.title || !values.url) return;
-
-    setIsSubmitting(true);
-
+  const onOpenSite = async (site: JobSite) => {
     try {
-      await createLink({ title: values.title, url: values.url });
-      // Reset form and stop submitting only if creation is successful
-      form.reset();
-      toast({
-        title: 'Success',
-        description: 'Job search saved successfully! We are scanning the site for new jobs in the background.',
-        variant: 'success',
-      });
-
-      // Close the dialog
       setIsOpen(false);
+      setIsJobBoardModalOpen(true);
+      await openJobBoardModal(site);
     } catch (error) {
-      handleError({ error });
-    } finally {
-      // Stop loading regardless of outcome
-      setIsSubmitting(false);
+      handleError({ error, title: 'Error opening job board' });
     }
+  };
+  const onCancelBrowsing = async () => {
+    try {
+      setJobBoardModalResponse(undefined);
+      await closeJobBoardModal();
+    } catch (error) {
+      handleError({ error, title: 'Error closing job board' });
+    } finally {
+      setIsJobBoardModalOpen(false);
+    }
+  };
+
+  /**
+   * Handler for closing the job browser.
+   */
+  const onCloseJobBoardModal = async () => {
+    try {
+      const jobSearchInfo = await finishJobBoardModal();
+      setJobBoardModalResponse(jobSearchInfo);
+      setIsJobBoardModalOpen(false);
+      setIsConfirmationDialogOpen(true);
+      return jobSearchInfo;
+    } catch (error) {
+      handleError({ error, title: 'Error closing job board' });
+    }
+  };
+
+  /**
+   * Handler for closing the confirmation dialog.
+   */
+  const onCancelSave = async () => {
+    try {
+      setIsConfirmationDialogOpen(false);
+      setJobBoardModalResponse(undefined);
+    } catch (error) {
+      handleError({ error, title: 'Error closing job board' });
+    }
+  };
+
+  const onSaveSearch = async (data: { title: string }) => {
+    if (!jobBoardModalResponse) {
+      throw new Error('Job board modal response is not set');
+    }
+
+    const createdLink = await createLink({
+      url: jobBoardModalResponse.url,
+      title: data.title,
+      html: jobBoardModalResponse.html,
+    });
+    toast({
+      title: 'Link created',
+      description: `Link ${createdLink.title} created successfully`,
+    });
+
+    setIsConfirmationDialogOpen(false);
+    setJobBoardModalResponse(undefined);
+    setIsJobBoardModalOpen(false);
+    setIsOpen(false);
+
+    return createdLink;
   };
 
   // JSX for rendering the form
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" size="lg" className="px-10 text-base">
-          Add Search
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xl p-6">
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="default" size="lg" className="px-10 text-base">
+            Add Search
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="w-[90vw] p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-medium tracking-wide">Add new job search</DialogTitle>
+            <DialogDescription>
+              <p>
+                Click on one of the supported job boards and start searching for a role. The more specific your filters,
+                the better we can tailor job alerts for you.
+              </p>
+
+              <Alert className="mt-2 flex items-center gap-2 border-0 p-0">
+                <AlertTitle className="mb-0">
+                  <InfoCircledIcon className="h-5 w-5" />
+                </AlertTitle>
+                <AlertDescription className="text-base">
+                  <span className="font-medium">Pro Tip: </span>Apply the 'Last 24 Hours' filter where possible.
+                </AlertDescription>
+              </Alert>
+            </DialogDescription>
+          </DialogHeader>
+
+          <h2 className="mt-6 text-base tracking-wide">Supported job boards:</h2>
+          <DialogFooter>
+            <ul className="flex w-full flex-wrap justify-evenly gap-1.5">
+              {sortedSites.map((site) => (
+                <li key={site.id}>
+                  <Badge
+                    onClick={() => {
+                      onOpenSite(site);
+                    }}
+                  >
+                    {site.name}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* render a top level action bar overlay */}
+      <JobBrowserOverlay isOpen={isJobBoardModalOpen} onCancel={onCancelBrowsing} onSave={onCloseJobBoardModal} />
+
+      {/* render the confirmation dialog */}
+      <JobSearchSubmitDialog
+        isOpen={isConfirmationDialogOpen}
+        title={jobBoardModalResponse?.title ?? ''}
+        url={jobBoardModalResponse?.url ?? ''}
+        onCancel={onCancelSave}
+        onSaveJobSearch={onSaveSearch}
+      />
+    </>
+  );
+}
+
+/**
+ * Helper component used to render a top level overlay on top of the main window.
+ * It sits fixed on top and has a height of 50px and a width of 100%.
+ * Render a cancel and a save button.
+ */
+const JobBrowserOverlay = ({
+  isOpen,
+  onCancel,
+  onSave,
+}: {
+  isOpen: boolean;
+  onCancel: () => void;
+  onSave: () => void;
+}) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`fixed left-0 top-0 z-50 flex h-[50px] w-full items-center justify-between border-b border-muted-foreground/20 bg-background px-5`}
+    >
+      <Button variant="outline" onClick={onCancel}>
+        Cancel
+      </Button>
+      <p className="text-sm font-medium">
+        Search for the jobs you want to apply to. Once you are done, click on save and we will create a job search for
+        you.
+      </p>
+      <Button variant="default" onClick={onSave}>
+        Save
+      </Button>
+    </div>
+  );
+};
+
+const JobSearchSubmitDialog = ({
+  title,
+  url,
+  isOpen,
+  onSaveJobSearch,
+  onCancel,
+}: {
+  title: string;
+  url: string;
+  isOpen: boolean;
+  onSaveJobSearch: (data: { title: string }) => Promise<Link>;
+  onCancel: () => void;
+}) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { handleError } = useError();
+  const { toast } = useToast();
+
+  const formSchema = z.object({
+    title: z.string().min(1, 'Title is required'),
+    url: z.string().url('Invalid URL').min(1, 'URL is required'),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title,
+      url,
+    },
+  });
+
+  const onSubmit = async (data: { title: string }) => {
+    setIsSubmitting(true);
+    try {
+      await onSaveJobSearch(data);
+      toast({
+        title: 'Job search created',
+        description: `Job search ${data.title} created successfully`,
+      });
+    } catch (error) {
+      handleError({ error, title: 'Error creating job search' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onCancel();
+        }
+      }}
+    >
+      <DialogContent className="w-[90vw] p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-medium tracking-wide">Add new job search</DialogTitle>
           <DialogDescription>
-            Go to one of your favorite websites and search for a job. The more specific your filters, the better we can
-            tailor job alerts for you.
+            Give this search a name so you can easily find it later. First 2 Apply will keep monitoring this search and
+            let you know when it finds new jobs.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,7 +313,7 @@ export function CreateLink() {
                   <FormItem className="w-full">
                     <FormLabel>URL</FormLabel>
                     <FormControl>
-                      <Input id="url" type="url" placeholder="Paste the URL of your job search" {...field} />
+                      <Input id="url" type="url" disabled={true} {...field} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -137,6 +321,10 @@ export function CreateLink() {
             </div>
 
             <div className="flex flex-row items-center justify-between pt-3">
+              {/* Cancel button */}
+              <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                Cancel
+              </Button>
               {/* Submit button */}
               <Button
                 type="submit"
@@ -149,30 +337,13 @@ export function CreateLink() {
                     Scanning site...
                   </>
                 ) : (
-                  'Save'
+                  'Save search'
                 )}
               </Button>
             </div>
           </form>
         </Form>
-
-        <h2 className="mt-6 text-base tracking-wide">Supported job boards:</h2>
-        <DialogFooter>
-          <ul className="flex w-full flex-wrap justify-evenly gap-1.5">
-            {sortedSites.map((site) => (
-              <li key={site.id}>
-                <Badge
-                  onClick={() => {
-                    openExternalUrl(site.urls[0]);
-                  }}
-                >
-                  {site.name}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};

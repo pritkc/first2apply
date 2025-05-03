@@ -32,7 +32,7 @@ export function Navbar() {
       icon: <MagnifyingGlassIcon className="h-7 w-7" />,
     },
     {
-      name: 'Filters',
+      name: 'AI Filters',
       path: '/filters',
       icon: <Crosshair2Icon className="h-7 w-7" />,
     },
