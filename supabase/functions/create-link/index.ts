@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { DbSchema, Job } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
-import { cleanJobUrl } from "../_shared/jobListParser.ts";
+import { cleanJobUrl, parseJobsListUrl } from "../_shared/jobListParser.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
 
 Deno.serve(async (req) => {
@@ -36,7 +36,11 @@ Deno.serve(async (req) => {
     logger.addMeta("user_id", user?.id ?? "");
     logger.addMeta("user_email", user?.email ?? "");
 
-    const { title, url } = await req.json();
+    const { title, url, html } = (await req.json()) as {
+      title: string;
+      url: string;
+      html?: string;
+    };
     logger.info(`Creating link: ${title} - ${url}`);
 
     // list all job sites from db
@@ -68,7 +72,51 @@ Deno.serve(async (req) => {
 
     // legacy, we don't parse the jobs list when creating a new link anymore
     // but need to still return an empty array for compatibility
-    const newJobs: Job[] = [];
+    let newJobs: Job[] = [];
+
+    // if an html is provided, parse it and insert the jobs in the db
+    if (html) {
+      const { jobs, parseFailed } = await parseJobsListUrl({
+        allJobSites,
+        link,
+        html,
+      });
+
+      if (parseFailed) {
+        // remove the link from the db
+        const { error: deleteError } = await supabaseClient
+          .from("links")
+          .delete()
+          .eq("id", link.id);
+        if (deleteError) {
+          logger.error(`failed to delete link ${link.id}: ${deleteError}`);
+        }
+        throw new Error(
+          "No jobs found on the page you are trying to save. Please check the URL and try again. If you think this is a mistake, please contact our support team"
+        );
+      }
+
+      logger.info(`parsed ${jobs.length} jobs from ${link.url}`);
+
+      // add the link id to the jobs
+      jobs.forEach((job) => {
+        job.link_id = link.id;
+      });
+
+      const { data: upsertedJobs, error: insertError } = await supabaseClient
+        .from("jobs")
+        .upsert(
+          jobs.map((job) => ({ ...job, status: "processing" as const })),
+          { onConflict: "user_id, externalId", ignoreDuplicates: true }
+        )
+        .select("*");
+      if (insertError) throw new Error(insertError.message);
+
+      logger.info(`upserted ${upsertedJobs?.length} jobs for link ${link.id}`);
+      newJobs =
+        upsertedJobs?.filter((job) => job.status === "processing") ?? [];
+      logger.info(`found ${newJobs.length} new jobs`);
+    }
 
     logger.info(`successfully created link: ${link.id}`);
 
