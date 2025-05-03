@@ -68,17 +68,29 @@ export class F2aSupabaseApi {
   /**
    * Create a new link.
    */
-  async createLink({ title, url }: { title: string; url: string }) {
+  async createLink({ title, url, html }: { title: string; url: string; html: string }) {
     const { link, newJobs } = await this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>('create-link', {
         body: {
           title,
           url,
+          html,
         },
       }),
     );
 
     return { link, newJobs };
+  }
+
+  /**
+   * Update an existing link.
+   */
+  async updateLink({ linkId, title, url }: { linkId: number; title: string; url: string }): Promise<Link> {
+    const updatedLink = await this._supabaseApiCall(async () =>
+      this._supabase.from('links').update({ title, url }).eq('id', linkId).select('*').single(),
+    );
+
+    return updatedLink;
   }
 
   /**
