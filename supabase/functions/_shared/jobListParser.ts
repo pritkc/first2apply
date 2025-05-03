@@ -874,7 +874,9 @@ export function parseDiceJobs({
     };
   }
 
-  const jobsList = document.querySelector("dhi-search-cards-widget");
+  const jobsList = document.querySelector(
+    "div[data-testid='jobSearchResultsContainer'"
+  );
   if (!jobsList) {
     return {
       jobs: [],
@@ -884,35 +886,47 @@ export function parseDiceJobs({
   }
 
   const jobElements = Array.from(
-    jobsList.querySelectorAll("dhi-search-card")
+    jobsList.querySelectorAll("div[data-id]")
   ) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
-    const externalId = el
-      .querySelector(".card-title-link")
-      ?.getAttribute("id")
-      ?.trim();
+    const externalId = el?.getAttribute("data-id")?.trim();
     if (!externalId) return null;
 
     const externalUrl = `https://www.dice.com/job-detail/${externalId}`.trim();
 
-    const title = el.querySelector(".card-title-link")?.textContent?.trim();
+    const title = el.querySelector(".content > div")?.textContent?.trim();
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".card-company > a")
+      .querySelector(".header > span > a:nth-child(2)")
       ?.textContent?.trim();
     if (!companyName) return null;
 
     const companyLogo =
       el
-        .querySelector(".company-page-logo-container")
+        .querySelector(".header > span > a")
         ?.querySelector("img")
         ?.getAttribute("src") || undefined;
 
     const location = el
-      .querySelector(".search-result-location")
+      .querySelector(".content > span > div > div")
       ?.textContent.trim();
+
+    const tags: string[] = [];
+    const postedAt = el
+      .querySelector(
+        ".content > span > div > div:nth-child(2) > div:nth-child(2)"
+      )
+      ?.textContent.trim();
+    if (postedAt) {
+      tags.push(postedAt);
+    }
+
+    const otherTags = Array.from(el.querySelectorAll(".content > div.box"))
+      .map((el) => el.textContent?.trim() || "")
+      .filter((t) => !!t);
+    tags.push(...otherTags);
 
     return {
       siteId,
@@ -923,6 +937,7 @@ export function parseDiceJobs({
       companyLogo,
       location,
       labels: [],
+      tags,
     };
   });
 
@@ -1298,7 +1313,7 @@ export function parseRemoteioJobs({
     noResultsNode.textContent
       .trim()
       .toLowerCase()
-      .startsWith("No results found")
+      .startsWith("no results found")
   ) {
     return {
       jobs: [],
