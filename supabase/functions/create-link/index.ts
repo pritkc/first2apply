@@ -89,8 +89,21 @@ Deno.serve(async (req) => {
           .delete()
           .eq("id", link.id);
         if (deleteError) {
-          logger.error(`failed to delete link ${link.id}: ${deleteError}`);
+          logger.error(
+            `failed to delete link ${link.id}: ${deleteError.message}`
+          );
         }
+
+        // save the html dump for debugging
+        const { error: htmlDumpError } = await supabaseClient
+          .from("html_dumps")
+          .insert([{ url: link.url, html }]);
+        if (htmlDumpError) {
+          logger.error(
+            `failed to save html dump for link ${link.id}: ${htmlDumpError.message}`
+          );
+        }
+
         throw new Error(
           "No jobs found on the page you are trying to save. Please check the URL and try again. If you think this is a mistake, please contact our support team"
         );
