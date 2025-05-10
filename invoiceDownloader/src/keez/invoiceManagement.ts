@@ -73,6 +73,10 @@ export async function uploadInvoicesToKeez({
       stripeInvoices: stripeInvoicesOrdered,
       keezTierToItemMap,
     });
+  allKeezInvoicesToValidate = reverseKeezInvoices.concat(
+    existingReverseKeezInvoices
+  );
+  await validateKeezInvoices({ keez, keezInvoices: allKeezInvoicesToValidate });
 
   const allReverseKeezInvoices =
     existingReverseKeezInvoices.concat(reverseKeezInvoices);
@@ -319,81 +323,102 @@ async function createKeezInvoiceFromStripeInvoice({
           })
         ),
 
-        netAmountCurrency: fromCents(netAmountCurrency),
-        netAmount: fromCents(
-          convertCurrency({
-            value: netAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
-        grossAmountCurrency: fromCents(netAmountCurrency + vatAmountCurrency),
-        grossAmount: fromCents(
-          convertCurrency({
-            value: netAmountCurrency + vatAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
-        originalNetAmountCurrency: fromCents(originalNetAmountCurrency),
-        originalNetAmount: fromCents(
-          convertCurrency({
-            value: originalNetAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
+        netAmountCurrency: multiplier * fromCents(netAmountCurrency),
+        netAmount:
+          multiplier *
+          fromCents(
+            convertCurrency({
+              value: netAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+        grossAmountCurrency:
+          multiplier * fromCents(netAmountCurrency + vatAmountCurrency),
+        grossAmount:
+          multiplier *
+          fromCents(
+            convertCurrency({
+              value: netAmountCurrency + vatAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+        originalNetAmountCurrency:
+          multiplier * fromCents(originalNetAmountCurrency),
+        originalNetAmount:
+          multiplier *
+          fromCents(
+            convertCurrency({
+              value: originalNetAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
 
         // VAT
         vatPercent,
-        vatAmountCurrency: fromCents(vatAmountCurrency),
-        vatAmount: fromCents(
-          convertCurrency({
-            value: vatAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
-        originalVatAmountCurrency: fromCents(originalVatAmountCurrency),
-        originalVatAmount: fromCents(
-          convertCurrency({
-            value: originalVatAmountCurrency,
-            exchangeRate,
-            decimals: 2,
-          })
-        ),
+        vatAmountCurrency: multiplier * vatAmountCurrency,
+        vatAmount:
+          multiplier *
+          fromCents(
+            convertCurrency({
+              value: vatAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
+        originalVatAmountCurrency:
+          multiplier * fromCents(originalVatAmountCurrency),
+        originalVatAmount:
+          multiplier *
+          fromCents(
+            convertCurrency({
+              value: originalVatAmountCurrency,
+              exchangeRate,
+              decimals: 2,
+            })
+          ),
 
         // Discount
         ...(hasDiscount && {
           discountType: "Value",
           discountValueOnNet: true,
 
-          discountNetValueCurrency: fromCents(discountAmountCurrency),
-          discountNetValue: fromCents(
-            convertCurrency({
-              value: discountAmountCurrency,
-              exchangeRate,
-              decimals: 2,
-            })
-          ),
-          discountVatValueCurrency: fromCents(discountVatAmountCurrency),
-          discountVatValue: fromCents(
-            convertCurrency({
-              value: discountVatAmountCurrency,
-              exchangeRate,
-              decimals: 2,
-            })
-          ),
-          discountGrossValueCurrency: fromCents(
-            discountAmountCurrency + discountVatAmountCurrency
-          ),
-          discountGrossValue: fromCents(
-            convertCurrency({
-              value: discountAmountCurrency + discountVatAmountCurrency,
-              exchangeRate,
-              decimals: 2,
-            })
-          ),
+          discountNetValueCurrency:
+            multiplier * fromCents(discountAmountCurrency),
+          discountNetValue:
+            multiplier *
+            fromCents(
+              convertCurrency({
+                value: discountAmountCurrency,
+                exchangeRate,
+                decimals: 2,
+              })
+            ),
+          discountVatValueCurrency:
+            multiplier * fromCents(discountVatAmountCurrency),
+          discountVatValue:
+            multiplier *
+            fromCents(
+              convertCurrency({
+                value: discountVatAmountCurrency,
+                exchangeRate,
+                decimals: 2,
+              })
+            ),
+          discountGrossValueCurrency:
+            multiplier *
+            fromCents(discountAmountCurrency + discountVatAmountCurrency),
+          discountGrossValue:
+            multiplier *
+            fromCents(
+              convertCurrency({
+                value: discountAmountCurrency + discountVatAmountCurrency,
+                exchangeRate,
+                decimals: 2,
+              })
+            ),
         }),
 
         exciseAmountCurrency: 0,
