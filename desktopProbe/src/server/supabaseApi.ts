@@ -1,6 +1,8 @@
 import { FunctionsHttpError, PostgrestError, SupabaseClient, User } from '@supabase/supabase-js';
 import { backOff } from 'exponential-backoff';
+import * as fs from 'fs';
 import * as luxon from 'luxon';
+import * as path from 'path';
 
 import {
   AdvancedMatchingConfig,
@@ -69,6 +71,10 @@ export class F2aSupabaseApi {
    * Create a new link.
    */
   async createLink({ title, url, html }: { title: string; url: string; html: string }) {
+    // for debugging, use a test.html file
+    // const htmlFixture = fs.readFileSync(path.join(__dirname, '../../../test.html'), 'utf-8');
+    // html = htmlFixture;
+
     const { link, newJobs } = await this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>('create-link', {
         body: {
