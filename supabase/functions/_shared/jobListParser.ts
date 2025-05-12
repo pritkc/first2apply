@@ -237,6 +237,7 @@ export function parseLinkedInJobs({
     // check if the user is logged into LinkedIn because then it has a totally different layout
     jobsList =
       document.querySelector("ul li[data-occludable-job-id]")?.closest("ul") ??
+      document.querySelector(".scaffold-layout__list ul") ??
       null;
     isLoggedIn = true;
   }
@@ -299,22 +300,35 @@ export function parseLinkedInJobs({
     });
   } else {
     jobs = jobElements.map((el): ParsedJob | null => {
-      const externalId = el.getAttribute("data-occludable-job-id")?.trim();
+      const jobCard = el.querySelector("div[data-job-id]"); // this is the new layout
+
+      const externalId =
+        el.getAttribute("data-occludable-job-id")?.trim() ??
+        jobCard?.getAttribute("data-job-id")?.trim();
       if (!externalId) return null;
 
-      const externalUrlEl = el.querySelector(".job-card-list__title--link");
+      const externalUrlEl =
+        el.querySelector(".job-card-list__title--link") ??
+        jobCard?.querySelector("a");
       if (!externalUrlEl) return null;
       const externalUrlPath = externalUrlEl.getAttribute("href")?.trim();
-      const externalUrl = `https://www.linkedin.com${externalUrlPath}`;
+      const prefix = "https://www.linkedin.com";
+      const externalUrl = externalUrlPath?.startsWith(prefix)
+        ? externalUrlPath
+        : `https://www.linkedin.com${externalUrlPath}`;
 
-      const title = externalUrlEl
-        .querySelector(":scope > span > strong")
-        ?.textContent?.trim();
+      const title = (
+        externalUrlEl.querySelector(":scope > span > strong") ??
+        externalUrlEl.querySelector(
+          ".job-card-job-posting-card-wrapper__title > span > strong"
+        )
+      )?.textContent?.trim();
       if (!title) return null;
 
-      const companyName = el
-        .querySelector(".artdeco-entity-lockup__subtitle > span")
-        ?.textContent?.trim();
+      const companyName = (
+        el.querySelector(".artdeco-entity-lockup__subtitle > span") ??
+        el.querySelector(".artdeco-entity-lockup__subtitle")
+      )?.textContent?.trim();
       if (!companyName) return null;
 
       const companyLogo =
@@ -345,9 +359,14 @@ export function parseLinkedInJobs({
           .map((p) => p.trim()) ?? [];
 
       // bottom tags
-      const footerTagEls = el.querySelectorAll(
+      let footerTagEls = el.querySelectorAll(
         ".job-card-list__footer-wrapper.job-card-container__footer-wrapper > li"
       );
+      if (!footerTagEls.length) {
+        footerTagEls = el.querySelectorAll(
+          ".job-card-job-posting-card-wrapper__footer-items > li"
+        );
+      }
       const footerTags = Array.from(footerTagEls)
         .map((el) => {
           // Remove children with class 'visually-hidden'
