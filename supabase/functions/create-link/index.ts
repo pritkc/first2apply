@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         }
 
         throw new Error(
-          "No jobs found on the page you are trying to save. Make sure the page you're on is a job list, not just the description of a single job. If you think this is a mistake, please contact our support team."
+          `No jobs found on the ${site.name} page you are trying to save. Make sure the page you're on is a job list, not just the description of a single job. If you think this is a mistake, please contact our support team.`
         );
       }
 
