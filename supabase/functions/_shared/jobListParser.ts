@@ -526,7 +526,9 @@ export function parseWeWorkRemotelyJobs({
   if (!document) throw new Error("Could not parse html");
 
   // check if the list is empty first
-  const noResultsNode = document.querySelector(".no_results");
+  const noResultsNode =
+    document.querySelector(".no_results") ||
+    document.querySelector(".advanced_no_results");
   if (noResultsNode) {
     return {
       jobs: [],
@@ -893,9 +895,7 @@ export function parseDiceJobs({
     };
   }
 
-  const jobsList = document.querySelector(
-    "div[data-testid='jobSearchResultsContainer'"
-  );
+  const jobsList = document.querySelector("div[data-id")?.parentElement;
   if (!jobsList) {
     return {
       jobs: [],
