@@ -313,10 +313,14 @@ export function parseLinkedInJobs({
       if (!externalUrlEl) return null;
       const externalUrlPath = externalUrlEl.getAttribute("href")?.trim();
       const prefix = "https://www.linkedin.com";
-      const externalUrl = externalUrlPath?.startsWith(prefix)
+      let externalUrl = externalUrlPath?.startsWith(prefix)
         ? externalUrlPath
         : `https://www.linkedin.com${externalUrlPath}`;
-
+      if (externalUrl.includes("jobs/search-results/?currentJobId")) {
+        // this is a special case where the url contains the job id in the query params
+        const urlParams = new URLSearchParams(externalUrl.split("?")[1]);
+        externalUrl = `${prefix}/jobs/view/${urlParams.get("currentJobId")}`;
+      }
       const title = (
         externalUrlEl.querySelector(":scope > span > strong") ??
         externalUrlEl.querySelector(
@@ -886,7 +890,9 @@ export function parseDiceJobs({
   if (!document) throw new Error("Could not parse html");
 
   // check if the list is empty first
-  const noResultsNode = document.querySelector(".no-jobs-message");
+  const noResultsNode =
+    document.querySelector(".no-jobs-message") ??
+    document.querySelector("div[data-testid='job-search-no-results']");
   if (noResultsNode) {
     return {
       jobs: [],
