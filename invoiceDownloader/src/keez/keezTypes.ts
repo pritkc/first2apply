@@ -21,7 +21,7 @@ export type KeezInvoice = {
   storno?: {
     series: string;
     number: number;
-    year: number;
+    date: string;
   }; // Optional: Reference to the invoice being canceled
   currencyCode: string; // Required: Currency code (ISO 4217)
   referenceCurrencyCode?: string; // Optional: Reference currency code (ISO 4217)
