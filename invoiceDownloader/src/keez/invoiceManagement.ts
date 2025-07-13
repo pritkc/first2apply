@@ -462,7 +462,9 @@ async function createKeezInvoiceFromStripeInvoice({
       storno: {
         series,
         number: parseInt(number),
-        year: luxon.DateTime.fromSeconds(stripeInvoice.created).year,
+        date: luxon.DateTime.fromSeconds(stripeInvoice.created).toFormat(
+          "yyyyMMdd"
+        ),
       },
     }),
     documentDate: luxon.DateTime.fromSeconds(stripeInvoice.created).toFormat(
