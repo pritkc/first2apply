@@ -26,7 +26,11 @@ export async function uploadInvoicesToKeez({
   stripe: Stripe;
   stripeInvoices: Stripe.Invoice[];
 }) {
-  const { keezItems } = await upsertKeezItems({ keez, stripeInvoices });
+  const { keezItems, stripePriceMap } = await upsertKeezItems({
+    keez,
+    stripeInvoices,
+    stripe,
+  });
 
   console.log("uploading invoices to keez ...");
   const keezTierToItemMap = new Map<string, KeezItem>(
@@ -45,6 +49,7 @@ export async function uploadInvoicesToKeez({
     stripe,
     stripeInvoicesOrdered,
     keezTierToItemMap,
+    stripePriceMap,
   });
   let allKeezInvoicesToValidate = existingKeezInvoices.concat(newKeezInvoices);
   await validateKeezInvoices({ keez, keezInvoices: allKeezInvoicesToValidate });
@@ -72,6 +77,7 @@ export async function uploadInvoicesToKeez({
       stripe,
       stripeInvoices: stripeInvoicesOrdered,
       keezTierToItemMap,
+      stripePriceMap,
     });
   allKeezInvoicesToValidate = reverseKeezInvoices.concat(
     existingReverseKeezInvoices
@@ -106,9 +112,11 @@ const toKeezItemNameCode = (tier: string, variant?: string) =>
 async function upsertKeezItems({
   keez,
   stripeInvoices,
+  stripe,
 }: {
   keez: KeezApi;
   stripeInvoices: Stripe.Invoice[];
+  stripe: Stripe;
 }) {
   // check if we have items in keez for the invoices
   console.log("checking if keez has all required items ...");
@@ -120,10 +128,37 @@ async function upsertKeezItems({
     stripeItems.push(...items);
   }
 
+  const priceIds = new Set(
+    stripeItems
+      .map((li) =>
+        li.pricing?.type === "price_details"
+          ? li.pricing.price_details?.price
+          : undefined
+      )
+      .filter((id): id is string => !!id)
+  );
+
+  const stripePriceMap = new Map<string, Stripe.Price>();
+  await Promise.all(
+    [...priceIds].map(async (id) => {
+      stripePriceMap.set(id, await stripe.prices.retrieve(id));
+    })
+  );
+
   console.log(`fetched ${stripeItems.length} items from Stripe`);
   const usedTiers = [
-    ...new Set(stripeItems.map((item) => item.price?.metadata.tier)),
-  ].filter((s): s is string => s !== undefined);
+    ...new Set(
+      stripeItems
+        .map((li) => {
+          if (li.pricing?.type !== "price_details") return undefined;
+          const price = stripePriceMap.get(
+            li.pricing.price_details?.price ?? ""
+          );
+          return price?.metadata.tier;
+        })
+        .filter((t): t is string => !!t)
+    ),
+  ];
 
   // we need two versions for each item, one for ro clients and one for non-ro clients
   const usedTierCodes = usedTiers.flatMap((tier) => [
@@ -155,7 +190,7 @@ async function upsertKeezItems({
     console.log("new tiers created");
   }
 
-  return { keezItems };
+  return { keezItems, stripePriceMap };
 }
 
 async function createKeezInvoices({
@@ -163,11 +198,13 @@ async function createKeezInvoices({
   stripe,
   stripeInvoicesOrdered,
   keezTierToItemMap,
+  stripePriceMap,
 }: {
   keez: KeezApi;
   stripe: Stripe;
   stripeInvoicesOrdered: Stripe.Invoice[];
   keezTierToItemMap: Map<string, KeezItem>;
+  stripePriceMap: Map<string, Stripe.Price>;
 }) {
   const newKeezInvoices: KeezInvoice[] = [];
   const existingKeezInvoices: KeezInvoice[] = [];
@@ -190,6 +227,7 @@ async function createKeezInvoices({
       stripe,
       stripeInvoice: invoice,
       keezTierToItemMap,
+      stripePriceMap,
     });
     newKeezInvoices.push(keezInvoice);
   }
@@ -203,13 +241,16 @@ async function createKeezInvoices({
 async function createKeezInvoiceFromStripeInvoice({
   keez,
   stripeInvoice,
+  stripe,
   keezTierToItemMap,
+  stripePriceMap,
   isStorno = false,
 }: {
   keez: KeezApi;
   stripe: Stripe;
   stripeInvoice: Stripe.Invoice;
   keezTierToItemMap: Map<string, KeezItem>;
+  stripePriceMap: Map<string, Stripe.Price>;
   isStorno?: boolean;
 }) {
   const { series, number } = getInvoiceSeriesAndNumber(stripeInvoice);
@@ -258,11 +299,25 @@ async function createKeezInvoiceFromStripeInvoice({
   }
 
   const multiplier = isStorno ? -1 : 1;
-  const vatAmountCurrency = multiplier * (stripeInvoice.tax ?? 0);
-  const vatPercent = vatAmountCurrency > 0 ? 19 : 0; // hard coded for now to romanian VAT
+  const totalTax =
+    stripeInvoice.total_taxes?.reduce((acc, tax) => acc + tax.amount, 0) ?? 0;
+  const vatAmountCurrency = multiplier * totalTax;
+  let vatPercent = 0;
+  const usedTaxRate = stripeInvoice.total_taxes?.find((tax) => tax.amount > 0);
+  if (usedTaxRate) {
+    const taxRateId =
+      usedTaxRate.tax_rate_details?.tax_rate ??
+      throwError("Missing tax rate ID");
+    const taxRate = await stripe.taxRates.retrieve(taxRateId);
+    vatPercent = taxRate.percentage;
+  }
+
   const invoiceDetails = stripeInvoice.lines.data.map(
     (item): KeezInvoiceDetail => {
-      const tier = item.price?.metadata.tier;
+      const price =
+        stripePriceMap.get(item.pricing?.price_details?.price ?? "") ??
+        throwError("Missing price details");
+      const tier = price.metadata.tier;
       if (!tier) {
         throw new Error(`Item ${item.id} does not have a tier`);
       }
@@ -287,7 +342,7 @@ async function createKeezInvoiceFromStripeInvoice({
       }
 
       const unitPriceCurrency =
-        item.price?.unit_amount ?? throwError("Missing unit price");
+        price.unit_amount ?? throwError("Missing unit price");
       const quantity = item.quantity ?? throwError("Missing quantity");
       const originalNetAmountCurrency = item.amount; // total item price without discount
 
@@ -426,8 +481,12 @@ async function createKeezInvoiceFromStripeInvoice({
       };
     }
   );
-  if (stripeInvoice.discount?.coupon.name) {
-    comments.push(`Discount: ${stripeInvoice.discount.coupon.name}`);
+
+  if (stripeInvoice.discounts.length > 0) {
+    stripeInvoice.discounts.forEach((d) => {
+      const discount = d as Stripe.Discount;
+      comments.push(`Discount: ${discount.coupon.name}`);
+    });
   }
 
   const discountAmountCurrency =
@@ -720,27 +779,36 @@ export async function createReverseInvoices({
   stripe,
   stripeInvoices,
   keezTierToItemMap,
+  stripePriceMap,
 }: {
   keez: KeezApi;
   stripe: Stripe;
   stripeInvoices: Stripe.Invoice[];
   keezTierToItemMap: Map<string, KeezItem>;
+  stripePriceMap: Map<string, Stripe.Price>;
 }) {
   console.log("Creating reverse invoices ...");
 
   let invoicesToReverse: Stripe.Invoice[] = [];
   await promiseAllBatched(stripeInvoices, 10, async (invoice) => {
+    const paymentIntentId = invoice.payments?.data[0].payment.payment_intent;
     const paymentIntent =
-      typeof invoice.payment_intent === "string"
-        ? await stripe.paymentIntents.retrieve(invoice.payment_intent)
+      paymentIntentId === "string"
+        ? await stripe.paymentIntents.retrieve(paymentIntentId)
         : undefined;
+
     const latestCharge =
       typeof paymentIntent?.latest_charge === "string"
         ? await stripe.charges.retrieve(paymentIntent.latest_charge)
         : undefined;
     const isRefunded = latestCharge?.refunded ?? false;
+    const isPaid =
+      invoice.status === "paid" &&
+      invoice.status_transitions.paid_at !== null &&
+      invoice.status_transitions.voided_at === null &&
+      invoice.status_transitions.marked_uncollectible_at === null;
 
-    if (!invoice.paid || invoice.status !== "paid" || isRefunded) {
+    if (!isPaid || isRefunded) {
       invoicesToReverse.push(invoice);
     }
   });
@@ -776,6 +844,7 @@ export async function createReverseInvoices({
       stripe,
       stripeInvoice: invoice,
       keezTierToItemMap,
+      stripePriceMap,
       isStorno: true,
     });
     reverseKeezInvoices.push(reverseInvoice);

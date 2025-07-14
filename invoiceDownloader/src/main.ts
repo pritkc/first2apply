@@ -31,22 +31,9 @@ async function fetchAndDownloadInvoices({ stripe }: { stripe: Stripe }) {
         },
         limit: 100, // Stripe's max per page
         ...(lastInvoiceId && { starting_after: lastInvoiceId }),
+        expand: ["data.discounts", "data.payments"],
       }
     );
-
-    // for (const invoice of invoices.data) {
-    //   if (invoice.invoice_pdf) {
-    //     const invoiceNumber = invoice.number || invoice.id;
-    //     console.log(`Downloading invoice: ${invoiceNumber}`);
-    //     await downloadInvoicePdf({
-    //       invoiceUrl: invoice.invoice_pdf,
-    //       invoiceNumber,
-    //       isPaid: invoice.paid,
-    //     });
-    //   } else {
-    //     console.error(`Invoice ${invoice.id} does not have a PDF`);
-    //   }
-    // }
 
     // Check if there's more data to paginate
     hasMore = invoices.has_more;
