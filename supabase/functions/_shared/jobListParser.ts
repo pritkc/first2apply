@@ -420,6 +420,11 @@ export function parseLinkedInJobs({
             tag.toLowerCase().includes("/hour") ||
             tag.toLowerCase().includes("/hourly")
         );
+
+        // remove the salary from the tags
+        if (job.salary) {
+          job.tags = job.tags.filter((tag) => tag !== job.salary);
+        }
       }
 
       return job;
