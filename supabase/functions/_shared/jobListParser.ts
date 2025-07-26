@@ -401,7 +401,29 @@ export function parseLinkedInJobs({
     });
   }
 
-  const validJobs = jobs.filter((job): job is ParsedJob => !!job);
+  const validJobs = jobs
+    .filter((job): job is ParsedJob => !!job)
+    .map((job) => {
+      // sanitize tags
+      job.tags = job.tags
+        ?.map((tag) => tag.trim().replaceAll(/\n/g, ""))
+        .filter((tag) => !!tag);
+
+      // try to parse the salary from the tags
+      if (!job.salary && job.tags) {
+        job.salary = job.tags.find(
+          (tag) =>
+            tag.toLowerCase().includes("/yr") ||
+            tag.toLowerCase().includes("/year") ||
+            tag.toLowerCase().includes("/yearly") ||
+            tag.toLowerCase().includes("/hr") ||
+            tag.toLowerCase().includes("/hour") ||
+            tag.toLowerCase().includes("/hourly")
+        );
+      }
+
+      return job;
+    });
 
   return {
     jobs: validJobs,
