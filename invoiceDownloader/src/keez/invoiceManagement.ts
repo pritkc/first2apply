@@ -791,7 +791,7 @@ export async function createReverseInvoices({
 
   let invoicesToReverse: Stripe.Invoice[] = [];
   await promiseAllBatched(stripeInvoices, 10, async (invoice) => {
-    const paymentIntentId = invoice.payments?.data[0].payment.payment_intent;
+    const paymentIntentId = invoice.payments?.data[0]?.payment?.payment_intent;
     const paymentIntent =
       paymentIntentId === "string"
         ? await stripe.paymentIntents.retrieve(paymentIntentId)
@@ -831,6 +831,8 @@ export async function createReverseInvoices({
       documentDate: luxon.DateTime.fromSeconds(
         invoice.due_date ?? invoice.created
       ).toFormat("yyyyMMdd"),
+      originalInvoiceSeries: series,
+      originalInvoiceNumber: number,
     });
     if (existingInvoice) {
       console.log(`Invoice ${invoice.number} already reversed in Keez`);

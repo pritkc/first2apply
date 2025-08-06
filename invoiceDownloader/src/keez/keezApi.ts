@@ -170,10 +170,14 @@ export class KeezApi {
     series,
     client,
     documentDate,
+    originalInvoiceSeries,
+    originalInvoiceNumber,
   }: {
     series: string;
     client: string;
     documentDate: string;
+    originalInvoiceSeries: string;
+    originalInvoiceNumber: string;
   }): Promise<KeezInvoice | null> {
     const { data: invoices } = await this._apiCall<{
       data: KeezInvoice[];
@@ -182,7 +186,7 @@ export class KeezApi {
       path: `/api/v1.0/public-api/${this._config.clientId}/invoices`,
       params: {
         filter: encodeURIComponent(
-          `series[eq]:${series} AND partnerName[like]:${client} AND documentDate[eq]:${documentDate}`
+          `series[eq]:${series} AND partnerName[like]:${client} AND documentDate[eq]:${documentDate} AND comments[like]:${originalInvoiceSeries}${originalInvoiceNumber}`
         ),
       },
     });
