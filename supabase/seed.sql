@@ -251,54 +251,54 @@ create trigger on_auth_user_created
 -- select id from auth.users
 -- where id not in (select user_id from public.profiles);
 
--- Stripe DB wrappers
-create extension if not exists wrappers with schema extensions;
-create foreign data wrapper stripe_wrapper
-  handler stripe_fdw_handler
-  validator stripe_fdw_validator;
+-- Stripe DB wrappers (commented out for local development)
+-- create extension if not exists wrappers with schema extensions;
+-- create foreign data wrapper stripe_wrapper
+--   handler stripe_fdw_handler
+--   validator stripe_fdw_validator;
 
-insert into vault.secrets (name, secret)
-values (
-  'stripe_secret_key',
-  'YOUR_SECRET'
-)
-returning key_id;
+-- insert into vault.secrets (name, secret)
+-- values (
+--   'stripe_secret_key',
+--   'YOUR_SECRET'
+-- )
+-- returning key_id;
 
-create server stripe_server
-  foreign data wrapper stripe_wrapper
-  options (
-    api_key_id 'stripe_secret_key',
-    api_url 'https://api.stripe.com/v1/'  -- Stripe API base URL, optional. Default is 'https://api.stripe.com/v1/'
-  );
+-- create server stripe_server
+--   foreign data wrapper stripe_wrapper
+--   options (
+--     api_key_id 'stripe_secret_key',
+--     api_url 'https://api.stripe.com/v1/'  -- Stripe API base URL, optional. Default is 'https://api.stripe.com/v1/'
+--   );
 
-create schema stripe;
-create foreign table stripe.customers (
-  id text,
-  email text,
-  name text,
-  description text,
-  created timestamp,
-  attrs jsonb
-)
-  server stripe_server
-  options (
-    object 'customers',
-    rowid_column 'id'
-  );
+-- create schema stripe;
+-- create foreign table stripe.customers (
+--   id text,
+--   email text,
+--   name text,
+--   description text,
+--   created timestamp,
+--   attrs jsonb
+-- )
+--   server stripe_server
+--   options (
+--     object 'customers',
+--     rowid_column 'id'
+--   );
   
-create foreign table stripe.subscriptions (
-  id text,
-  customer text,
-  currency text,
-  current_period_start timestamp,
-  current_period_end timestamp,
-  attrs jsonb
-)
-  server stripe_server
-  options (
-    object 'subscriptions',
-    rowid_column 'id'
-  );
+-- create foreign table stripe.subscriptions (
+--   id text,
+--   customer text,
+--   currency text,
+--   current_period_start timestamp,
+--   current_period_end timestamp,
+--   attrs jsonb
+-- )
+--   server stripe_server
+--   options (
+--     object 'subscriptions',
+--     rowid_column 'id'
+--   );
 
 -- advanced matching
 create table

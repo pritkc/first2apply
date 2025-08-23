@@ -24,14 +24,21 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       throw new Error("Missing Authorization header");
     }
-    const supabaseClient = createClient<DbSchema>(
+    
+    // Create two separate clients - one for service operations, one for user operations
+    const serviceClient = createClient<DbSchema>(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    
+    const userClient = createClient<DbSchema>(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } }
     );
 
     const { data: userData, error: getUserError } =
-      await supabaseClient.auth.getUser();
+      await userClient.auth.getUser();
     if (getUserError) {
       throw new Error(getUserError.message);
     }
@@ -48,8 +55,8 @@ Deno.serve(async (req) => {
     const { jobId, html, maxRetries, retryCount } = body;
     logger.info(`processing job description for ${jobId}  ...`);
 
-    // find the job and its site
-    const { data: job, error: findJobErr } = await supabaseClient
+    // find the job and its site using service client for database operations
+    const { data: job, error: findJobErr } = await serviceClient
       .from("jobs")
       .select("*")
       .eq("id", jobId)
@@ -61,7 +68,7 @@ Deno.serve(async (req) => {
       throw new Error(`Job not found: ${jobId}`);
     }
 
-    const { data: site, error: findSiteErr } = await supabaseClient
+    const { data: site, error: findSiteErr } = await serviceClient
       .from("sites")
       .select("*")
       .eq("id", job.siteId)
@@ -93,7 +100,7 @@ Deno.serve(async (req) => {
           }
         );
 
-        await supabaseClient
+        await serviceClient
           .from("html_dumps")
           .insert([{ url: job.externalUrl, html }]);
       }
@@ -110,7 +117,7 @@ Deno.serve(async (req) => {
       const { newStatus, excludeReason } = await applyAdvancedMatchingFilters({
         logger,
         job: updatedJob,
-        supabaseClient,
+        supabaseClient: serviceClient,
         openAiApiKey:
           Deno.env.get("OPENAI_API_KEY") ??
           throwError("missing OPENAI_API_KEY"),
@@ -125,7 +132,7 @@ Deno.serve(async (req) => {
 
     logger.info(`[${site.provider}] ${updatedJob.status} ${job.title}`);
 
-    const { error: updateJobErr } = await supabaseClient
+    const { error: updateJobErr } = await serviceClient
       .from("jobs")
       .update({
         description: updatedJob.description,

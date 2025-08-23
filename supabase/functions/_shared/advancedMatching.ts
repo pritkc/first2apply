@@ -1,12 +1,11 @@
-import { AzureOpenAI } from "npm:openai@4.86.2";
+import { OpenAI } from "npm:openai@4.86.2";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
 import { Profile } from "./types.ts";
 import { getExceptionMessage, throwError } from "./errorUtils.ts";
 import { ILogger } from "./logger.ts";
-import { zodResponseFormat } from "npm:openai@4.86.2/helpers/zod";
-import { z } from "npm:zod";
+// Removed Zod imports - using native JSON mode instead
 
 /**
  * Apply all the advanced matching rules to the given job and
@@ -166,10 +165,8 @@ async function promptOpenAI({
   job: Job;
   openAiApiKey: string;
 }) {
-  const openai = new AzureOpenAI({
+  const openai = new OpenAI({
     apiKey: openAiApiKey,
-    endpoint: "https://first2apply.openai.azure.com/",
-    apiVersion: "2024-10-21",
   });
 
   const llmConfig = {
@@ -198,16 +195,17 @@ async function promptOpenAI({
     top_p: 0,
     frequency_penalty: 0,
     presence_penalty: 0,
-    response_format: zodResponseFormat(JobExclusionFormat, "JobExclusion"),
+    response_format: { type: "json_object" },
   });
 
   const choice = response.choices[0];
   if (choice.finish_reason !== "stop") {
     throw new Error(`OpenAI response did not finish: ${choice.finish_reason}`);
   }
-  const exclusionDecision = JobExclusionFormat.parse(
-    JSON.parse(choice.message.content ?? throwError("missing content"))
-  );
+  const exclusionDecision = JSON.parse(choice.message.content ?? throwError("missing content")) as {
+    excluded: boolean;
+    reason?: string;
+  };
 
   const inputTokensUsed = response.usage?.prompt_tokens ?? 0;
   const outputTokensUsed = response.usage?.completion_tokens ?? 0;
@@ -267,7 +265,4 @@ Reply with a JSON object containing the following fields:
 - excluded: boolean (true if the job should be excluded, false otherwise)
 - reason: string (the reason why the job should be excluded; leave this field empty if the job should not be excluded)`;
 
-const JobExclusionFormat = z.object({
-  excluded: z.boolean(),
-  reason: z.string().optional(),
-});
+// Using native JSON parsing instead of Zod validation

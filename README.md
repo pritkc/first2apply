@@ -2,32 +2,38 @@
 
 First 2 Apply (https://first2apply.com/) is an open-source job board aggregator that centralizes listings from platforms like LinkedIn, Indeed, Dice, and more, helping job seekers find opportunities faster.
 
-## Project Setup
-The project has 2 main components:
-- supabase backend
-- desktop probe 
+## Quick Start
 
-Create `.env` files in both folders by coping the existing `.env.example` ones.
+The application consists of two main components:
+- **Supabase backend** - handles data storage and AI job matching
+- **Desktop application** - provides the user interface and job scanning
 
-To set up the project using Supabase:
-```
-npx supabase init
-```
+### Daily Usage
 
-You should now be able to visit the Supabase dashboard by visiting http://localhost:54323/
-All required tables should already be configured.
+1. **Start the backend services:**
+   ```bash
+   supabase start
+   supabase functions serve
+   ```
 
-Then import the [sites_rows.csv](./supabase/sites_rows.csv) file into the `sites` table in the supabase manager.
+2. **Start the desktop application:**
+   ```bash
+   cd desktopProbe
+   npm run start
+   ```
 
-Run edge functions with hot reload:
-```
-npx supabase functions serve
-```
+3. **Access the application:**
+   - Desktop app will appear in your menu bar (paper airplane icon)
+   - Supabase Studio: http://127.0.0.1:54323
+   - API endpoint: http://127.0.0.1:54321
 
-Finally, navigate to the `desktopProbe` folder and run:
-```
-npm run start
-```
+### Features
+
+- **Automated job scanning** from multiple job boards
+- **AI-powered job matching** using OpenAI
+- **Desktop notifications** for relevant job matches
+- **Local data storage** with Supabase
+- **Customizable filters** and preferences
 
 ## Release
 
