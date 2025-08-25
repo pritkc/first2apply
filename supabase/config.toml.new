@@ -57,7 +57,3 @@ inspector_port = 8083
 enabled = true
 port = 54327
 backend = "postgres"
-
-
-
-

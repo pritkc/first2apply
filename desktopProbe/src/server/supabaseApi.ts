@@ -1,6 +1,7 @@
 import { FunctionsHttpError, PostgrestError, SupabaseClient, User } from '@supabase/supabase-js';
 import { backOff } from 'exponential-backoff';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as luxon from 'luxon';
 import * as path from 'path';
 
@@ -149,6 +150,23 @@ export class F2aSupabaseApi {
     maxRetries: number;
     retryCount: number;
   }) {
+    // Load API config saved by the desktop app UI
+    let provider: 'openai' | 'gemini' | 'llama' | undefined;
+    let openaiKey: string | undefined;
+    let geminiKey: string | undefined;
+    try {
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
+          provider?: 'openai' | 'gemini' | 'llama';
+          keys?: { openai?: string; gemini?: string; llama?: string };
+        };
+        provider = config.provider;
+        openaiKey = config.keys?.openai;
+        geminiKey = config.keys?.gemini;
+      }
+    } catch {}
+
     return this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ job: Job; parseFailed: boolean }>('scan-job-description', {
         body: {
@@ -156,6 +174,9 @@ export class F2aSupabaseApi {
           html,
           maxRetries,
           retryCount,
+          llmProvider: provider,
+          openAiApiKey: openaiKey,
+          geminiApiKey: geminiKey,
         },
       }),
     );

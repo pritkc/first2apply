@@ -393,6 +393,26 @@ export async function debugLink(linkId: number): Promise<void> {
 }
 
 /**
+ * Get the API configuration (provider and keys).
+ */
+export async function getApiConfig(): Promise<{
+  provider: 'openai' | 'gemini' | 'llama';
+  keys: { openai?: string; gemini?: string; llama?: string; };
+}> {
+  return await _mainProcessApiCall('get-api-config', {});
+}
+
+/**
+ * Update the API configuration (provider and keys).
+ */
+export async function updateApiConfig(config: {
+  provider: 'openai' | 'gemini' | 'llama';
+  keys: { openai?: string; gemini?: string; llama?: string; };
+}): Promise<void> {
+  await _mainProcessApiCall('update-api-config', { config });
+}
+
+/**
  * Get the current state of the application.
  */
 export async function getAppState(): Promise<{

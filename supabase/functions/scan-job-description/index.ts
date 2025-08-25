@@ -51,6 +51,10 @@ Deno.serve(async (req) => {
       html: string;
       maxRetries?: number;
       retryCount?: number;
+      // Optional overrides from desktop app UI
+      llmProvider?: "openai" | "gemini" | "llama";
+      openAiApiKey?: string;
+      geminiApiKey?: string;
     } = await req.json();
     const { jobId, html, maxRetries, retryCount } = body;
     logger.info(`processing job description for ${jobId}  ...`);
@@ -114,13 +118,32 @@ Deno.serve(async (req) => {
         );
       }
 
+      const llmProvider = (body.llmProvider ?? Deno.env.get("DEFAULT_LLM_PROVIDER") ?? "gemini") as
+        | "openai"
+        | "gemini"
+        | "llama";
+      const openAiApiKey = body.openAiApiKey ?? Deno.env.get("OPENAI_API_KEY");
+      const geminiApiKey = body.geminiApiKey ?? Deno.env.get("GEMINI_API_KEY");
+
+      logger.info(
+        `LLM config resolved: provider=${llmProvider}, hasOpenAIKey=${!!openAiApiKey}, hasGeminiKey=${!!geminiApiKey}`
+      );
+
+      // Validate API keys based on provider
+      if (llmProvider === "openai" && !openAiApiKey) {
+        throw new Error("OPENAI_API_KEY is required when using OpenAI provider");
+      }
+      if (llmProvider === "gemini" && !geminiApiKey) {
+        throw new Error("GEMINI_API_KEY is required when using Gemini provider");
+      }
+
       const { newStatus, excludeReason } = await applyAdvancedMatchingFilters({
         logger,
         job: updatedJob,
         supabaseClient: serviceClient,
-        openAiApiKey:
-          Deno.env.get("OPENAI_API_KEY") ??
-          throwError("missing OPENAI_API_KEY"),
+        openAiApiKey,
+        geminiApiKey,
+        llmProvider,
       });
 
       updatedJob = {
