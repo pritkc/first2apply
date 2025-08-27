@@ -147,6 +147,7 @@ export type AdvancedMatchingConfig = {
   id: number;
   user_id: string;
   blacklisted_companies: string[];
+  favorite_companies: string[];
   chatgpt_prompt: string;
   ai_api_cost: number;
   ai_api_input_tokens_used: number;
@@ -226,12 +227,12 @@ export type DbSchema = {
         Row: AdvancedMatchingConfig;
         Insert: Pick<
           AdvancedMatchingConfig,
-          "blacklisted_companies" | "chatgpt_prompt"
+          "blacklisted_companies" | "favorite_companies" | "chatgpt_prompt"
         >;
         Update: Partial<
           Pick<
             AdvancedMatchingConfig,
-            "blacklisted_companies" | "chatgpt_prompt"
+            "blacklisted_companies" | "favorite_companies" | "chatgpt_prompt"
           >
         >;
       };

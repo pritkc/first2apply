@@ -23,6 +23,8 @@ export type JobFiltersType = {
   sites: number[];
   links: number[];
   labels: string[];
+  favoritesOnly?: boolean;
+  hideLinkedInReposts?: boolean;
 };
 
 const ALL_LABELS = Object.values(JOB_LABELS);
@@ -34,11 +36,13 @@ export function JobFiltersMenu({
   selectedSites,
   selectedLinks,
   selectedLabels,
+  hideLinkedInReposts = false,
   onApplyFilters,
 }: {
   selectedSites: number[];
   selectedLinks: number[];
   selectedLabels: string[];
+  hideLinkedInReposts?: boolean;
   onApplyFilters: (filters: JobFiltersType) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +101,7 @@ export function JobFiltersMenu({
     onApplyFilters({ sites: selectedSites, links: selectedLinks, labels: [] });
   };
   const clearAll = () => {
-    onApplyFilters({ sites: [], links: [], labels: [] });
+    onApplyFilters({ sites: [], links: [], labels: [], favoritesOnly: false, hideLinkedInReposts: false });
   };
 
   const activeFilterCount = selectedSites.length + selectedLinks.length + selectedLabels.length;
@@ -250,6 +254,45 @@ export function JobFiltersMenu({
         >
           Remove Filters
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* Favorites only toggle */}
+        <DropdownMenuCheckboxItem
+          checked={selectedLabels.includes('FAVORITES_ONLY')}
+          onSelect={(evt) => {
+            evt.preventDefault();
+            const isOn = selectedLabels.includes('FAVORITES_ONLY');
+            onApplyFilters({
+              sites: selectedSites,
+              links: selectedLinks,
+              labels: isOn ? selectedLabels.filter((l) => l !== 'FAVORITES_ONLY') : [...selectedLabels, 'FAVORITES_ONLY'],
+              favoritesOnly: !isOn,
+              hideLinkedInReposts,
+            });
+          }}
+          className="pr-8"
+        >
+          Favorites only
+        </DropdownMenuCheckboxItem>
+
+        {/* Hide LinkedIn reposts */}
+        <DropdownMenuCheckboxItem
+          checked={!!hideLinkedInReposts}
+          onSelect={(evt) => {
+            evt.preventDefault();
+            onApplyFilters({
+              sites: selectedSites,
+              links: selectedLinks,
+              labels: selectedLabels,
+              favoritesOnly: selectedLabels.includes('FAVORITES_ONLY'),
+              hideLinkedInReposts: !hideLinkedInReposts,
+            });
+          }}
+          className="pr-8"
+        >
+          Hide LinkedIn reposts
+        </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

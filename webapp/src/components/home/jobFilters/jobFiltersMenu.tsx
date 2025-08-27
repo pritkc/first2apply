@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 export type JobFiltersType = {
   sites: number[];
   links: number[];
+  hideLinkedInReposts?: boolean;
 };
 
 /**
@@ -27,10 +28,12 @@ export type JobFiltersType = {
 export function JobFiltersMenu({
   selectedSites,
   selectedLinks,
+  hideLinkedInReposts = false,
   onApplyFilters,
 }: {
   selectedSites: number[];
   selectedLinks: number[];
+  hideLinkedInReposts?: boolean;
   onApplyFilters: (filters: JobFiltersType) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,7 +69,7 @@ export function JobFiltersMenu({
     onApplyFilters({ sites: selectedSites, links: [] });
   };
   const clearAll = () => {
-    onApplyFilters({ sites: [], links: [] });
+    onApplyFilters({ sites: [], links: [], hideLinkedInReposts: false });
   };
 
   const activeFilterCount = selectedSites.length + selectedLinks.length;
@@ -177,6 +180,24 @@ export function JobFiltersMenu({
         >
           Remove Filters
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* Hide LinkedIn reposts */}
+        <DropdownMenuCheckboxItem
+          checked={!!hideLinkedInReposts}
+          onSelect={(evt) => {
+            evt.preventDefault();
+            onApplyFilters({
+              sites: selectedSites,
+              links: selectedLinks,
+              hideLinkedInReposts: !hideLinkedInReposts,
+            });
+          }}
+          className="pr-8"
+        >
+          Hide LinkedIn reposts
+        </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,5 +1,5 @@
 import { IAnalyticsClient } from '@/lib/analytics';
-import { BrowserWindow, Notification, app, powerSaveBlocker } from 'electron';
+import { BrowserWindow, Notification, app, powerSaveBlocker, shell } from 'electron';
 import fs from 'fs';
 import { ScheduledTask, schedule } from 'node-cron';
 import path from 'path';
@@ -335,6 +335,14 @@ export class JobScanner {
       // sound: "Submarine",
       silent: !this._settings.useSound,
     });
+
+    // Play an additional audible alert for emphasis if enabled
+    if (this._settings.useSound) {
+      // 3 quick beeps for a louder notification without extra deps
+      shell.beep();
+      setTimeout(() => shell.beep(), 180);
+      setTimeout(() => shell.beep(), 360);
+    }
 
     // Show the notification
     const notificationId = new Date().getTime().toString();

@@ -65,7 +65,7 @@ export class F2aSupabaseApi {
   getUser(): Promise<{ user: User | null }> {
     return this._supabaseApiCall(async () => await this._supabase.auth.getUser()).catch(() => ({
       user: null,
-    }));
+    } as { user: User | null }));
   }
 
   /**
@@ -205,6 +205,7 @@ export class F2aSupabaseApi {
     siteIds,
     linkIds,
     labels,
+    favoritesOnly,
     limit = 50,
     after,
   }: {
@@ -213,6 +214,7 @@ export class F2aSupabaseApi {
     siteIds?: number[];
     linkIds?: number[];
     labels?: string[];
+    favoritesOnly?: boolean;
     limit?: number;
     after?: string;
   }) {
@@ -230,6 +232,7 @@ export class F2aSupabaseApi {
           jobs_site_ids,
           jobs_link_ids,
           jobs_labels,
+          jobs_favorites_only: favoritesOnly ?? null,
         });
 
         return res;
@@ -246,6 +249,7 @@ export class F2aSupabaseApi {
           jobs_site_ids,
           jobs_link_ids,
           jobs_labels,
+          jobs_favorites_only: favoritesOnly ?? null,
         });
 
         return res;
@@ -507,7 +511,7 @@ export class F2aSupabaseApi {
   /**
    * Update the advanced matching configuration for the current user.
    */
-  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>) {
+  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies' | 'favorite_companies'>) {
     const [updatedConfig] = await this._supabaseApiCall(
       async () =>
         await this._supabase

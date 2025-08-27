@@ -131,6 +131,7 @@ export function JobsList({
       <ul>
         {jobs.map((job, index) => {
           const fromLink = linksMap.get(job.link_id)?.title;
+          const isFavorite = (job as any).__isFavorite;
 
           return (
             <li
@@ -141,7 +142,7 @@ export function JobsList({
             >
               <div className="flex flex-wrap-reverse items-center justify-between gap-1.5">
                 {/* Company Name */}
-                <p className="my-1.5 text-xs text-muted-foreground">{job.companyName}</p>
+                <p className={cn('my-1.5 text-xs', isFavorite ? 'text-foreground' : 'text-muted-foreground')}>{job.companyName}</p>
 
                 {/* Action buttons */}
                 <div className="ml-auto flex items-center gap-2">
@@ -195,11 +196,11 @@ export function JobsList({
               </div>
 
               {/* Job Title */}
-              <p className="mt-2 leading-5 tracking-wide">{job.title}</p>
+              <p className={cn('mt-2 leading-5 tracking-wide', isFavorite && 'font-medium')}>{job.title}</p>
 
               <div className="mt-1.5 flex items-center justify-between gap-4">
                 {/* Location, JobType, Salary & Tags */}
-                <p className="text-sm leading-[18px] tracking-tight text-foreground/80">
+                <p className={cn('text-sm leading-[18px] tracking-tight', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
                   {job.location && <span>{job.location}</span>}
                   {job.jobType && (
                     <>
@@ -239,7 +240,7 @@ export function JobsList({
 
               <div className="mt-4 flex items-center gap-12">
                 {/* Source */}
-                <p className="flex items-center gap-2 text-xs leading-3 text-foreground/80">
+                <p className={cn('flex items-center gap-2 text-xs leading-3', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
                   {/* Source logo */}
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={siteLogos[job.siteId]} />
@@ -249,12 +250,12 @@ export function JobsList({
                 </p>
 
                 {/* Timestamp */}
-                <p className="ml-auto w-fit flex-shrink-0 text-xs text-foreground/80">
+                <p className={cn('ml-auto w-fit flex-shrink-0 text-xs', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
                   detected {getRelativeTimeString(new Date(job.created_at))}
                 </p>
               </div>
 
-              <hr className="mt-6 w-full border-muted" />
+              <hr className={cn('mt-6 w-full', isFavorite ? 'border-2 border-blue-400/50' : 'border-muted')} />
             </li>
           );
         })}

@@ -139,6 +139,7 @@ export async function listJobs({
   siteIds,
   linkIds,
   labels,
+  favoritesOnly,
   limit,
   after,
 }: {
@@ -147,6 +148,7 @@ export async function listJobs({
   siteIds?: number[];
   linkIds?: number[];
   labels?: string[];
+  favoritesOnly?: boolean;
   limit?: number;
   after?: string;
 }) {
@@ -163,6 +165,7 @@ export async function listJobs({
     siteIds,
     linkIds,
     labels,
+    favoritesOnly,
     limit,
     after,
   });
@@ -378,11 +381,29 @@ export async function getAdvancedMatchingConfig(): Promise<AdvancedMatchingConfi
  * Update the advanced matching configuration for the current user.
  */
 export async function updateAdvancedMatchingConfig(
-  config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>,
+  config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies' | 'favorite_companies'>,
 ) {
   return await _mainProcessApiCall<AdvancedMatchingConfig>('update-advanced-matching-config', {
     config,
   });
+}
+
+/**
+ * Export advanced matching config (prompt, blacklist, favorites) as JSON via Save dialog.
+ */
+export async function exportAdvancedMatchingConfig(): Promise<void> {
+  await _mainProcessApiCall('export-advanced-matching-config', {});
+}
+
+/**
+ * Import advanced matching config JSON via Open dialog. Returns the parsed values.
+ */
+export async function importAdvancedMatchingConfig(): Promise<{
+  chatgpt_prompt: string;
+  blacklisted_companies: string[];
+  favorite_companies: string[];
+} | {}> {
+  return await _mainProcessApiCall('import-advanced-matching-config', {});
 }
 
 /**

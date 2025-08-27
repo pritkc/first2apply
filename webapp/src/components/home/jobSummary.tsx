@@ -5,6 +5,7 @@ import {
   ExternalLinkIcon,
   ListBulletIcon,
   TrashIcon,
+  CopyIcon,
 } from "@radix-ui/react-icons";
 import React from "react";
 
@@ -25,6 +26,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { DeleteJobDialog } from "./deleteJobDialog";
+import { toast } from "../ui/use-toast";
 
 function isJobLabel(value: any): value is JobLabel {
   return Object.values(JOB_LABELS).includes(value);
@@ -147,6 +149,35 @@ export function JobSummary({
 
             <TooltipContent side="bottom" className="text-base">
               See job page
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Copy details button */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={() => {
+                  const text = `${job.companyName} - ${job.title}` +
+                    (job.description ? `\n\n${job.description}` : "");
+                  navigator.clipboard.writeText(text);
+                  toast({
+                    title: "Job details copied",
+                    description: "Company, title and description are on your clipboard.",
+                    variant: "success",
+                  });
+                }}
+              >
+                <CopyIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Copy details
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

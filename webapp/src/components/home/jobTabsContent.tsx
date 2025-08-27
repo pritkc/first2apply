@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useSites } from '@/hooks/sites';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 import { Job, JobLabel, JobStatus } from '../../../../supabase/functions/_shared/types';
@@ -51,6 +52,7 @@ export function JobTabsContent({
 
   const router = useRouter();
   const { isSubscriptionExpired } = useSession();
+  const { siteMap } = useSites();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
 
@@ -298,8 +300,9 @@ export function JobTabsContent({
 
   // Update the query params when the search input changes
   const onSearchJobs = ({ search, filters }: { search: string; filters: JobFiltersType }) => {
+    const hideReposts = filters.hideLinkedInReposts ? '1' : '0';
     router.push(
-      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}`,
+      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&hide_reposts=${hideReposts}`,
     );
   };
 
@@ -318,7 +321,27 @@ export function JobTabsContent({
                 ) : listing.jobs.length > 0 ? (
                   <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
                     <JobsList
-                      jobs={listing.jobs}
+                      jobs={(() => {
+                        const params = new URLSearchParams(location.search);
+                        const hideReposts = params.get('hide_reposts') === '1';
+                        if (!hideReposts) return listing.jobs;
+                        return listing.jobs.filter((j) => {
+                          const site = siteMap[j.siteId];
+                          const isLinkedIn = site?.provider === 'linkedin';
+                          if (!isLinkedIn) return true;
+                          const haystack = [j.title, j.description, ...(j.tags || [])]
+                            .filter(Boolean)
+                            .join(' ')
+                            .toLowerCase();
+                          return !(
+                            haystack.includes('reposted') ||
+                            haystack.includes('re post') ||
+                            haystack.includes('re-post') ||
+                            haystack.includes('re shared') ||
+                            haystack.includes('reshared')
+                          );
+                        });
+                      })()}
                       selectedJobId={selectedJobId}
                       hasMore={listing.hasMore}
                       parentContainerId="jobsList"
