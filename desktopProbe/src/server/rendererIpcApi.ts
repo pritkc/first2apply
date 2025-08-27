@@ -239,10 +239,14 @@ export function initRendererIpcApi({
   // Export advanced matching configuration (prompt, blacklist, favorites) to JSON
   ipcMain.handle('export-advanced-matching-config', async (event, {}) =>
     _apiCall(async () => {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      // Use a filename-safe timestamp (YYYYMMDD-HHmmss)
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
       const res = await dialog.showSaveDialog({
         properties: ['createDirectory'],
         filters: [{ name: 'JSON', extensions: ['json'] }],
-        defaultPath: 'first2apply-advanced-matching-config.json',
+        defaultPath: `first2apply-advanced-matching-config-${timestamp}.json`,
       });
       if (res.canceled || !res.filePath) return {};
 
