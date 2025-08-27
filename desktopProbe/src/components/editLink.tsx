@@ -23,7 +23,7 @@ export function EditLink({
 }: {
   isOpen: boolean;
   link: Link;
-  onUpdateLink: (data: { linkId: number; title: string }) => Promise<void>;
+  onUpdateLink: (data: { linkId: number; title: string; url: string }) => Promise<void>;
   onCancel: () => void;
 }) {
   if (!isOpen) {
@@ -47,12 +47,13 @@ export function EditLink({
     },
   });
 
-  const onSubmit = async (data: { title: string }) => {
+  const onSubmit = async (data: { title: string; url: string }) => {
     setIsSubmitting(true);
     try {
       await onUpdateLink({
         linkId: link.id,
         title: data.title,
+        url: data.url,
       });
       toast({
         title: 'Job search updated',
@@ -115,7 +116,7 @@ export function EditLink({
                   <FormItem className="w-full">
                     <FormLabel>URL</FormLabel>
                     <FormControl>
-                      <Input id="url" type="url" disabled={true} {...field} />
+                      <Input id="url" type="url" {...field} />
                     </FormControl>
                   </FormItem>
                 )}
