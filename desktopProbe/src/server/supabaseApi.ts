@@ -93,8 +93,10 @@ export class F2aSupabaseApi {
    * Update an existing link.
    */
   async updateLink({ linkId, title, url }: { linkId: number; title: string; url: string }): Promise<Link> {
-    const updatedLink = await this._supabaseApiCall(async () =>
-      this._supabase.from('links').update({ title, url }).eq('id', linkId).select('*').single(),
+    const updatedLink = await this._supabaseApiCall(() =>
+      this._supabase.functions.invoke<Link>('update-link', {
+        body: { linkId, title, url },
+      }),
     );
 
     return updatedLink;
