@@ -61,6 +61,14 @@ brew install node
 - Supabase API: http://localhost:54321
 - External AI APIs: Configured via Electron app UI
 
+## Data Protection
+
+The system includes automatic backup and data protection:
+- **Auto-backup**: Creates backup before every git commit
+- **Database protection**: Real-time protection against data loss
+- **Recovery tools**: `./data-protection-manager.sh` for backup management
+- **Backup location**: `./backups/` directory (keeps last 5 backups)
+
 ## Troubleshooting Guide
 
 ### 1. White Screen in Electron App
