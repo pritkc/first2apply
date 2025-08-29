@@ -1,4 +1,4 @@
-# Logs
+ill # Logs
 logs
 *.log
 npm-debug.log*
@@ -132,3 +132,6 @@ dist
 invoice-downloader/invoices
 test.html
 .DS_Store
+
+First2Apply-master-legacy/
+
