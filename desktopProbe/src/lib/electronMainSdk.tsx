@@ -15,6 +15,27 @@ import {
 import { JobScannerSettings, NewAppVersion, OverlayBrowserViewResult } from './types';
 
 async function _mainProcessApiCall<T>(channel: string, params?: object): Promise<T> {
+  console.log('🔧 Making main process API call to channel:', channel);
+  console.log('🔧 Params:', params);
+  
+  // Check if window.electron exists
+  // @ts-ignore
+  if (!window.electron) {
+    console.error('❌ window.electron is not available!');
+    throw new Error('Electron APIs not available - window.electron is undefined');
+  }
+  
+  // Check if invoke method exists
+  // @ts-ignore
+  if (!window.electron.invoke) {
+    console.error('❌ window.electron.invoke is not available!');
+    // @ts-ignore
+    console.log('❌ Available methods on window.electron:', Object.keys(window.electron));
+    throw new Error('Electron invoke method not available');
+  }
+  
+  console.log('✅ Electron APIs are available, making invoke call...');
+  
   // @ts-ignore
   const { data, error } = await window.electron.invoke(channel, params);
   if (error) throw new Error(error);

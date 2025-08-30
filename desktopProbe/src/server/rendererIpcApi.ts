@@ -11,6 +11,8 @@ import { OverlayBrowserView } from './overlayBrowserView';
 import { getStripeConfig } from './stripeConfig';
 import { F2aSupabaseApi } from './supabaseApi';
 
+console.log('🔧 Initializing renderer IPC API...');
+
 /**
  * Helper methods used to centralize error handling.
  */
@@ -41,6 +43,14 @@ export function initRendererIpcApi({
   overlayBrowserView: OverlayBrowserView;
   nodeEnv: string;
 }) {
+  console.log('🔧 Setting up IPC handlers...');
+  console.log('🔧 Node environment:', nodeEnv);
+  console.log('🔧 Available services:', {
+    supabaseApi: !!supabaseApi,
+    jobScanner: !!jobScanner,
+    autoUpdater: !!autoUpdater,
+  });
+
   ipcMain.handle('get-os-type', (event) =>
     _apiCall(async () => {
       return os.platform();
