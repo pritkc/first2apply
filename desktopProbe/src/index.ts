@@ -251,7 +251,9 @@ async function bootstrap() {
     });
 
     // init the renderer IPC API
+    console.log('🔧 About to initialize renderer IPC API...');
     initRendererIpcApi({ supabaseApi, jobScanner, autoUpdater, jobBoardModal, nodeEnv: ENV.nodeEnv });
+    console.log('🔧 Renderer IPC API initialized successfully');
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });

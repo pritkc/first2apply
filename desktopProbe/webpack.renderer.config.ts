@@ -20,7 +20,7 @@ export const rendererConfig: Configuration = {
   plugins,
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": path.resolve(process.cwd(), "src"),
     },
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css"],
   },
