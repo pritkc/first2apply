@@ -154,13 +154,52 @@ start_electron() {
     echo "USE_LOCAL_LLM=false" > "$PROJECT_ROOT/.env.local"
     echo "DEFAULT_LLM_PROVIDER=gemini" >> "$PROJECT_ROOT/.env.local"
     
-    # Start Electron app
-    print_status "Launching Electron app..."
-    npm start &
+    # Start Electron app and wait for build to complete
+    print_status "Building and launching Electron app (this may take 30-60 seconds)..."
+    
+    # Run npm start and capture the output to monitor build progress
+    npm start > "$PROJECT_ROOT/electron-build.log" 2>&1 &
     local electron_pid=$!
     echo $electron_pid > "$PROJECT_ROOT/electron.pid"
     
-    print_success "Electron app started! (PID: $electron_pid)"
+    # Wait for the build to complete by monitoring the log
+    local max_wait=120  # Maximum wait time in seconds
+    local waited=0
+    local build_complete=false
+    
+    while [ $waited -lt $max_wait ]; do
+        if grep -q "Electron app launched successfully\|App ready\|Window created" "$PROJECT_ROOT/electron-build.log" 2>/dev/null; then
+            build_complete=true
+            break
+        fi
+        
+        # Check if the process is still running
+        if ! kill -0 $electron_pid 2>/dev/null; then
+            print_error "Electron build process failed!"
+            print_status "Check the build log: $PROJECT_ROOT/electron-build.log"
+            return 1
+        fi
+        
+        # Check for common build completion indicators
+        if grep -q "webpack compiled successfully\|Compiled successfully\|Build completed" "$PROJECT_ROOT/electron-build.log" 2>/dev/null; then
+            # Wait a bit more for the app to actually launch
+            sleep 5
+            build_complete=true
+            break
+        fi
+        
+        sleep 2
+        waited=$((waited + 2))
+        print_status "Waiting for build to complete... (${waited}s/${max_wait}s)"
+    done
+    
+    if [ "$build_complete" = true ]; then
+        print_success "Electron app built and started successfully! (PID: $electron_pid)"
+        print_status "Build log: $PROJECT_ROOT/electron-build.log"
+    else
+        print_warning "Build may still be in progress. Check the log: $PROJECT_ROOT/electron-build.log"
+        print_status "You can monitor progress with: tail -f $PROJECT_ROOT/electron-build.log"
+    fi
 }
 
 # Function to start all services
