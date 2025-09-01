@@ -7,8 +7,7 @@ import { changeAllJobsStatus, exportJobsToCsv } from '@/lib/electronMainSdk';
 import { ArchiveIcon, DotsVerticalIcon, DownloadIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-
-import { Job, JobStatus } from '../../../../supabase/functions/_shared/types';
+import { Job, JobStatus } from '@/lib/supabase/types';
 import { Button } from '../ui/button';
 import { JobTabsContent } from './jobTabsContent';
 import { TabActions } from './tabActions';
@@ -52,6 +51,8 @@ export function JobTabs() {
     archived: 0,
     filtered: 0,
   });
+
+
 
   // Handle tab change
   const onTabChange = (tabValue: string) => {
@@ -128,20 +129,24 @@ export function JobTabs() {
       </div>
 
       <div className="flex items-center justify-between">
-        <TabsList className="flex flex-1 md:flex-none xl:w-2/5">
-          <TabsTrigger value="new" className="flex-1">
-            New jobs <span className="hidden sm:inline">{`(${listing.new})`}</span>
-          </TabsTrigger>
-          <TabsTrigger value="applied" className="flex-1">
-            Applied <span className="hidden sm:inline">{`(${listing.applied})`}</span>
-          </TabsTrigger>
-          <TabsTrigger value="archived" className="flex-1">
-            Archived <span className="hidden sm:inline">{`(${listing.archived})`}</span>
-          </TabsTrigger>
-          <TabsTrigger value="excluded_by_advanced_matching" className="flex-1">
-            Filtered out <span className="hidden sm:inline">{`(${listing.filtered})`}</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center space-x-4">
+          <TabsList className="flex flex-1 md:flex-none xl:w-2/5">
+            <TabsTrigger value="new" className="flex-1">
+              New jobs <span className="hidden sm:inline">{`(${listing.new})`}</span>
+            </TabsTrigger>
+            <TabsTrigger value="applied" className="flex-1">
+              Applied <span className="hidden sm:inline">{`(${listing.applied})`}</span>
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="flex-1">
+              Archived <span className="hidden sm:inline">{`(${listing.archived})`}</span>
+            </TabsTrigger>
+            <TabsTrigger value="excluded_by_advanced_matching" className="flex-1">
+              Filtered out <span className="hidden sm:inline">{`(${listing.filtered})`}</span>
+            </TabsTrigger>
+          </TabsList>
+
+
+        </div>
 
         {/* Tab action buttons */}
         <div className="hidden md:block">
@@ -162,6 +167,7 @@ export function JobTabs() {
         search={search}
         siteIds={siteIds}
         linkIds={linkIds}
+
       />
     </Tabs>
   );

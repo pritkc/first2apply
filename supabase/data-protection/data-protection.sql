@@ -15,13 +15,21 @@ CREATE TABLE IF NOT EXISTS public.protected_data (
 -- Enable RLS on protected_data
 ALTER TABLE public.protected_data enable row level security;
 
--- Create policy for protected_data
+-- Create policy for protected_data - allow service role full access
 CREATE POLICY "enable all for service role only" 
 ON public.protected_data 
 AS permissive 
 FOR all 
 TO service_role 
 USING (true) 
+WITH CHECK (true);
+
+-- Create policy for protected_data - allow authenticated users to insert (needed for triggers)
+CREATE POLICY "allow authenticated users to insert for backup triggers" 
+ON public.protected_data 
+AS permissive 
+FOR insert 
+TO authenticated 
 WITH CHECK (true);
 
 -- Function to backup data before deletion

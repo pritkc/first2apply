@@ -68,6 +68,8 @@ export function JobTabs() {
     filtered: 0,
   });
 
+
+
   // Handle tab change
   const onTabChange = (tabValue: string) => {
     navigate(
@@ -218,6 +220,8 @@ export function JobTabs() {
         </TabsTrigger>
       </TabsList>
 
+
+
       <JobTabsContent
         status={status}
         listing={listing}
@@ -226,6 +230,7 @@ export function JobTabs() {
         siteIds={siteIds}
         linkIds={linkIds}
         labels={labels}
+
       />
     </Tabs>
   );
