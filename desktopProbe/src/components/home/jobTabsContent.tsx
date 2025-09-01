@@ -19,8 +19,9 @@ import { JobSummary } from './jobSummary';
 import { JobListing } from './jobTabs';
 import { JobsList } from './jobsList';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
+import { DateGroupManager } from './dateGrouping';
 
-const JOB_BATCH_SIZE = 30;
+const JOB_BATCH_SIZE = 1000; // Increased from 30 to load all jobs at once
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 type FavoriteAwareJob = Job & { __isFavorite?: boolean };
 
@@ -438,12 +439,12 @@ export function JobTabsContent({
                 {listing.isLoading || statusItem !== status ? (
                   <JobsListSkeleton />
                 ) : filteredJobs.length > 0 ? (
-                  <JobsList
+                  <DateGroupManager
                     jobs={filteredJobs}
+                    status={status}
+                    search={search}
                     selectedJobId={selectedJobId}
-                    hasMore={listing.hasMore}
                     parentContainerId="jobsList"
-                    onLoadMore={onLoadMore}
                     onSelect={(job) => scanJobAndSelect(job)}
                     onArchive={(j) => {
                       onUpdateJobStatus(j.id, 'archived');
@@ -451,6 +452,8 @@ export function JobTabsContent({
                     onDelete={(j) => {
                       onUpdateJobStatus(j.id, 'deleted');
                     }}
+                    onLoadMore={onLoadMore}
+                    hasMore={listing.hasMore}
                   />
                 ) : (
                   <p className="px-4 pt-20 text-center">
