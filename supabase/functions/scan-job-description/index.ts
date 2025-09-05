@@ -87,10 +87,16 @@ Deno.serve(async (req) => {
       logger.info(
         `[${site.provider}] parsing job description for ${jobId} ...`
       );
+      
+      // Debug: Log HTML length and check for applicant-related content
+      logger.info(`[${site.provider}] HTML length: ${html.length} characters`);
+      const hasApplicantContent = html.toLowerCase().includes('applicant');
+      logger.info(`[${site.provider}] HTML contains 'applicant': ${hasApplicantContent}`);
 
       // update the job with the description
       const jd = parseJobDescription({ site, job, html });
       const isLastRetry = retryCount === maxRetries;
+      
       updatedJob = {
         ...updatedJob,
         description: jd.content ?? updatedJob.description,

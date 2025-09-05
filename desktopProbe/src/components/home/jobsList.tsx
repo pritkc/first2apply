@@ -8,11 +8,12 @@ import { createRef, useEffect, useMemo, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
-import { Job } from '../../../../supabase/functions/_shared/types';
+import { Job, JobLabel } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { DeleteJobDialog } from './deleteJobDialog';
+import { getJobPostingDate, getRelativeTimeString } from '@/lib/dateUtils';
 
 /**
  * List of jobs component.
@@ -119,6 +120,7 @@ export function JobsList({
     { preventDefault: true },
   );
 
+
   return (
     <InfiniteScroll
       dataLength={jobs.length}
@@ -130,7 +132,8 @@ export function JobsList({
     >
       <ul>
         {jobs.map((job, index) => {
-          const fromLink = linksMap.get(job.link_id)?.title;
+          const link = linksMap.get(job.link_id ?? 0);
+          const fromLink = link?.title;
           const isFavorite = (job as any).__isFavorite;
 
           return (
@@ -150,7 +153,7 @@ export function JobsList({
                   {job.status !== 'archived' && (
                     <TooltipProvider delayDuration={500}>
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger asChild>
                           <Button
                             variant="secondary"
                             className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
@@ -173,7 +176,7 @@ export function JobsList({
                   {/* Delete button */}
                   <TooltipProvider delayDuration={500}>
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <Button
                           variant="destructive"
                           className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
@@ -198,6 +201,16 @@ export function JobsList({
               {/* Job Title */}
               <p className={cn('mt-2 leading-5 tracking-wide', isFavorite && 'font-medium')}>{job.title}</p>
 
+              {/* Date Information - Prominent Display */}
+              <div className="mt-2 flex items-center gap-4">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                  Posted: {getJobPostingDate(job) || 'Unknown'}
+                </span>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                  Found: {getRelativeTimeString(job.created_at)}
+                </span>
+              </div>
+
               <div className="mt-1.5 flex items-center justify-between gap-4">
                 {/* Location, JobType, Salary & Tags */}
                 <p className={cn('text-sm leading-[18px] tracking-tight', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
@@ -216,7 +229,7 @@ export function JobsList({
                       <span>{job.salary}</span>
                     </>
                   )}
-                  {job.tags?.map((tag) => (
+                  {job.tags?.map((tag: string) => (
                     <span key={job.id + tag}>
                       {(job.location || job.jobType || job.salary) && (
                         <span className="text-3 mx-[8px] font-light text-foreground/40"> | </span>
@@ -230,7 +243,7 @@ export function JobsList({
                 {job.labels[0] && (
                   <div
                     className={`w-[85px] flex-shrink-0 rounded-md bg-opacity-80 py-1 text-center text-xs leading-3 text-white dark:bg-opacity-60 ${
-                      LABEL_COLOR_CLASSES[job.labels[0]]
+                      LABEL_COLOR_CLASSES[job.labels[0] as JobLabel]
                     }`}
                   >
                     {job.labels[0]}
@@ -247,11 +260,6 @@ export function JobsList({
                     <AvatarFallback>LI</AvatarFallback>
                   </Avatar>
                   {fromLink ?? siteMap[job.siteId]?.name}
-                </p>
-
-                {/* Timestamp */}
-                <p className={cn('ml-auto w-fit flex-shrink-0 text-xs', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
-                  detected {getRelativeTimeString(new Date(job.created_at))}
                 </p>
               </div>
 

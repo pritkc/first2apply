@@ -1,4 +1,5 @@
 import { JobSite } from '../../../supabase/functions/_shared/types';
+export type { Job, JobStatus, JobLabel, Link } from '../../../supabase/functions/_shared/types';
 
 export const AVAILABLE_CRON_RULES = [
   {

@@ -12,6 +12,7 @@ import {
   TrashIcon,
   HeartFilledIcon,
   CrossCircledIcon,
+  ReloadIcon,
 } from '@radix-ui/react-icons';
 import React from 'react';
 
@@ -127,7 +128,7 @@ export function JobSummary({
         {job.status !== 'applied' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -149,7 +150,7 @@ export function JobSummary({
         {job.status !== 'new' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -171,7 +172,7 @@ export function JobSummary({
         {job.status !== 'archived' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -192,7 +193,7 @@ export function JobSummary({
         {/* Copy details button */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="secondary"
@@ -221,7 +222,7 @@ export function JobSummary({
         {/* Copy URL button (restored) */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="secondary"
@@ -249,7 +250,7 @@ export function JobSummary({
         {/* Favorite company */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="secondary"
@@ -272,7 +273,7 @@ export function JobSummary({
         {/* Blacklist company */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="secondary"
@@ -292,10 +293,11 @@ export function JobSummary({
           </Tooltip>
         </TooltipProvider>
 
+
         {/* Delete button */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="destructive"

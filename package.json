@@ -12,6 +12,8 @@
     "supabase": "1.226.4"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.0"
+    "@supabase/supabase-js": "^2.56.0",
+    "bcrypt": "^6.0.0",
+    "jsdom": "^26.1.0"
   }
 }

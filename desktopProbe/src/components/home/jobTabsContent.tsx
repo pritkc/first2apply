@@ -25,11 +25,10 @@ import { JobFiltersType } from './jobFilters/jobFiltersMenu';
 import { JobNotes } from './jobNotes';
 import { JobSummary } from './jobSummary';
 import { JobListing } from './jobTabs';
-import { JobsList } from './jobsList';
-import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 import { DateGroupManager } from './dateGrouping';
+import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
-const JOB_BATCH_SIZE = 1000; // Increased from 30 to load all jobs at once
+const JOB_BATCH_SIZE = 1000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 type FavoriteAwareJob = Job & { __isFavorite?: boolean };
@@ -113,6 +112,12 @@ export function JobTabsContent({
 
         const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
         const result = await listJobs({ status, search, siteIds, linkIds, labels: labelsForBackend, favoritesOnly: (labels || []).includes('FAVORITES_ONLY'), limit: JOB_BATCH_SIZE });
+        console.log('[JobTabsContent] listJobs result', {
+          status,
+          counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+          jobs: result.jobs?.length,
+          next: result.nextPageToken,
+        });
 
         // Mark favorites
         const favSet = new Set(favoriteCompanies.map((c) => c?.toLowerCase?.()));
@@ -121,12 +126,31 @@ export function JobTabsContent({
           __isFavorite: favSet.has(j.companyName?.toLowerCase?.()),
         })) as FavoriteAwareJob[];
 
-        setListing({
-          ...result,
+        setListing((prev) => ({
+          // keep previous counts for tabs we didn't just fetch
+          ...prev,
           jobs: jobsWithFav,
           isLoading: false,
           hasMore: !!result.nextPageToken,
-        });
+          nextPageToken: result.nextPageToken,
+          // update only provided counts, preserve others
+          new: result.new ?? prev.new,
+          applied: result.applied ?? prev.applied,
+          archived: result.archived ?? prev.archived,
+          filtered: result.filtered ?? prev.filtered,
+        }));
+        try {
+          localStorage.setItem(
+            'f2a_job_counts',
+            JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+          );
+          console.log('[JobTabsContent] saved counts to storage', {
+            new: result.new,
+            applied: result.applied,
+            archived: result.archived,
+            filtered: result.filtered,
+          });
+        } catch {}
 
         const firstJob = jobsWithFav[0] as Job | undefined;
         if (firstJob) {
@@ -164,6 +188,12 @@ export function JobTabsContent({
             favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
             linkIds,
           });
+          console.log('[JobTabsContent] listJobs append result', {
+            status,
+            counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+            jobs: result.jobs?.length,
+            next: result.nextPageToken,
+          });
 
           const newFavSet = favSet;
           const jobsWithFav = result.jobs.map((j) => ({
@@ -172,11 +202,22 @@ export function JobTabsContent({
           })) as FavoriteAwareJob[];
 
           setListing((l) => ({
-            ...result,
+            ...l,
             jobs: l.jobs.concat(jobsWithFav as unknown as Job[]),
             isLoading: false,
             hasMore: !!result.nextPageToken,
+            nextPageToken: result.nextPageToken,
+            new: result.new ?? l.new,
+            applied: result.applied ?? l.applied,
+            archived: result.archived ?? l.archived,
+            filtered: result.filtered ?? l.filtered,
           }));
+          try {
+            localStorage.setItem(
+              'f2a_job_counts',
+              JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+            );
+          } catch {}
         }
       } catch (error) {
         handleError({ error });
@@ -314,6 +355,12 @@ export function JobTabsContent({
         favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
         linkIds,
       });
+      console.log('[JobTabsContent] listJobs loadMore result', {
+        status,
+        counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+        jobs: result.jobs?.length,
+        next: result.nextPageToken,
+      });
 
       const favSet = new Set(favoriteCompanies.map((c) => c?.toLowerCase?.()));
       const jobsWithFav = result.jobs.map((j) => ({
@@ -322,11 +369,22 @@ export function JobTabsContent({
       })) as FavoriteAwareJob[];
 
       setListing((listing) => ({
-        ...result,
+        ...listing,
         jobs: [...listing.jobs, ...(jobsWithFav as unknown as Job[])],
         isLoading: false,
         hasMore: !!result.nextPageToken,
+        nextPageToken: result.nextPageToken,
+        new: result.new ?? listing.new,
+        applied: result.applied ?? listing.applied,
+        archived: result.archived ?? listing.archived,
+        filtered: result.filtered ?? listing.filtered,
       }));
+      try {
+        localStorage.setItem(
+          'f2a_job_counts',
+          JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+        );
+      } catch {}
     } catch (error) {
       handleError({ error, title: 'Failed to load more jobs' });
     }
@@ -446,8 +504,9 @@ export function JobTabsContent({
                     jobs={filteredJobs}
                     status={status}
                     search={search}
-                    selectedJobId={selectedJobId}
+                    selectedJobId={selectedJobId || undefined}
                     parentContainerId="jobsList"
+                    onLoadMore={onLoadMore}
                     onSelect={(job) => scanJobAndSelect(job)}
                     onArchive={(j) => {
                       onUpdateJobStatus(j.id, 'archived');
@@ -455,8 +514,8 @@ export function JobTabsContent({
                     onDelete={(j) => {
                       onUpdateJobStatus(j.id, 'deleted');
                     }}
-                    onLoadMore={onLoadMore}
                     hasMore={listing.hasMore}
+                    favoriteCompanies={favoriteCompanies}
                   />
                 ) : (
                   <p className="px-4 pt-20 text-center">

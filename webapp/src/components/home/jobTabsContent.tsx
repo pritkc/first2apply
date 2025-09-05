@@ -26,9 +26,8 @@ import { JobSummary } from './jobSummary';
 import { JobListing } from './jobTabs';
 import { JobsList } from './jobsList';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
-import { DateGroupManager } from './dateGrouping';
 
-const JOB_BATCH_SIZE = 1000; // Increased from 30 to load all jobs at once
+const JOB_BATCH_SIZE = 1000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 /**
@@ -82,7 +81,7 @@ export function JobTabsContent({
           return;
         }
 
-        console.log(location.search);
+        console.log(router.asPath);
         setListing((listing) => ({ ...listing, isLoading: true }));
 
         const result = await listJobs({
@@ -119,7 +118,7 @@ export function JobTabsContent({
       }
     };
     asyncLoad();
-  }, [location.search]); // using location.search to trigger the effect when the query parameter changes
+  }, [router]); // using router to trigger the effect when the query parameter changes
 
   // Load a new batch of jobs after updating the status of a job if there are still jobs to load
   useEffect(() => {
@@ -342,9 +341,9 @@ export function JobTabsContent({
                   <JobsListSkeleton />
                                   ) : listing.jobs.length > 0 ? (
                     <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
-                      <DateGroupManager
+                      <JobsList
                         jobs={(() => {
-                          const params = new URLSearchParams(location.search);
+                          const params = new URLSearchParams(router.asPath.split('?')[1] || '');
                           const hideReposts = params.get('hide_reposts') === '1';
                           if (!hideReposts) return listing.jobs;
                           return listing.jobs.filter((j) => {
@@ -364,10 +363,10 @@ export function JobTabsContent({
                             );
                           });
                         })()}
-                        status={status}
-                        search={search}
                         selectedJobId={selectedJobId}
+                        hasMore={listing.hasMore}
                         parentContainerId="jobsList"
+                        onLoadMore={onLoadMore}
                         onSelect={(job) => scanJobAndSelect(job)}
                         onArchive={(j) => {
                           onUpdateJobStatus(j.id, 'archived');
@@ -375,8 +374,6 @@ export function JobTabsContent({
                         onDelete={(j) => {
                           onUpdateJobStatus(j.id, 'deleted');
                         }}
-                        onLoadMore={onLoadMore}
-                        hasMore={listing.hasMore}
                       />
                     </div>
                 ) : (
@@ -651,7 +648,7 @@ export function JobTabsContent({
   );
 }
 
-const NoSearchResults = () => {
+function NoSearchResults() {
   const { isScanning } = useAppState();
 
   return isScanning ? (
@@ -665,4 +662,4 @@ const NoSearchResults = () => {
   ) : (
     <span>There aren't any jobs that match your search.</span>
   );
-};
+}

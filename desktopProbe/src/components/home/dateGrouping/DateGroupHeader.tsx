@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, ArchiveIcon, CheckIcon, TrashIcon } from '@radix-ui/react-icons';
 import { formatDisplayDate, DateGroup } from '@/lib/dateGrouping';
-import { JobStatus } from '../../../../supabase/functions/_shared/types';
+import { JobStatus } from '@/lib/types';
 
 interface DateGroupHeaderProps {
   dateGroup: DateGroup;

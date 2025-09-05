@@ -212,7 +212,9 @@ create or replace function list_jobs(
     jobs_site_ids integer[] default null,
     jobs_link_ids integer[] default null,
     jobs_labels text[] default null,
-    jobs_favorites_only boolean default null
+    jobs_favorites_only boolean default null,
+    jobs_hide_reposts boolean default null,
+    jobs_show_reposts_only boolean default null
 )
 returns setof jobs as $$
 declare
@@ -422,7 +424,9 @@ create or replace function count_jobs(
     jobs_site_ids integer[] default null,
     jobs_link_ids integer[] default null,
     jobs_labels text[] default null,
-    jobs_favorites_only boolean default null
+    jobs_favorites_only boolean default null,
+    jobs_hide_reposts boolean default null,
+    jobs_show_reposts_only boolean default null
 )
 returns table(status "Job Status", job_count bigint) as $$
 begin
@@ -447,3 +451,4 @@ begin
   order by j.status;
 end; $$
 language plpgsql;
+

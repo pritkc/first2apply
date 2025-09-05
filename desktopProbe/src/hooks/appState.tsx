@@ -37,7 +37,10 @@ export const AppStateProvider = ({ children }: React.PropsWithChildren) => {
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        const startedAt = Date.now();
         const { isScanning, newUpdate } = await getAppState();
+        // eslint-disable-next-line no-console
+        console.debug('[AppState] getAppState result', { isScanning, hasUpdate: !!newUpdate, dt: Date.now() - startedAt });
         setIsScanning(isScanning);
         setNewUpdate(newUpdate);
       } catch (error) {
@@ -46,7 +49,11 @@ export const AppStateProvider = ({ children }: React.PropsWithChildren) => {
     };
 
     asyncLoad().then(() => setIsLoading(false));
-    const interval = setInterval(asyncLoad, 2000);
+    const interval = setInterval(() => {
+      // eslint-disable-next-line no-console
+      console.debug('[AppState] polling getAppState');
+      asyncLoad();
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 

@@ -228,8 +228,11 @@ export class F2aSupabaseApi {
           jobs_search,
           jobs_site_ids,
           jobs_link_ids,
+          jobs_labels: undefined,
+          jobs_favorites_only: false,
+          jobs_hide_reposts: false, // Add missing parameter to match 10-parameter version
+          jobs_show_reposts_only: false, // Add missing parameter to match 10-parameter version
         });
-
         return res;
       }),
       this._supabaseApiCall<
@@ -240,9 +243,14 @@ export class F2aSupabaseApi {
         PostgrestError
       >(async () => {
         const res = await this._supabase.rpc("count_jobs", {
+          jobs_status: status,
           jobs_search,
           jobs_site_ids,
           jobs_link_ids,
+          jobs_labels: undefined,
+          jobs_favorites_only: false,
+          jobs_hide_reposts: false, // Add missing parameter to match 8-parameter version
+          jobs_show_reposts_only: false, // Add missing parameter to match 8-parameter version
         });
 
         return res;

@@ -4,7 +4,8 @@ import { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { DateGroup } from '@/lib/dateGrouping';
 import { Job } from '@/lib/supabase/types';
 import { DateGroupHeader } from './DateGroupHeader';
-import { ArchiveIcon, TrashIcon } from '@radix-ui/react-icons';
+import { ArchiveIcon, TrashIcon, StarFilledIcon } from '@radix-ui/react-icons';
+import { getJobPostingDate, getRelativeTimeString } from '@/lib/dateUtils';
 
 interface DateGroupedJobsListProps {
   dateGroups: DateGroup[];
@@ -15,6 +16,7 @@ interface DateGroupedJobsListProps {
   onDelete: (job: Job) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
+  favoriteCompanies?: string[];
 }
 
 export const DateGroupedJobsList = memo(function DateGroupedJobsList({
@@ -25,7 +27,8 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
   onArchive,
   onDelete,
   onLoadMore,
-  hasMore = false
+  hasMore = false,
+  favoriteCompanies = []
 }: DateGroupedJobsListProps) {
   // Track which date groups are expanded - use ref to avoid unnecessary re-renders
   const expandedDatesRef = useRef<Set<string>>(new Set());
@@ -34,14 +37,10 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
   // Track selected job IDs for bulk actions
   const [selectedJobIds, setSelectedJobIds] = useState<Set<number>>(new Set());
 
-  // Initialize expanded dates - only expand "Today" by default
+  // Initialize expanded dates - expand all date groups by default
   useEffect(() => {
     if (dateGroups.length > 0) {
-      const newExpandedDates = new Set<string>();
-      // Only expand the first date group (Today) by default
-      if (dateGroups.length > 0) {
-        newExpandedDates.add(dateGroups[0].date);
-      }
+      const newExpandedDates = new Set<string>(dateGroups.map(g => g.date));
       expandedDatesRef.current = newExpandedDates;
       setExpandedDatesState(newExpandedDates);
     }
@@ -157,13 +156,16 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
                   {dateGroup.jobs.map((job) => {
                     const isSelected = selectedJobIds.has(job.id);
                     const isJobSelected = selectedJobId === job.id;
+                    const isFavoriteCompany = favoriteCompanies.some(fav => 
+                      job.companyName?.toLowerCase().trim() === fav.toLowerCase().trim()
+                    );
                     
                     return (
                       <div
                         key={job.id}
                         className={`flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors ${
                           isJobSelected ? 'bg-accent' : ''
-                        }`}
+                        } ${isFavoriteCompany ? 'border-l-4 border-yellow-400 bg-yellow-50/30 dark:bg-yellow-900/10' : ''}`}
                       >
                         {/* Selection Checkbox */}
                         <input
@@ -183,9 +185,23 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
                               <h3 className="text-sm font-medium text-foreground truncate">
                                 {job.title}
                               </h3>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {job.companyName}
-                              </p>
+                              <div className="flex items-center gap-1">
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {job.companyName}
+                                </p>
+                                {isFavoriteCompany && (
+                                  <StarFilledIcon className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+                                )}
+                              </div>
+                              {/* Date Information */}
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                  Posted: {getJobPostingDate(job) || 'Unknown'}
+                                </span>
+                                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                  Found: {getRelativeTimeString(job.created_at)}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
