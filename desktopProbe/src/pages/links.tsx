@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
-import { scanLink } from '@/lib/electronMainSdk';
+import { debugLink, exportLinks, importLinks } from '@/lib/electronMainSdk';
 import { throwError } from '@/lib/error';
 import { useEffect, useRef, useState } from 'react';
 
@@ -90,8 +90,38 @@ export function LinksPage() {
           <h1 className="text-2xl font-medium tracking-wide">Job Searches</h1>
           {isScanning && <span className="ml-4 pb-1 text-xs">( currently scanning for new jobs )</span>}
         </div>
-
-        {links.length > 0 && <CreateLink />}
+        <div className="flex items-center gap-2">
+          {links.length > 0 && (
+            <>
+              <button
+                className="rounded-md border px-3 py-1 text-sm"
+                onClick={async () => {
+                  try {
+                    await exportLinks();
+                  } catch (error) {
+                    handleError({ error, title: 'Failed to export saved searches' });
+                  }
+                }}
+              >
+                Export
+              </button>
+              <button
+                className="rounded-md border px-3 py-1 text-sm"
+                onClick={async () => {
+                  try {
+                    const res = await importLinks();
+                    await reloadLinks();
+                  } catch (error) {
+                    handleError({ error, title: 'Failed to import saved searches' });
+                  }
+                }}
+              >
+                Import
+              </button>
+            </>
+          )}
+          <CreateLink />
+        </div>
       </div>
 
       {links.length === 0 && (

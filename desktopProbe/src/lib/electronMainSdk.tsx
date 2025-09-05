@@ -428,7 +428,21 @@ export async function importAdvancedMatchingConfig(): Promise<{
 }
 
 /**
- * Scan a link to fetch new jobs.
+ * Export saved searches (links) to JSON via Save dialog.
+ */
+export async function exportLinks(): Promise<void> {
+  await _mainProcessApiCall('export-links', {});
+}
+
+/**
+ * Import saved searches (links) from JSON via Open dialog. Returns number imported.
+ */
+export async function importLinks(): Promise<{ imported: number } | {}> {
+  return await _mainProcessApiCall('import-links', {});
+}
+
+/**
+ * Start debugging a link.
  */
 export async function scanLink(linkId: number): Promise<void> {
   await _mainProcessApiCall('scan-link', { linkId });
