@@ -319,6 +319,56 @@ export function initRendererIpcApi({
     }),
   );
 
+  // Export saved searches (links) as JSON via Save dialog
+  ipcMain.handle('export-links', async (event, {}) =>
+    _apiCall(async () => {
+      const links = await supabaseApi.listLinks();
+      const res = await dialog.showSaveDialog({
+        title: 'Export Saved Searches',
+        defaultPath: `first2apply-links-${new Date().toISOString().slice(0,10)}.json`,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePath) return {};
+
+      // Only include portable fields
+      const portable = links.map((l) => ({ id: l.id, title: l.title, url: l.url, site_id: l.site_id }));
+      fs.writeFileSync(res.filePath, JSON.stringify({ version: 1, links: portable }, null, 2), 'utf8');
+      return {};
+    }),
+  );
+
+  // Import saved searches (links) from JSON via Open dialog
+  ipcMain.handle('import-links', async (event, {}) =>
+    _apiCall(async () => {
+      const res = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePaths?.length) return { imported: 0 };
+
+      const filePath = res.filePaths[0];
+      const text = fs.readFileSync(filePath, 'utf8');
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON file');
+      }
+
+      const items: any[] = Array.isArray(json?.links) ? json.links : [];
+      let imported = 0;
+      for (const it of items) {
+        if (typeof it?.title === 'string' && typeof it?.url === 'string' && Number.isFinite(it?.site_id)) {
+          try {
+            await supabaseApi.insertLinkRaw({ title: it.title, url: it.url, site_id: Number(it.site_id) });
+            imported += 1;
+          } catch {}
+        }
+      }
+      return { imported };
+    }),
+  );
+
   ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.startDebugWindow({ linkId })));
 
   // API Configuration handlers

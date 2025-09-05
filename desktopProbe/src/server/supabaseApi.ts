@@ -112,6 +112,20 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Insert a link directly without scanning (used for importing saved searches).
+   * Returns the created link row.
+   */
+  async insertLinkRaw({ title, url, site_id }: { title: string; url: string; site_id: number }): Promise<Link> {
+    const [created] = await this._supabaseApiCall(async () =>
+      this._supabase
+        .from('links')
+        .insert({ title: title.trim(), url: url.trim(), site_id })
+        .select('*'),
+    );
+    return created;
+  }
+
+  /**
    * Delete a link.
    */
   deleteLink(linkId: string) {
