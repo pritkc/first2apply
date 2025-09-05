@@ -68,9 +68,11 @@ export function Navbar() {
         <Link to={isScanning ? '/links' : '/'} className="mb-16 md:mb-20">
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger className="flex gap-3">
-                <Logo />
-                <span className="hidden text-lg 2xl:inline-block">{isScanning ? 'Scanning ...' : 'First 2 Apply'}</span>
+              <TooltipTrigger asChild>
+                <span className="flex gap-3">
+                  <Logo />
+                  <span className="hidden text-lg 2xl:inline-block">{isScanning ? 'Scanning ...' : 'First 2 Apply'}</span>
+                </span>
               </TooltipTrigger>
 
               <TooltipContent side="right" className="text-base 2xl:hidden">
@@ -83,7 +85,7 @@ export function Navbar() {
         {navItems.map((item) => (
           <TooltipProvider delayDuration={500} key={item.name}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Link
                   key={item.name}
                   to={item.path}
@@ -107,7 +109,7 @@ export function Navbar() {
       {/* theme toggle */}
       <TooltipProvider delayDuration={500}>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="flex items-center gap-3 p-1 hover:text-primary"

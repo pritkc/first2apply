@@ -2,7 +2,9 @@ import { useSites } from '@/hooks/sites';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-import { Job } from '../../../../supabase/functions/_shared/types';
+import { Job } from '@/lib/types';
+import { useLinks } from '@/hooks/links';
+import { getJobDateInfo } from '@/lib/dateUtils';
 import { Skeleton } from '../ui/skeleton';
 
 /**
@@ -11,6 +13,9 @@ import { Skeleton } from '../ui/skeleton';
 export function JobDetails({ job, isScrapingDescription }: { job: Job; isScrapingDescription: boolean }) {
   const { sites } = useSites();
   const site = sites.find((site) => site.id === job.siteId);
+  const { links } = useLinks();
+  const link = links.find((l) => l.id === (job.link_id ?? 0));
+  const dateInfo = getJobDateInfo(job, link?.last_scraped_at);
 
   return isScrapingDescription ? (
     // Description is being fetched
@@ -32,9 +37,21 @@ export function JobDetails({ job, isScrapingDescription }: { job: Job; isScrapin
     </div>
   ) : job.description ? (
     // Description has been fetched
-    <Markdown remarkPlugins={[remarkGfm]} className="job-description-md pl-[25px] pr-2">
-      {job.description}
-    </Markdown>
+    <div>
+      <div className="mb-3 flex items-center gap-3 pl-[25px] pr-2">
+        {/* Date Information - Consistent with job list UI */}
+        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+          Posted: {dateInfo.postedDate || 'Unknown'}
+        </span>
+        <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+          Found: {dateInfo.foundDate}
+        </span>
+      </div>
+
+      <Markdown remarkPlugins={[remarkGfm]} className="job-description-md pl-[25px] pr-2">
+        {job.description}
+      </Markdown>
+    </div>
   ) : (
     // Description failed to fetch
     <div className="mt-20 text-center">

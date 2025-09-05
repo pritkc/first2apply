@@ -41,19 +41,4 @@ try {
   console.error('❌ Failed to expose electron APIs:', error);
 }
 
-// Test if the APIs are accessible
-console.log('🔧 Testing API access...');
-try {
-  // @ts-ignore
-  if (window.electron) {
-    console.log('✅ window.electron is accessible');
-    // @ts-ignore
-    console.log('✅ window.electron.invoke exists:', typeof window.electron.invoke);
-  } else {
-    console.error('❌ window.electron is not accessible');
-  }
-} catch (error) {
-  console.error('❌ Error accessing window.electron:', error);
-}
-
 console.log('🔧 Preload script finished');

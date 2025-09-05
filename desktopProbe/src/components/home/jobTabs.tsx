@@ -20,7 +20,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useError } from '@/hooks/error';
 import { changeAllJobsStatus, exportJobsToCsv } from '@/lib/electronMainSdk';
 import { ArchiveIcon, DotsVerticalIcon, DownloadIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Job, JobStatus } from '../../../../supabase/functions/_shared/types';
@@ -67,6 +67,33 @@ export function JobTabs() {
     archived: 0,
     filtered: 0,
   });
+
+  // Debug counts rendering
+  console.log('[JobTabs] render counts', {
+    url: location.search,
+    new: listing.new,
+    applied: listing.applied,
+    archived: listing.archived,
+    filtered: listing.filtered,
+  });
+
+  // Hydrate counts from localStorage to avoid flicker/reset across tab switches/remounts
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('f2a_job_counts');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<Pick<JobListing, 'new' | 'applied' | 'archived' | 'filtered'>>;
+      if (!parsed) return;
+      setListing((prev) => ({
+        ...prev,
+        new: typeof parsed.new === 'number' ? parsed.new : prev.new,
+        applied: typeof parsed.applied === 'number' ? parsed.applied : prev.applied,
+        archived: typeof parsed.archived === 'number' ? parsed.archived : prev.archived,
+        filtered: typeof parsed.filtered === 'number' ? parsed.filtered : prev.filtered,
+      }));
+      console.log('[JobTabs] hydrated counts from storage', parsed);
+    } catch {}
+  }, []);
 
 
 
@@ -259,13 +286,16 @@ function TabActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
+          asChild
           className="h-6 w-6 focus-visible:outline-none focus-visible:ring-0"
           onClick={(evt) => {
             evt.preventDefault();
             evt.stopPropagation();
           }}
         >
-          <DotsVerticalIcon className="m-auto h-5 w-auto text-muted-foreground transition-all duration-200 ease-in-out hover:h-6" />
+          <span role="button" aria-label="tab actions" className="inline-flex items-center justify-center">
+            <DotsVerticalIcon className="m-auto h-5 w-auto text-muted-foreground transition-all duration-200 ease-in-out hover:h-6" />
+          </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" className="space-y-1">
           <DropdownMenuItem className="cursor-pointer focus:bg-secondary/40" onClick={() => onTabChange(tab)}>

@@ -3,10 +3,7 @@ import {
   Element,
 } from "https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts";
 import turndown from "npm:turndown@7.1.2";
-import { DbSchema, Job, JobSite, SiteProvider, User } from "./types.ts";
-import { parseCustomJobDescription } from "./customJobsParser.ts";
-import { ILogger } from "./logger.ts";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1/dist/module/index.js";
+import { Job, JobSite, SiteProvider } from "./types.ts";
 
 type SiteProviderQuerySelectors = {
   description: string[];
@@ -25,10 +22,10 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     ],
   },
   [SiteProvider.glassdoor]: {
-    description: [".JobDetails_JobDescriptionUpdates__uW_fK"],
+    description: [".JobDetails_jobDescription__uW_fK"],
   },
   [SiteProvider.indeed]: {
-    description: ["#JobDescriptionUpdatesText"],
+    description: ["#jobDescriptionText"],
   },
   [SiteProvider.remoteok]: {
     description: [".description"],
@@ -75,21 +72,18 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     ],
   },
   [SiteProvider.usaJobs]: {
-    description: [".apply-joa-defaults"],
+    description: ["#requirements"],
   },
   [SiteProvider.talent]: {
     description: [
       ".sc-e78c1cd5-10.sc-e78c1cd5-11.sc-207c7d5e-10.dwTTNY.gdYndp.jkXeTb > p",
     ],
   },
-  [SiteProvider.custom]: {
-    description: ["#job-description"],
-  },
 };
 
-export type JobDescriptionUpdates = Partial<
-  Pick<Job, "description" | "salary" | "tags">
->;
+type JobDescription = {
+  content?: string;
+};
 
 const turndownService = new turndown({
   bulletListMarker: "-",
@@ -99,21 +93,14 @@ const turndownService = new turndown({
 /**
  * Parse the job description from the HTML.
  */
-export async function parseJobDescriptionUpdates({
+export function parseJobDescription({
   site,
   html,
-  user,
-  ...context
 }: {
   site: JobSite;
   job: Job;
   html: string;
-  user: User;
-
-  // dependencies
-  logger: ILogger;
-  supabaseAdminClient: SupabaseClient<DbSchema, "public">;
-}): Promise<JobDescriptionUpdates> {
+}): JobDescription {
   switch (site.provider) {
     case SiteProvider.linkedin:
       return parseLinkedinJobDescription({ html });
@@ -149,8 +136,6 @@ export async function parseJobDescriptionUpdates({
       return parseUSAJobsJobDescription({ html });
     case SiteProvider.talent:
       return parseTalentJobDescription({ html });
-    case SiteProvider.custom:
-      return await parseCustomJobDescription({ html, user, ...context });
   }
 }
 
@@ -192,8 +177,8 @@ function parseLinkedinJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
-  const { descriptionContainer } = extractCommonDomElements({
+}): JobDescription {
+  const { document, descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.linkedin,
     html,
   });
@@ -209,18 +194,14 @@ function parseLinkedinJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
 /**
  * Parse a indeed job description from the HTML.
  */
-function parseIndeedJobDescription({
-  html,
-}: {
-  html: string;
-}): JobDescriptionUpdates {
+function parseIndeedJobDescription({ html }: { html: string }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.indeed,
     html,
@@ -246,7 +227,7 @@ function parseIndeedJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -257,7 +238,7 @@ function parseGlassdoorJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.glassdoor,
     html,
@@ -269,7 +250,7 @@ function parseGlassdoorJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -280,7 +261,7 @@ function parseRemoteOkJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { document, descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.remoteok,
     html,
@@ -296,7 +277,7 @@ function parseRemoteOkJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -307,7 +288,7 @@ function parseWeWorkRemotelyJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.weworkremotely,
     html,
@@ -319,18 +300,14 @@ function parseWeWorkRemotelyJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
 /**
  * Parse a Dice job description from the HTML.
  */
-function parseDiceJobDescription({
-  html,
-}: {
-  html: string;
-}): JobDescriptionUpdates {
+function parseDiceJobDescription({ html }: { html: string }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.dice,
     html,
@@ -342,7 +319,7 @@ function parseDiceJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -353,7 +330,7 @@ function parseFlexJobsJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.flexjobs,
     html,
@@ -365,7 +342,7 @@ function parseFlexJobsJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -376,7 +353,7 @@ function parseBestJobsJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.bestjobs,
     html,
@@ -388,7 +365,7 @@ function parseBestJobsJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -399,7 +376,7 @@ function parseEchoJobsJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.echojobs,
     html,
@@ -411,7 +388,7 @@ function parseEchoJobsJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -422,7 +399,7 @@ function parseRemotiveJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const parseOwnHtml = ({ html }: { html: string }) => {
     const { descriptionContainer } = extractCommonDomElements({
       provider: SiteProvider.remotive,
@@ -434,7 +411,7 @@ function parseRemotiveJobDescription({
         turndownService.turndown(descriptionContainer.innerHTML) ||
         "job might be archived";
     }
-    return { description };
+    return { content: description };
   };
 
   // quite often, remotive redirects to an indeed job page so try to parse the description from there
@@ -446,15 +423,15 @@ function parseRemotiveJobDescription({
     parseTalentJobDescription,
   ];
   for (const parser of parsers) {
-    const { description: parsedDescription } = parser({ html });
-    if (parsedDescription) {
-      description = parsedDescription;
+    const { content } = parser({ html });
+    if (content) {
+      description = content;
       break;
     }
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -465,7 +442,7 @@ function parseRemoteIoJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.remoteio,
     html,
@@ -477,7 +454,7 @@ function parseRemoteIoJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -488,7 +465,7 @@ function parseBuiltInJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.builtin,
     html,
@@ -500,18 +477,14 @@ function parseBuiltInJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
 /**
  * Parse a Naukri job description from the HTML.
  */
-function parseNaukriJobDescription({
-  html,
-}: {
-  html: string;
-}): JobDescriptionUpdates {
+function parseNaukriJobDescription({ html }: { html: string }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.naukri,
     html,
@@ -523,16 +496,14 @@ function parseNaukriJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
 /**
  * Parse a RobertHalf job description from the HTML.
  */
-function parseRobertHalfJobDescription({}: {
-  html: string;
-}): JobDescriptionUpdates {
+function parseRobertHalfJobDescription({}: { html: string }): JobDescription {
   // the entire JD is parsed from the list so no need to parse the description
 
   return {};
@@ -545,7 +516,7 @@ function parseZipRecruiterJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.zipRecruiter,
     html,
@@ -557,7 +528,7 @@ function parseZipRecruiterJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
@@ -568,7 +539,7 @@ function parseUSAJobsJobDescription({
   html,
 }: {
   html: string;
-}): JobDescriptionUpdates {
+}): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.usaJobs,
     html,
@@ -580,18 +551,14 @@ function parseUSAJobsJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }
 
 /**
  * Parse a Talent job description from the HTML.
  */
-function parseTalentJobDescription({
-  html,
-}: {
-  html: string;
-}): JobDescriptionUpdates {
+function parseTalentJobDescription({ html }: { html: string }): JobDescription {
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.talent,
     html,
@@ -603,6 +570,6 @@ function parseTalentJobDescription({
   }
 
   return {
-    description,
+    content: description,
   };
 }

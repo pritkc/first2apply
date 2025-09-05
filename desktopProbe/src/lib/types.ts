@@ -1,3 +1,6 @@
+import { JobSite } from '../../../supabase/functions/_shared/types';
+export type { Job, JobStatus, JobLabel, Link } from '../../../supabase/functions/_shared/types';
+
 export const AVAILABLE_CRON_RULES = [
   {
     name: 'Every 30 minutes',
@@ -8,20 +11,8 @@ export const AVAILABLE_CRON_RULES = [
     value: '0 * * * *',
   },
   {
-    name: 'Every 2 hours',
-    value: '0 */2 * * *',
-  },
-  {
     name: 'Every 4 hours',
     value: '0 */4 * * *',
-  },
-  {
-    name: 'Every 8 hours',
-    value: '0 */8 * * *',
-  },
-  {
-    name: 'Every 12 hours',
-    value: '0 */12 * * *',
   },
   {
     name: 'Every day',
@@ -51,8 +42,9 @@ export type NewAppVersion = {
   message: string;
 };
 
-export type OverlayBrowserViewResult = {
+export type JobBoardModalResponse = {
   url: string;
   title: string;
   html: string;
+  site: JobSite;
 };

@@ -131,6 +131,22 @@ export function initRendererIpcApi({
       return { job: updatedJob };
     }),
   );
+
+  ipcMain.handle('scan-linkedin-applicant-data', async (event, { jobIds }) =>
+    _apiCall(async () => {
+      // Get the jobs from the database
+      const jobs = await Promise.all(
+        jobIds.map(async (jobId: number) => {
+          const job = await supabaseApi.getJob(jobId);
+          return job;
+        })
+      );
+      
+      // Scan for applicant data
+      const updatedJobs = await jobScanner.scanLinkedInApplicantData(jobs);
+      return { jobs: updatedJobs };
+    }),
+  );
   ipcMain.handle('get-app-state', async (event, {}) =>
     _apiCall(async () => {
       const isScanning = await jobScanner.isScanning();

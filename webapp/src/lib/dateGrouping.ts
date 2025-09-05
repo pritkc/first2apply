@@ -11,9 +11,10 @@ export interface DateGroup {
  * Groups jobs by their creation date for efficient organization
  * @param jobs Array of jobs to group
  * @param status Current job status for the group
- * @returns Array of date groups sorted by newest first
+ * @param favoriteCompanies Optional array of favorite company names to prioritize
+ * @returns Array of date groups sorted by newest first, with favorite companies at top of each group
  */
-export function groupJobsByDate(jobs: Job[], status: JobStatus): DateGroup[] {
+export function groupJobsByDate(jobs: Job[], status: JobStatus, favoriteCompanies: string[] = []): DateGroup[] {
   const groups = new Map<string, Job[]>();
   
   jobs.forEach(job => {
@@ -25,12 +26,31 @@ export function groupJobsByDate(jobs: Job[], status: JobStatus): DateGroup[] {
   });
   
   return Array.from(groups.entries())
-    .map(([date, jobs]) => ({
-      date,
-      jobs,
-      count: jobs.length,
-      status
-    }))
+    .map(([date, jobs]) => {
+      // Sort jobs within each date group to prioritize favorite companies
+      const sortedJobs = jobs.sort((a, b) => {
+        const aIsFavorite = favoriteCompanies.some(fav => 
+          a.companyName?.toLowerCase().trim() === fav.toLowerCase().trim()
+        );
+        const bIsFavorite = favoriteCompanies.some(fav => 
+          b.companyName?.toLowerCase().trim() === fav.toLowerCase().trim()
+        );
+        
+        // If one is favorite and other isn't, favorite comes first
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+        
+        // If both are favorites or both are not favorites, maintain original order
+        return 0;
+      });
+      
+      return {
+        date,
+        jobs: sortedJobs,
+        count: sortedJobs.length,
+        status
+      };
+    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 

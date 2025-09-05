@@ -8,31 +8,12 @@ import { createRef, useEffect, useMemo, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
-import { Job } from '../../../../supabase/functions/_shared/types';
+import { Job, JobLabel } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { DeleteJobDialog } from './deleteJobDialog';
-
-// Lightweight relative time helper for display (minutes/hours/days)
-function getRelativeTimeString(date: Date) {
-  const now = new Date().getTime();
-  const diffMs = now - date.getTime();
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  if (diffMs < minute) return 'just now';
-  if (diffMs < hour) {
-    const m = Math.floor(diffMs / minute);
-    return `${m} min${m === 1 ? '' : 's'} ago`;
-  }
-  if (diffMs < day) {
-    const h = Math.floor(diffMs / hour);
-    return `${h} hour${h === 1 ? '' : 's'} ago`;
-  }
-  const d = Math.floor(diffMs / day);
-  return `${d} day${d === 1 ? '' : 's'} ago`;
-}
+import { getJobPostingDate, getRelativeTimeString } from '@/lib/dateUtils';
 
 /**
  * List of jobs component.
@@ -139,6 +120,7 @@ export function JobsList({
     { preventDefault: true },
   );
 
+
   return (
     <InfiniteScroll
       dataLength={jobs.length}
@@ -150,7 +132,9 @@ export function JobsList({
     >
       <ul>
         {jobs.map((job, index) => {
-          const fromLink = linksMap.get(job.link_id)?.title;
+          const link = linksMap.get(job.link_id ?? 0);
+          const fromLink = link?.title;
+          const isFavorite = (job as any).__isFavorite;
 
           return (
             <li
@@ -161,7 +145,7 @@ export function JobsList({
             >
               <div className="flex flex-wrap-reverse items-center justify-between gap-1.5">
                 {/* Company Name */}
-                <p className="my-1.5 text-xs text-muted-foreground">{job.companyName}</p>
+                <p className={cn('my-1.5 text-xs', isFavorite ? 'text-foreground' : 'text-muted-foreground')}>{job.companyName}</p>
 
                 {/* Action buttons */}
                 <div className="ml-auto flex items-center gap-2">
@@ -169,7 +153,7 @@ export function JobsList({
                   {job.status !== 'archived' && (
                     <TooltipProvider delayDuration={500}>
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger asChild>
                           <Button
                             variant="secondary"
                             className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/10 focus:bg-foreground/10"
@@ -192,7 +176,7 @@ export function JobsList({
                   {/* Delete button */}
                   <TooltipProvider delayDuration={500}>
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <Button
                           variant="destructive"
                           className="h-[22px] w-[22px] rounded-sm bg-transparent px-0 transition-colors duration-200 ease-in-out hover:bg-destructive/20 focus:bg-destructive/20"
@@ -215,11 +199,21 @@ export function JobsList({
               </div>
 
               {/* Job Title */}
-              <p className="mt-2 leading-5 tracking-wide">{job.title}</p>
+              <p className={cn('mt-2 leading-5 tracking-wide', isFavorite && 'font-medium')}>{job.title}</p>
+
+              {/* Date Information - Prominent Display */}
+              <div className="mt-2 flex items-center gap-4">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                  Posted: {getJobPostingDate(job) || 'Unknown'}
+                </span>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                  Found: {getRelativeTimeString(job.created_at)}
+                </span>
+              </div>
 
               <div className="mt-1.5 flex items-center justify-between gap-4">
                 {/* Location, JobType, Salary & Tags */}
-                <p className="text-sm leading-[18px] tracking-tight text-foreground/80">
+                <p className={cn('text-sm leading-[18px] tracking-tight', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
                   {job.location && <span>{job.location}</span>}
                   {job.jobType && (
                     <>
@@ -235,7 +229,7 @@ export function JobsList({
                       <span>{job.salary}</span>
                     </>
                   )}
-                  {job.tags?.map((tag) => (
+                  {job.tags?.map((tag: string) => (
                     <span key={job.id + tag}>
                       {(job.location || job.jobType || job.salary) && (
                         <span className="text-3 mx-[8px] font-light text-foreground/40"> | </span>
@@ -249,7 +243,7 @@ export function JobsList({
                 {job.labels[0] && (
                   <div
                     className={`w-[85px] flex-shrink-0 rounded-md bg-opacity-80 py-1 text-center text-xs leading-3 text-white dark:bg-opacity-60 ${
-                      LABEL_COLOR_CLASSES[job.labels[0]]
+                      LABEL_COLOR_CLASSES[job.labels[0] as JobLabel]
                     }`}
                   >
                     {job.labels[0]}
@@ -259,7 +253,7 @@ export function JobsList({
 
               <div className="mt-4 flex items-center gap-12">
                 {/* Source */}
-                <p className="flex items-center gap-2 text-xs leading-3 text-foreground/80">
+                <p className={cn('flex items-center gap-2 text-xs leading-3', isFavorite ? 'text-foreground' : 'text-foreground/80')}>
                   {/* Source logo */}
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={siteLogos[job.siteId]} />
@@ -267,14 +261,9 @@ export function JobsList({
                   </Avatar>
                   {fromLink ?? siteMap[job.siteId]?.name}
                 </p>
-
-                {/* Timestamp */}
-                <p className="ml-auto w-fit flex-shrink-0 text-xs text-foreground/80">
-                  detected {getRelativeTimeString(new Date(job.created_at))}
-                </p>
               </div>
 
-              <hr className="mt-6 w-full border-muted" />
+              <hr className={cn('mt-6 w-full', isFavorite ? 'border-2 border-blue-400/50' : 'border-muted')} />
             </li>
           );
         })}
@@ -290,4 +279,32 @@ export function JobsList({
     </InfiniteScroll>
   );
 }
- 
+
+function getRelativeTimeString(date: Date, locale: string = 'en') {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const now = new Date();
+  const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
+
+  const minutes = Math.floor(diffInSeconds / 60);
+  const hours = Math.floor(diffInSeconds / (60 * 60));
+  const days = Math.floor(diffInSeconds / (60 * 60 * 24));
+  const weeks = Math.floor(diffInSeconds / (60 * 60 * 24 * 7));
+  const months = Math.floor(diffInSeconds / (60 * 60 * 24 * 30));
+  const years = Math.floor(diffInSeconds / (60 * 60 * 24 * 365));
+
+  if (years >= 1) {
+    return rtf.format(-years, 'year');
+  } else if (months >= 1) {
+    return rtf.format(-months, 'month');
+  } else if (weeks >= 1) {
+    return rtf.format(-weeks, 'week');
+  } else if (days >= 1) {
+    return rtf.format(-days, 'day');
+  } else if (hours >= 1) {
+    return rtf.format(-hours, 'hour');
+  } else if (minutes >= 1) {
+    return rtf.format(-minutes, 'minute');
+  } else {
+    return rtf.format(-Math.floor(diffInSeconds), 'second');
+  }
+}

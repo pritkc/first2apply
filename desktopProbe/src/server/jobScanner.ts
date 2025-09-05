@@ -235,8 +235,17 @@ export class JobScanner {
     // figure out which jobs can be scanned in incognito mode
     const sites = await this._supabaseApi.listSites();
     const sitesMap = new Map(sites.map((site) => [site.id, site]));
-    const incognitoJobsToScan = jobs.filter((job) => sitesMap.get(job.siteId)?.incognito_support);
-    const normalJobsToScan = jobs.filter((job) => !sitesMap.get(job.siteId)?.incognito_support);
+    
+    // For LinkedIn jobs, we need to be more careful about applicant data
+    // Keep job discovery in incognito mode, but applicant data needs authenticated session
+    const incognitoJobsToScan = jobs.filter((job) => {
+      const site = sitesMap.get(job.siteId);
+      return site?.incognito_support && site.provider !== 'linkedin';
+    });
+    const normalJobsToScan = jobs.filter((job) => {
+      const site = sitesMap.get(job.siteId);
+      return !site?.incognito_support || site.provider === 'linkedin';
+    });
 
     const scanJobDescriptions = async ({
       jobsToScan,
@@ -336,6 +345,15 @@ export class JobScanner {
     this._logger.info('finished scanning job descriptions');
 
     return updatedJobs;
+  }
+
+  /**
+   * Scan LinkedIn jobs specifically for applicant data using authenticated session.
+   * This is a separate method to avoid risks with bulk scraping.
+   */
+  async scanLinkedInApplicantData(jobs: Job[]): Promise<Job[]> {
+    // Applicants feature has been removed
+    return jobs;
   }
 
   /**

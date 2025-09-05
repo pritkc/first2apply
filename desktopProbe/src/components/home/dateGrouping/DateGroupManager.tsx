@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Job, JobStatus } from '../../../../supabase/functions/_shared/types';
+import { Job, JobStatus } from '@/lib/types';
 import { DateGroup, groupJobsByDate, filterDateGroupsBySearch } from '@/lib/dateGrouping';
 import { DateGroupedJobsList } from './DateGroupedJobsList';
 
@@ -14,6 +14,7 @@ interface DateGroupManagerProps {
   onDelete: (job: Job) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
+  favoriteCompanies?: string[];
 }
 
 export const DateGroupManager = memo(function DateGroupManager({
@@ -26,13 +27,14 @@ export const DateGroupManager = memo(function DateGroupManager({
   onArchive,
   onDelete,
   onLoadMore,
-  hasMore = false
+  hasMore = false,
+  favoriteCompanies = []
 }: DateGroupManagerProps) {
   // Group jobs by date and apply search filtering
   const dateGroups = useMemo(() => {
-    const grouped = groupJobsByDate(jobs, status);
+    const grouped = groupJobsByDate(jobs, status, favoriteCompanies);
     return filterDateGroupsBySearch(grouped, search);
-  }, [jobs, status, search]);
+  }, [jobs, status, search, favoriteCompanies]);
 
   // If no jobs, show empty state
   if (jobs.length === 0) {
@@ -82,6 +84,7 @@ export const DateGroupManager = memo(function DateGroupManager({
         onDelete={onDelete}
         onLoadMore={onLoadMore}
         hasMore={hasMore}
+        favoriteCompanies={favoriteCompanies}
       />
     </div>
   );

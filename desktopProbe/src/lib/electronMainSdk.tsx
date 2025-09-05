@@ -248,6 +248,14 @@ export async function scanJob(job: Job): Promise<Job> {
 }
 
 /**
+ * Scan LinkedIn jobs specifically for applicant data using authenticated session.
+ */
+export async function scanLinkedInApplicantData(jobIds: number[]): Promise<Job[]> {
+  const { jobs } = await _mainProcessApiCall<{ jobs: Job[] }>('scan-linkedin-applicant-data', { jobIds });
+  return jobs;
+}
+
+/**
  * Create a user review.
  */
 export async function createReview({
