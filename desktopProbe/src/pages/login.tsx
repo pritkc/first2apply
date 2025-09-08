@@ -2,7 +2,8 @@ import { LoginCard } from '@/components/loginCard';
 import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
 import { loginWithEmail } from '@/lib/electronMainSdk';
-import { useState } from 'react';
+import { ENV } from '@/env';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -14,6 +15,35 @@ export function LoginPage() {
   const { handleError } = useError();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
+
+  // Auto-login for development environment
+  useEffect(() => {
+    const attemptAutoLogin = async () => {
+      if (ENV.nodeEnv === 'development' && !autoLoginAttempted) {
+        setAutoLoginAttempted(true);
+        console.log('🔧 Development mode: Attempting auto-login with default credentials');
+        
+        try {
+          setIsSubmitting(true);
+          const user = await loginWithEmail({ 
+            email: 'dev@localhost.com', 
+            password: 'password123' 
+          });
+          await login(user);
+          console.log('✅ Auto-login successful');
+          navigate('/');
+        } catch (error) {
+          console.log('❌ Auto-login failed:', error);
+          // Don't show error for auto-login failure, just let user login manually
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    };
+
+    attemptAutoLogin();
+  }, [autoLoginAttempted, login, navigate]);
 
   const onLoginWithEmail = async ({ email, password }: { email: string; password: string }) => {
     try {
@@ -30,7 +60,14 @@ export function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <LoginCard onLoginWithEmail={onLoginWithEmail} isSubmitting={isSubmitting} />
+      <div className="space-y-4">
+        {ENV.nodeEnv === 'development' && autoLoginAttempted && isSubmitting && (
+          <div className="text-center text-sm text-muted-foreground">
+            🔧 Development mode: Attempting auto-login with dev@localhost.com...
+          </div>
+        )}
+        <LoginCard onLoginWithEmail={onLoginWithEmail} isSubmitting={isSubmitting} />
+      </div>
     </main>
   );
 }
