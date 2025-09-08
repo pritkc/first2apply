@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/components/ui/use-toast';
 import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
-import { getAdvancedMatchingConfig, openExternalUrl, updateAdvancedMatchingConfig } from '@/lib/electronMainSdk';
+import { getAdvancedMatchingConfig, getApiConfig, openExternalUrl, updateAdvancedMatchingConfig, updateApiConfig, exportAdvancedMatchingConfig, importAdvancedMatchingConfig } from '@/lib/electronMainSdk';
 import { Cross2Icon, InfoCircledIcon, MinusCircledIcon } from '@radix-ui/react-icons';
 import { useEffect, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -31,21 +31,44 @@ export function FiltersPage() {
   const [userAiInput, setUserAiInput] = useState<string>('');
   const [blacklistedCompanies, setBlacklistedCompanies] = useState<string[]>([]);
   const [addBlacklistedCompany, setAddBlacklistedCompany] = useState<string>('');
+  const [favoriteCompanies, setFavoriteCompanies] = useState<string[]>([]);
+  const [addFavoriteCompany, setAddFavoriteCompany] = useState<string>('');
   const [isSubscriptionDialogOpen, setSubscriptionDialogOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showAllBlacklistedCompanies, setShowAllBlacklistedCompanies] = useState(false);
+  const [showAllFavoriteCompanies, setShowAllFavoriteCompanies] = useState(false);
+  
+  // API Model Selection State
+  const [selectedProvider, setSelectedProvider] = useState<'openai' | 'gemini' | 'llama'>('gemini');
+  const [apiKeys, setApiKeys] = useState({
+    openai: '',
+    gemini: '',
+    llama: ''
+  });
+  const [showApiKeyInputs, setShowApiKeyInputs] = useState(false);
 
   /**
-   * Load the advanced matching filters from the user's profile.
+   * Load the advanced matching filters and API config from the user's profile.
    */
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        // Load advanced matching config
         const config = await getAdvancedMatchingConfig();
         if (config) {
           setUserAiInput(config.chatgpt_prompt);
           setBlacklistedCompanies(config.blacklisted_companies);
+          setFavoriteCompanies(config.favorite_companies || []);
         }
+        
+        // Load API configuration
+        const apiConfig = await getApiConfig();
+        setSelectedProvider(apiConfig.provider);
+        setApiKeys({
+          openai: apiConfig.keys.openai || '',
+          gemini: apiConfig.keys.gemini || '',
+          llama: apiConfig.keys.llama || ''
+        });
       } catch (error) {
         handleError({ error, title: 'Failed to load advanced matching filters' });
       } finally {
@@ -56,26 +79,67 @@ export function FiltersPage() {
   }, []);
 
   /**
-   * Save the config to the database.
+   * Save the config to the database and local storage.
    */
   const onSave = async () => {
     try {
+      // Save advanced matching config
       const updatedConfig = await updateAdvancedMatchingConfig({
         chatgpt_prompt: userAiInput,
         blacklisted_companies: blacklistedCompanies,
+        favorite_companies: favoriteCompanies,
       });
       setUserAiInput(updatedConfig.chatgpt_prompt);
       setBlacklistedCompanies(updatedConfig.blacklisted_companies);
+      setFavoriteCompanies(updatedConfig.favorite_companies || []);
 
-      // if the user is not on the PRO plan, show the subscription dialog
-      if (profile.subscription_tier !== 'pro') {
-        setSubscriptionDialogOpen(true);
-        return;
-      } else {
-        toast({ title: 'Advanced matching filters saved' });
-      }
+      // Save API configuration
+      await updateApiConfig({
+        provider: selectedProvider,
+        keys: {
+          openai: apiKeys.openai || undefined,
+          gemini: apiKeys.gemini || undefined,
+          llama: apiKeys.llama || undefined,
+        }
+      });
+
+      // For local development, bypass PRO plan check
+      // if (profile.subscription_tier !== 'pro') {
+      //   setSubscriptionDialogOpen(true);
+      //   return;
+      // } else {
+      //   toast({ title: 'Advanced matching filters and API configuration saved' });
+      // }
+      
+      // Always allow saving for local development
+      toast({ title: 'Advanced matching filters and API configuration saved' });
     } catch (error) {
       handleError({ error, title: 'Failed to save advanced matching filters' });
+    }
+  };
+
+  const onExport = async () => {
+    try {
+      await exportAdvancedMatchingConfig();
+      toast({ title: 'Filters exported' });
+    } catch (error) {
+      handleError({ error, title: 'Failed to export filters' });
+    }
+  };
+
+  const onImport = async () => {
+    try {
+      const result = (await importAdvancedMatchingConfig()) as any;
+      if (!result || (!('chatgpt_prompt' in result) && !('blacklisted_companies' in result) && !('favorite_companies' in result))) {
+        toast({ title: 'No data imported' });
+        return;
+      }
+      if (typeof result.chatgpt_prompt === 'string') setUserAiInput(result.chatgpt_prompt);
+      if (Array.isArray(result.blacklisted_companies)) setBlacklistedCompanies(result.blacklisted_companies);
+      if (Array.isArray(result.favorite_companies)) setFavoriteCompanies(result.favorite_companies);
+      toast({ title: 'Filters imported. Click Save to persist.' });
+    } catch (error) {
+      handleError({ error, title: 'Failed to import filters' });
     }
   };
 
@@ -156,6 +220,145 @@ export function FiltersPage() {
             specifics like remote work or PTO preferences and more.
           </AlertDescription>
         </Alert>
+      </section>
+
+      {/* API MODEL SELECTION */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-lg">
+            Choose your <span className="font-medium">AI Provider</span> for job filtering:
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowApiKeyInputs(!showApiKeyInputs)}
+          >
+            {showApiKeyInputs ? 'Hide' : 'Configure'} API Keys
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Provider Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedProvider === 'gemini'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedProvider('gemini')}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">Google Gemini</h3>
+                <Badge variant="secondary" className="text-xs">Recommended</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Fast, cost-effective, and reliable
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <div>Model: Gemini 2.5 Flash-Lite</div>
+                <div>Cost: ~$0.075/1M tokens</div>
+              </div>
+            </div>
+
+            <div
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedProvider === 'openai'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedProvider('openai')}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">OpenAI GPT</h3>
+                <Badge variant="outline" className="text-xs">Premium</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                High accuracy, more expensive
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <div>Model: GPT-4o</div>
+                <div>Cost: ~$2.5/1M tokens</div>
+              </div>
+            </div>
+
+            <div
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all opacity-50 ${
+                selectedProvider === 'llama'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                  : 'border-gray-200'
+              }`}
+              onClick={() => setSelectedProvider('llama')}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">Llama API</h3>
+                <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Open source, flexible pricing
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <div>Model: Llama 3.2</div>
+                <div>Cost: Variable</div>
+              </div>
+            </div>
+          </div>
+
+          {/* API Key Configuration */}
+          {showApiKeyInputs && (
+            <div className="mt-6 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+              <h4 className="font-medium mb-4">API Key Configuration</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Google Gemini API Key
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder="Enter your Gemini API key"
+                    value={apiKeys.gemini}
+                    onChange={(e) => setApiKeys(prev => ({ ...prev, gemini: e.target.value }))}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    OpenAI API Key
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder="Enter your OpenAI API key (sk-...)"
+                    value={apiKeys.openai}
+                    onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Llama API Key
+                    <Badge variant="outline" className="ml-2 text-xs">Coming Soon</Badge>
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder="Llama API integration coming soon"
+                    value={apiKeys.llama}
+                    onChange={(e) => setApiKeys(prev => ({ ...prev, llama: e.target.value }))}
+                    className="font-mono text-sm"
+                    disabled
+                  />
+                </div>
+              </div>
+              
+              <Alert className="mt-4">
+                <InfoCircledIcon className="h-4 w-4" />
+                <AlertTitle>Security Note</AlertTitle>
+                <AlertDescription>
+                  Your API keys are stored securely on your device and never shared with our servers.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* HERE STARTS THE BLACKLISTING */}
@@ -246,9 +449,89 @@ export function FiltersPage() {
         </div>
       </section>
 
-      <Button className="ml-auto w-36" onClick={onSave}>
-        Save filters
-      </Button>
+      {/* FAVORITE COMPANIES */}
+
+      <section>
+        <p className="mb-4 text-lg">
+          Add <span className="font-medium">Favorite companies</span> you love. We’ll <span className="font-medium">highlight</span> jobs from them and you can filter to only see these.
+        </p>
+
+        <div className="flex w-full gap-2">
+          <div className="relative flex-1">
+            <Input
+              value={addFavoriteCompany}
+              placeholder="E.g. Stripe"
+              onChange={(evt) => setAddFavoriteCompany(evt.target.value)}
+              maxLength={100}
+              className="bg-card px-6 pr-20 text-base ring-ring placeholder:text-base focus-visible:ring-2"
+            />
+            <span className="absolute bottom-2 right-4 text-sm text-muted-foreground">
+              {addFavoriteCompany.length}/100
+            </span>
+          </div>
+
+          <Button
+            variant="secondary"
+            className="w-36 border border-border"
+            onClick={() => {
+              if (addFavoriteCompany) {
+                setFavoriteCompanies([...favoriteCompanies, addFavoriteCompany]);
+                setAddFavoriteCompany('');
+              }
+            }}
+          >
+            Add favorite
+          </Button>
+        </div>
+
+        <div className="mt-4">
+          {favoriteCompanies.length === 0 ? (
+            <p>You haven't added any favorites yet</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(showAllFavoriteCompanies ? favoriteCompanies : favoriteCompanies.slice(0, 10)).map(
+                (company) => (
+                  <Badge
+                    key={company}
+                    className="flex items-center gap-2 border border-border bg-card py-1 pl-4 pr-2 text-base hover:bg-card"
+                  >
+                    {company}
+                    <TooltipProvider delayDuration={500}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Cross2Icon
+                            className="h-4 w-4 text-foreground"
+                            onClick={() => setFavoriteCompanies(favoriteCompanies.filter((c) => c !== company))}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="mt-2 text-sm">
+                          Remove
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Badge>
+                ),
+              )}
+              {favoriteCompanies.length > 10 && !showAllFavoriteCompanies && (
+                <Button variant="secondary" className="py-2" onClick={() => setShowAllFavoriteCompanies(true)}>
+                  See All
+                </Button>
+              )}
+              {showAllFavoriteCompanies && (
+                <Button variant="secondary" className="py-2" onClick={() => setShowAllFavoriteCompanies(false)}>
+                  Show Less
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="ml-auto flex gap-2">
+        <Button variant="secondary" onClick={onExport}>Export</Button>
+        <Button variant="secondary" onClick={onImport}>Import</Button>
+        <Button onClick={onSave}>Save filters</Button>
+      </div>
 
       <SubscriptionDialog
         isOpen={isSubscriptionDialogOpen}

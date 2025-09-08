@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { DeleteJobDialog } from "./deleteJobDialog";
-import { getRelativeTimeString } from "@/lib/date";
+import { getJobPostingDate, getRelativeTimeString } from "@/lib/dateUtils";
 
 /**
  * List of jobs component.
@@ -131,6 +131,7 @@ export function JobsList({
     { preventDefault: true }
   );
 
+
   return (
     <InfiniteScroll
       dataLength={jobs.length}
@@ -214,6 +215,16 @@ export function JobsList({
               {/* Job Title */}
               <p className="mt-2 leading-5 tracking-wide">{job.title}</p>
 
+              {/* Date Information - Prominent Display */}
+              <div className="mt-2 flex items-center gap-4">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                  Posted: {getJobPostingDate(job) || 'Unknown'}
+                </span>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                  Found: {getRelativeTimeString(job.created_at)}
+                </span>
+              </div>
+
               <div className="mt-1.5 flex items-center justify-between gap-4">
                 {/* Location, JobType, Salary & Tags */}
                 <p className="text-sm leading-[18px] tracking-tight text-foreground/80">
@@ -265,20 +276,14 @@ export function JobsList({
                 )}
               </div>
 
-              <div className="mt-4 flex items-center gap-12">
+              <div className="mt-4 flex w-full flex-wrap items-center gap-6 text-xs text-foreground/80">
                 {/* Source */}
-                <p className="flex items-center gap-2 text-xs leading-3 text-foreground/80">
-                  {/* Source logo */}
+                <p className="flex items-center gap-2 leading-3">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={siteLogos[job.siteId]} />
                     <AvatarFallback>LI</AvatarFallback>
                   </Avatar>
                   {fromLink ?? siteMap[job.siteId]?.name}
-                </p>
-
-                {/* Timestamp */}
-                <p className="ml-auto w-fit flex-shrink-0 text-xs text-foreground/80">
-                  detected {getRelativeTimeString(new Date(job.created_at))}
                 </p>
               </div>
 

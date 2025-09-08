@@ -178,7 +178,7 @@ function parseLinkedinJobDescription({
 }: {
   html: string;
 }): JobDescription {
-  const { descriptionContainer } = extractCommonDomElements({
+  const { document, descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.linkedin,
     html,
   });

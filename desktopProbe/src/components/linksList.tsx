@@ -20,7 +20,7 @@ export function LinksList({
   links: Link[];
   onDeleteLink: (linkId: number) => void;
   onDebugLink: (linkId: number) => void;
-  onUpdateLink: (data: { linkId: number; title: string }) => Promise<void>;
+  onUpdateLink: (data: { linkId: number; title: string; url: string }) => Promise<void>;
 }) {
   const { siteLogos, sites } = useSites();
   const sitesMap = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
@@ -33,6 +33,17 @@ export function LinksList({
     <>
       <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:gap-6">
         {links.map((link) => {
+          // Debug: validate date types for ReactTimeAgo
+          try {
+            // eslint-disable-next-line no-console
+            console.debug('[LinksList] link dates', {
+              id: link.id,
+              last_scraped_at: link.last_scraped_at,
+              created_at: link.created_at,
+              typeof_last_scraped_at: typeof (link as any).last_scraped_at,
+              typeof_created_at: typeof (link as any).created_at,
+            });
+          } catch {}
           return (
             <li
               key={link.id}
@@ -66,11 +77,11 @@ export function LinksList({
                 <div>
                   <p className="text-xs font-light text-foreground/40">
                     {'Last checked '}
-                    <ReactTimeAgo date={link.last_scraped_at} locale="en-US" />
+                    <ReactTimeAgo date={new Date((link as any).last_scraped_at).getTime()} locale="en-US" />
                   </p>
                   <p className="text-xs font-light text-foreground/40">
                     {'Added '}
-                    <ReactTimeAgo date={link.created_at} locale="en-US" />
+                    <ReactTimeAgo date={new Date((link as any).created_at).getTime()} locale="en-US" />
                   </p>
                 </div>
 
@@ -93,7 +104,7 @@ export function LinksList({
                   {/* Copy URL */}
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <Button
                           variant="secondary"
                           size="default"
@@ -114,7 +125,7 @@ export function LinksList({
                   {/* edit search */}
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <Button
                           variant="secondary"
                           size="default"
@@ -157,7 +168,7 @@ export function LinksList({
             return;
           }
 
-          await onUpdateLink({ linkId: editedLink.id, title: data.title });
+          await onUpdateLink({ linkId: editedLink.id, title: data.title, url: data.url });
           setEditedLink(null);
         }}
         onCancel={() => {

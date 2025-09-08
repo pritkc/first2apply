@@ -4,7 +4,7 @@ import { LinksListSkeleton } from '@/components/skeletons/linksListSkeleton';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
-import { debugLink } from '@/lib/electronMainSdk';
+import { debugLink, exportLinks, importLinks } from '@/lib/electronMainSdk';
 import { throwError } from '@/lib/error';
 import { useEffect } from 'react';
 
@@ -47,12 +47,9 @@ export function LinksPage() {
   };
 
   // update link
-  const handleUpdateLink = async (data: { linkId: number; title: string }) => {
+  const handleUpdateLink = async (data: { linkId: number; title: string; url: string }) => {
     try {
-      // for now, we only update the title
-      const link = links.find((l) => l.id === data.linkId) ?? throwError('Link not found');
-
-      await updateLink(data.linkId, { title: data.title, url: link.url });
+      await updateLink(data.linkId, { title: data.title, url: data.url });
     } catch (error) {
       handleError({ error });
     }
@@ -73,8 +70,38 @@ export function LinksPage() {
           <h1 className="text-2xl font-medium tracking-wide">Job Searches</h1>
           {isScanning && <span className="ml-4 pb-1 text-xs">( currently scanning for new jobs )</span>}
         </div>
-
-        {links.length > 0 && <CreateLink />}
+        <div className="flex items-center gap-2">
+          {links.length > 0 && (
+            <>
+              <button
+                className="rounded-md border px-3 py-1 text-sm"
+                onClick={async () => {
+                  try {
+                    await exportLinks();
+                  } catch (error) {
+                    handleError({ error, title: 'Failed to export saved searches' });
+                  }
+                }}
+              >
+                Export
+              </button>
+              <button
+                className="rounded-md border px-3 py-1 text-sm"
+                onClick={async () => {
+                  try {
+                    const res = await importLinks();
+                    await reloadLinks();
+                  } catch (error) {
+                    handleError({ error, title: 'Failed to import saved searches' });
+                  }
+                }}
+              >
+                Import
+              </button>
+            </>
+          )}
+          <CreateLink />
+        </div>
       </div>
 
       {links.length === 0 && (

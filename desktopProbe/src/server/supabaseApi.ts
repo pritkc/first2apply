@@ -1,6 +1,7 @@
 import { FunctionsHttpError, PostgrestError, SupabaseClient, User } from '@supabase/supabase-js';
 import { backOff } from 'exponential-backoff';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as luxon from 'luxon';
 import * as path from 'path';
 
@@ -64,7 +65,7 @@ export class F2aSupabaseApi {
   getUser(): Promise<{ user: User | null }> {
     return this._supabaseApiCall(async () => await this._supabase.auth.getUser()).catch(() => ({
       user: null,
-    }));
+    } as { user: User | null }));
   }
 
   /**
@@ -92,8 +93,10 @@ export class F2aSupabaseApi {
    * Update an existing link.
    */
   async updateLink({ linkId, title, url }: { linkId: number; title: string; url: string }): Promise<Link> {
-    const updatedLink = await this._supabaseApiCall(async () =>
-      this._supabase.from('links').update({ title, url }).eq('id', linkId).select('*').single(),
+    const updatedLink = await this._supabaseApiCall(() =>
+      this._supabase.functions.invoke<Link>('update-link', {
+        body: { linkId, title, url },
+      }),
     );
 
     return updatedLink;
@@ -106,6 +109,20 @@ export class F2aSupabaseApi {
     return this._supabaseApiCall(async () =>
       this._supabase.from('links').select('*').order('id', { ascending: false }),
     );
+  }
+
+  /**
+   * Insert a link directly without scanning (used for importing saved searches).
+   * Returns the created link row.
+   */
+  async insertLinkRaw({ title, url, site_id }: { title: string; url: string; site_id: number }): Promise<Link> {
+    const [created] = await this._supabaseApiCall(async () =>
+      this._supabase
+        .from('links')
+        .insert({ title: title.trim(), url: url.trim(), site_id })
+        .select('*'),
+    );
+    return created;
   }
 
   /**
@@ -149,6 +166,23 @@ export class F2aSupabaseApi {
     maxRetries: number;
     retryCount: number;
   }) {
+    // Load API config saved by the desktop app UI
+    let provider: 'openai' | 'gemini' | 'llama' | undefined;
+    let openaiKey: string | undefined;
+    let geminiKey: string | undefined;
+    try {
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
+          provider?: 'openai' | 'gemini' | 'llama';
+          keys?: { openai?: string; gemini?: string; llama?: string };
+        };
+        provider = config.provider;
+        openaiKey = config.keys?.openai;
+        geminiKey = config.keys?.gemini;
+      }
+    } catch {}
+
     return this._supabaseApiCall(() =>
       this._supabase.functions.invoke<{ job: Job; parseFailed: boolean }>('scan-job-description', {
         body: {
@@ -156,6 +190,9 @@ export class F2aSupabaseApi {
           html,
           maxRetries,
           retryCount,
+          llmProvider: provider,
+          openAiApiKey: openaiKey,
+          geminiApiKey: geminiKey,
         },
       }),
     );
@@ -184,6 +221,7 @@ export class F2aSupabaseApi {
     siteIds,
     linkIds,
     labels,
+    favoritesOnly,
     limit = 50,
     after,
   }: {
@@ -192,6 +230,7 @@ export class F2aSupabaseApi {
     siteIds?: number[];
     linkIds?: number[];
     labels?: string[];
+    favoritesOnly?: boolean;
     limit?: number;
     after?: string;
   }) {
@@ -199,7 +238,7 @@ export class F2aSupabaseApi {
     const jobs_site_ids = siteIds?.length > 0 ? siteIds : undefined;
     const jobs_link_ids = linkIds?.length > 0 ? linkIds : undefined;
     const jobs_labels = labels?.length > 0 ? labels : undefined;
-    const [jobs, counters] = await Promise.all([
+    const [jobs, countersByStatus] = await Promise.all([
       this._supabaseApiCall<Job[], PostgrestError>(async () => {
         const res = await this._supabase.rpc('list_jobs', {
           jobs_status: status,
@@ -209,26 +248,58 @@ export class F2aSupabaseApi {
           jobs_site_ids,
           jobs_link_ids,
           jobs_labels,
+          jobs_favorites_only: favoritesOnly ?? null,
         });
 
         return res;
       }),
-      this._supabaseApiCall<
-        Array<{
-          status: JobStatus;
-          job_count: number;
-        }>,
-        PostgrestError
-      >(async () => {
-        const res = await this._supabase.rpc('count_jobs', {
-          jobs_search,
-          jobs_site_ids,
-          jobs_link_ids,
-          jobs_labels,
-        });
-
-        return res;
-      }),
+      // Fetch counters for each status independently so tab badges reflect global counts
+      Promise.all([
+        this._supabaseApiCall(
+          async () =>
+            await this._supabase.rpc('count_jobs', {
+              jobs_status: 'new',
+              jobs_search,
+              jobs_site_ids,
+              jobs_link_ids,
+              jobs_labels,
+              jobs_favorites_only: favoritesOnly ?? null,
+            }),
+        ),
+        this._supabaseApiCall(
+          async () =>
+            await this._supabase.rpc('count_jobs', {
+              jobs_status: 'applied',
+              jobs_search,
+              jobs_site_ids,
+              jobs_link_ids,
+              jobs_labels,
+              jobs_favorites_only: favoritesOnly ?? null,
+            }),
+        ),
+        this._supabaseApiCall(
+          async () =>
+            await this._supabase.rpc('count_jobs', {
+              jobs_status: 'archived',
+              jobs_search,
+              jobs_site_ids,
+              jobs_link_ids,
+              jobs_labels,
+              jobs_favorites_only: favoritesOnly ?? null,
+            }),
+        ),
+        this._supabaseApiCall(
+          async () =>
+            await this._supabase.rpc('count_jobs', {
+              jobs_status: 'excluded_by_advanced_matching',
+              jobs_search,
+              jobs_site_ids,
+              jobs_link_ids,
+              jobs_labels,
+              jobs_favorites_only: favoritesOnly ?? null,
+            }),
+        ),
+      ]),
     ]);
 
     let nextPageToken: string | undefined;
@@ -238,8 +309,17 @@ export class F2aSupabaseApi {
       nextPageToken = `${lastJob.id}!${lastJob.updated_at}`;
     }
 
-    const countersMap = new Map(counters.map((c) => [c.status, c.job_count]));
-    return {
+    const countersMap = new Map<JobStatus, number>();
+    try {
+      const [newC, appliedC, archivedC, filteredC] = countersByStatus;
+      const pickCount = (arr: any) => (Array.isArray(arr) && arr[0] && typeof arr[0].job_count === 'number' ? arr[0].job_count : 0);
+      countersMap.set('new', pickCount(newC));
+      countersMap.set('applied', pickCount(appliedC));
+      countersMap.set('archived', pickCount(archivedC));
+      // Stored procedure uses 'excluded_by_advanced_matching' but returns status accordingly if included; we set filtered explicitly
+      countersMap.set('excluded_by_advanced_matching', pickCount(filteredC));
+    } catch {}
+    const payload = {
       jobs,
       new: countersMap.get('new') ?? 0,
       archived: countersMap.get('archived') ?? 0,
@@ -247,6 +327,11 @@ export class F2aSupabaseApi {
       filtered: countersMap.get('excluded_by_advanced_matching') ?? 0,
       nextPageToken,
     };
+    try {
+      console.log('[supabaseApi.listJobs] status=%s search=%s siteIds=%j linkIds=%j labels=%j favoritesOnly=%j -> counts=%j nextPageToken=%s jobs=%d',
+        status, !!search, jobs_site_ids, jobs_link_ids, jobs_labels, favoritesOnly, { new: payload.new, applied: payload.applied, archived: payload.archived, filtered: payload.filtered }, nextPageToken, jobs.length);
+    } catch {}
+    return payload;
   }
 
   /**
@@ -486,7 +571,7 @@ export class F2aSupabaseApi {
   /**
    * Update the advanced matching configuration for the current user.
    */
-  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>) {
+  async updateAdvancedMatchingConfig(config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies' | 'favorite_companies'>) {
     const [updatedConfig] = await this._supabaseApiCall(
       async () =>
         await this._supabase

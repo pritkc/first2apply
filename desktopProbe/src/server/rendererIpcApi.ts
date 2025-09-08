@@ -11,6 +11,8 @@ import { JobScanner } from './jobScanner';
 import { getStripeConfig } from './stripeConfig';
 import { F2aSupabaseApi } from './supabaseApi';
 
+console.log('🔧 Initializing renderer IPC API...');
+
 /**
  * Helper methods used to centralize error handling.
  */
@@ -41,6 +43,15 @@ export function initRendererIpcApi({
   jobBoardModal: JobBoardModal;
   nodeEnv: string;
 }) {
+  console.log('🔧 Setting up IPC handlers...');
+  console.log('🔧 Node environment:', nodeEnv);
+  console.log('🔧 Available services:', {
+    supabaseApi: !!supabaseApi,
+    jobScanner: !!jobScanner,
+    autoUpdater: !!autoUpdater,
+    jobBoardModal: !!jobBoardModal
+  });
+
   ipcMain.handle('get-os-type', (event) =>
     _apiCall(async () => {
       return os.platform();
@@ -92,8 +103,8 @@ export function initRendererIpcApi({
 
   ipcMain.handle('delete-link', async (event, { linkId }) => _apiCall(() => supabaseApi.deleteLink(linkId)));
 
-  ipcMain.handle('list-jobs', async (event, { status, search, siteIds, linkIds, labels, limit, after }) =>
-    _apiCall(() => supabaseApi.listJobs({ status, search, siteIds, linkIds, labels, limit, after })),
+  ipcMain.handle('list-jobs', async (event, { status, search, siteIds, linkIds, labels, favoritesOnly, limit, after }) =>
+    _apiCall(() => supabaseApi.listJobs({ status, search, siteIds, linkIds, labels, favoritesOnly, limit, after })),
   );
 
   ipcMain.handle('update-job-status', async (event, { jobId, status }) =>
@@ -119,6 +130,22 @@ export function initRendererIpcApi({
     _apiCall(async () => {
       const [updatedJob] = await jobScanner.scanJobs([job]);
       return { job: updatedJob };
+    }),
+  );
+
+  ipcMain.handle('scan-linkedin-applicant-data', async (event, { jobIds }) =>
+    _apiCall(async () => {
+      // Get the jobs from the database
+      const jobs = await Promise.all(
+        jobIds.map(async (jobId: number) => {
+          const job = await supabaseApi.getJob(jobId);
+          return job;
+        })
+      );
+      
+      // Scan for applicant data
+      const updatedJobs = await jobScanner.scanLinkedInApplicantData(jobs);
+      return { jobs: updatedJobs };
     }),
   );
   ipcMain.handle('get-app-state', async (event, {}) =>
@@ -236,7 +263,160 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.updateAdvancedMatchingConfig(config)),
   );
 
+  // Export advanced matching configuration (prompt, blacklist, favorites) to JSON
+  ipcMain.handle('export-advanced-matching-config', async (event, {}) =>
+    _apiCall(async () => {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      // Use a filename-safe timestamp (YYYYMMDD-HHmmss)
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const res = await dialog.showSaveDialog({
+        properties: ['createDirectory'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+        defaultPath: `first2apply-advanced-matching-config-${timestamp}.json`,
+      });
+      if (res.canceled || !res.filePath) return {};
+
+      const current = await supabaseApi.getAdvancedMatchingConfig();
+      const payload = {
+        chatgpt_prompt: current?.chatgpt_prompt ?? '',
+        blacklisted_companies: current?.blacklisted_companies ?? [],
+        favorite_companies: current?.favorite_companies ?? [],
+      };
+
+      fs.writeFileSync(res.filePath, JSON.stringify(payload, null, 2), 'utf8');
+      return {};
+    }),
+  );
+
+  // Import advanced matching configuration from JSON (does not persist automatically)
+  ipcMain.handle('import-advanced-matching-config', async (event, {}) =>
+    _apiCall(async () => {
+      const res = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePaths?.length) return {};
+
+      const filePath = res.filePaths[0];
+      const text = fs.readFileSync(filePath, 'utf8');
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON file');
+      }
+
+      const chatgpt_prompt = typeof json?.chatgpt_prompt === 'string' ? json.chatgpt_prompt : '';
+      const blacklisted_companies = Array.isArray(json?.blacklisted_companies)
+        ? json.blacklisted_companies.filter((x: any) => typeof x === 'string')
+        : [];
+      const favorite_companies = Array.isArray(json?.favorite_companies)
+        ? json.favorite_companies.filter((x: any) => typeof x === 'string')
+        : [];
+
+      return { chatgpt_prompt, blacklisted_companies, favorite_companies };
+    }),
+  );
+
+  // Export saved searches (links) as JSON via Save dialog
+  ipcMain.handle('export-links', async (event, {}) =>
+    _apiCall(async () => {
+      const links = await supabaseApi.listLinks();
+      const res = await dialog.showSaveDialog({
+        title: 'Export Saved Searches',
+        defaultPath: `first2apply-links-${new Date().toISOString().slice(0,10)}.json`,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePath) return {};
+
+      // Only include portable fields
+      const portable = links.map((l) => ({ id: l.id, title: l.title, url: l.url, site_id: l.site_id }));
+      fs.writeFileSync(res.filePath, JSON.stringify({ version: 1, links: portable }, null, 2), 'utf8');
+      return {};
+    }),
+  );
+
+  // Import saved searches (links) from JSON via Open dialog
+  ipcMain.handle('import-links', async (event, {}) =>
+    _apiCall(async () => {
+      const res = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePaths?.length) return { imported: 0 };
+
+      const filePath = res.filePaths[0];
+      const text = fs.readFileSync(filePath, 'utf8');
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON file');
+      }
+
+      const items: any[] = Array.isArray(json?.links) ? json.links : [];
+      let imported = 0;
+      for (const it of items) {
+        if (typeof it?.title === 'string' && typeof it?.url === 'string' && Number.isFinite(it?.site_id)) {
+          try {
+            await supabaseApi.insertLinkRaw({ title: it.title, url: it.url, site_id: Number(it.site_id) });
+            imported += 1;
+          } catch {}
+        }
+      }
+      return { imported };
+    }),
+  );
+
   ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.startDebugWindow({ linkId })));
+
+  // API Configuration handlers
+  ipcMain.handle('get-api-config', async (event) =>
+    _apiCall(async () => {
+      // Load API config from secure storage
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      
+      try {
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          return config;
+        }
+      } catch (error) {
+        console.error('Error loading API config:', error);
+      }
+      
+      // Return default config
+      return {
+        provider: 'gemini',
+        keys: { openai: '', gemini: '', llama: '' }
+      };
+    })
+  );
+
+  ipcMain.handle('update-api-config', async (event, { config }) =>
+    _apiCall(async () => {
+      // Save API config to secure storage
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      
+      try {
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+      } catch (error) {
+        console.error('Error saving API config:', error);
+        throw error;
+      }
+      
+      return {};
+    })
+  );
 
   ipcMain.handle('open-job-board-modal', async (event, { jobSite }) => {
     return _apiCall(async () => jobBoardModal.open(jobSite));

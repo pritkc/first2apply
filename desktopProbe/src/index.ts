@@ -59,7 +59,9 @@ const createMainWindow = () => {
       additionalArguments: [theme],
       partition: `persist:scraper`,
     },
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
+    show: true,
+    skipTaskbar: false,
   });
 
   // and load the index.html of the app.
@@ -71,8 +73,10 @@ const createMainWindow = () => {
   }
 
   mainWindow.on('close', (event) => {
-    event.preventDefault();
-    onHideToSystemTray();
+    if (appIsRunning) {
+      event.preventDefault();
+      onHideToSystemTray();
+    }
   });
 
   // open all external links in the default browser
@@ -247,7 +251,9 @@ async function bootstrap() {
     });
 
     // init the renderer IPC API
+    console.log('🔧 About to initialize renderer IPC API...');
     initRendererIpcApi({ supabaseApi, jobScanner, autoUpdater, jobBoardModal, nodeEnv: ENV.nodeEnv });
+    console.log('🔧 Renderer IPC API initialized successfully');
 
     // init the tray menu
     trayMenu = new TrayMenu({ logger, onQuit: quit, onNavigate: navigate });
@@ -310,6 +316,15 @@ async function bootstrap() {
   // create the main window after everything is setup
   const mainWindow = createMainWindow();
   jobBoardModal.setMainWindow(mainWindow);
+  
+  // Make sure the window is visible
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+    if (process.platform === 'darwin') {
+      app.dock.show();
+    }
+  }
 
   // handle deep links on macOS and linux
   app.on('open-url', (event, url) => {

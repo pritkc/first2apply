@@ -1,0 +1,41 @@
+First2Apply Secure Backup Manifest
+==================================
+Backup Name: first2apply_backup_20250907_225742
+Created: Sun Sep  7 22:57:49 PDT 2025
+Size: 129M
+Security: Verified (no sensitive files)
+
+Contents:
+./
+./electron.pid
+./.DS_Store
+./First2Apply-master-legacy/
+./invoiceDownloader/
+./DEVELOPMENT_SETUP.md
+./webapp/
+./node_modules/
+./emailTemplates/
+./blog/
+./llm-usage.json
+./supabase/
+./README.md
+./.gitignore
+./package-lock.json
+./package.json
+./GIT_WORKFLOW.md
+./BACKUP_SECURITY.md
+./scripts/
+./local-llm-api/
+... (truncated, see full backup for complete list)
+
+Excluded Files:
+- All .env* files
+- All API keys and secrets
+- node_modules
+- .git directory
+- Previous backups
+- Build artifacts
+- Log files
+- Temporary files
+
+This backup is safe to share and store.

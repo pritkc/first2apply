@@ -29,14 +29,14 @@ export async function checkUserSubscription({
     throw new Error("Profile not found");
   }
 
-  // check if the user's subscription has expired
-  const subscriptionHasExpired =
-    new Date(profile.subscription_end_date) < new Date();
-  const hasRequiredTier = profile.subscription_tier === "pro";
+  // For local development, bypass subscription checks
+  // const subscriptionHasExpired =
+  //   new Date(profile.subscription_end_date) < new Date();
+  // const hasRequiredTier = profile.subscription_tier === "pro";
 
   return {
     profile,
-    subscriptionHasExpired,
-    hasAdvancedMatching: hasRequiredTier && !subscriptionHasExpired,
+    subscriptionHasExpired: false, // Always treat subscription as active for local development
+    hasAdvancedMatching: true, // Always allow advanced matching for local development
   };
 }

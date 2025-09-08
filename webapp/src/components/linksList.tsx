@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { Link } from "../../../supabase/functions/_shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { getRelativeTimeString } from "@/lib/date";
+import { getRelativeTimeString } from "@/lib/dateUtils";
 
 const scrapeFailureThreshold = 3;
 
@@ -66,11 +66,11 @@ export function LinksList({
               <div>
                 <p className="text-xs font-light text-foreground/40">
                   {"Last checked "}
-                  {getRelativeTimeString(new Date(link.last_scraped_at))}
+                  {getRelativeTimeString(link.last_scraped_at)}
                 </p>
                 <p className="text-xs font-light text-foreground/40">
                   {"Added "}
-                  {getRelativeTimeString(new Date(link.created_at))}
+                  {getRelativeTimeString(link.created_at)}
                 </p>
               </div>
 

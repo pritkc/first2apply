@@ -15,6 +15,27 @@ import {
 import { JobBoardModalResponse, JobScannerSettings, NewAppVersion } from './types';
 
 async function _mainProcessApiCall<T>(channel: string, params?: object): Promise<T> {
+  console.log('🔧 Making main process API call to channel:', channel);
+  console.log('🔧 Params:', params);
+  
+  // Check if window.electron exists
+  // @ts-ignore
+  if (!window.electron) {
+    console.error('❌ window.electron is not available!');
+    throw new Error('Electron APIs not available - window.electron is undefined');
+  }
+  
+  // Check if invoke method exists
+  // @ts-ignore
+  if (!window.electron.invoke) {
+    console.error('❌ window.electron.invoke is not available!');
+    // @ts-ignore
+    console.log('❌ Available methods on window.electron:', Object.keys(window.electron));
+    throw new Error('Electron invoke method not available');
+  }
+  
+  console.log('✅ Electron APIs are available, making invoke call...');
+  
   // @ts-ignore
   const { data, error } = await window.electron.invoke(channel, params);
   if (error) throw new Error(error);
@@ -139,6 +160,7 @@ export async function listJobs({
   siteIds,
   linkIds,
   labels,
+  favoritesOnly,
   limit,
   after,
 }: {
@@ -147,6 +169,7 @@ export async function listJobs({
   siteIds?: number[];
   linkIds?: number[];
   labels?: string[];
+  favoritesOnly?: boolean;
   limit?: number;
   after?: string;
 }) {
@@ -163,6 +186,7 @@ export async function listJobs({
     siteIds,
     linkIds,
     labels,
+    favoritesOnly,
     limit,
     after,
   });
@@ -221,6 +245,14 @@ export async function openExternalUrl(url: string): Promise<void> {
 export async function scanJob(job: Job): Promise<Job> {
   const { job: updatedJob } = await _mainProcessApiCall<{ job: Job }>('scan-job-description', { job });
   return updatedJob;
+}
+
+/**
+ * Scan LinkedIn jobs specifically for applicant data using authenticated session.
+ */
+export async function scanLinkedInApplicantData(jobIds: number[]): Promise<Job[]> {
+  const { jobs } = await _mainProcessApiCall<{ jobs: Job[] }>('scan-linkedin-applicant-data', { jobIds });
+  return jobs;
 }
 
 /**
@@ -378,7 +410,7 @@ export async function getAdvancedMatchingConfig(): Promise<AdvancedMatchingConfi
  * Update the advanced matching configuration for the current user.
  */
 export async function updateAdvancedMatchingConfig(
-  config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies'>,
+  config: Pick<AdvancedMatchingConfig, 'chatgpt_prompt' | 'blacklisted_companies' | 'favorite_companies'>,
 ) {
   return await _mainProcessApiCall<AdvancedMatchingConfig>('update-advanced-matching-config', {
     config,
@@ -386,10 +418,62 @@ export async function updateAdvancedMatchingConfig(
 }
 
 /**
+ * Export advanced matching config (prompt, blacklist, favorites) as JSON via Save dialog.
+ */
+export async function exportAdvancedMatchingConfig(): Promise<void> {
+  await _mainProcessApiCall('export-advanced-matching-config', {});
+}
+
+/**
+ * Import advanced matching config JSON via Open dialog. Returns the parsed values.
+ */
+export async function importAdvancedMatchingConfig(): Promise<{
+  chatgpt_prompt: string;
+  blacklisted_companies: string[];
+  favorite_companies: string[];
+} | {}> {
+  return await _mainProcessApiCall('import-advanced-matching-config', {});
+}
+
+/**
+ * Export saved searches (links) to JSON via Save dialog.
+ */
+export async function exportLinks(): Promise<void> {
+  await _mainProcessApiCall('export-links', {});
+}
+
+/**
+ * Import saved searches (links) from JSON via Open dialog. Returns number imported.
+ */
+export async function importLinks(): Promise<{ imported: number } | {}> {
+  return await _mainProcessApiCall('import-links', {});
+}
+
+/**
  * Start debugging a link.
  */
 export async function debugLink(linkId: number): Promise<void> {
   await _mainProcessApiCall('debug-link', { linkId });
+}
+
+/**
+ * Get the API configuration (provider and keys).
+ */
+export async function getApiConfig(): Promise<{
+  provider: 'openai' | 'gemini' | 'llama';
+  keys: { openai?: string; gemini?: string; llama?: string; };
+}> {
+  return await _mainProcessApiCall('get-api-config', {});
+}
+
+/**
+ * Update the API configuration (provider and keys).
+ */
+export async function updateApiConfig(config: {
+  provider: 'openai' | 'gemini' | 'llama';
+  keys: { openai?: string; gemini?: string; llama?: string; };
+}): Promise<void> {
+  await _mainProcessApiCall('update-api-config', { config });
 }
 
 /**

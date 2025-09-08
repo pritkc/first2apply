@@ -5,10 +5,14 @@ import {
   CheckIcon,
   CookieIcon,
   CopyIcon,
+  Link2Icon,
   InfoCircledIcon,
   ListBulletIcon,
   ResetIcon,
   TrashIcon,
+  HeartFilledIcon,
+  CrossCircledIcon,
+  ReloadIcon,
 } from '@radix-ui/react-icons';
 import React from 'react';
 
@@ -32,11 +36,15 @@ export function JobSummary({
   onView,
   onUpdateJobStatus,
   onUpdateLabels,
+  onFavoriteCompany,
+  onBlacklistCompany,
 }: {
   job: Job;
   onView: (job: Job) => void;
   onUpdateJobStatus: (jobId: number, status: JobStatus) => void;
   onUpdateLabels: (jobId: number, labels: JobLabel[]) => void;
+  onFavoriteCompany: (job: Job) => void;
+  onBlacklistCompany: (job: Job) => void;
 }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
@@ -120,7 +128,7 @@ export function JobSummary({
         {job.status !== 'applied' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -142,7 +150,7 @@ export function JobSummary({
         {job.status !== 'new' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -164,7 +172,7 @@ export function JobSummary({
         {job.status !== 'archived' && (
           <TooltipProvider delayDuration={500}>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -182,10 +190,39 @@ export function JobSummary({
           </TooltipProvider>
         )}
 
-        {/* Copy url button */}
+        {/* Copy details button */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  const text = `${job.companyName} - ${job.title}` + (job.description ? `\n\n${job.description}` : '');
+                  navigator.clipboard.writeText(text);
+                  toast({
+                    title: 'Job details copied',
+                    description: 'Company, title and description are on your clipboard.',
+                    variant: 'success',
+                  });
+                }}
+              >
+                <CopyIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Copy details
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Copy URL button (restored) */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="secondary"
@@ -200,7 +237,7 @@ export function JobSummary({
                   });
                 }}
               >
-                <CopyIcon className="h-4 w-auto" />
+                <Link2Icon className="h-4 w-auto" />
               </Button>
             </TooltipTrigger>
 
@@ -210,10 +247,57 @@ export function JobSummary({
           </Tooltip>
         </TooltipProvider>
 
+        {/* Favorite company */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  onFavoriteCompany(job);
+                }}
+              >
+                <HeartFilledIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Add company to Favorites
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Blacklist company */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  onBlacklistCompany(job);
+                }}
+              >
+                <CrossCircledIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Blacklist company
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+
         {/* Delete button */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 size="lg"
                 variant="destructive"

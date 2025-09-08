@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useSites } from '@/hooks/sites';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 import { Job, JobLabel, JobStatus } from '../../../../supabase/functions/_shared/types';
@@ -26,7 +27,7 @@ import { JobListing } from './jobTabs';
 import { JobsList } from './jobsList';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
-const JOB_BATCH_SIZE = 30;
+const JOB_BATCH_SIZE = 1000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 /**
@@ -51,6 +52,7 @@ export function JobTabsContent({
 
   const router = useRouter();
   const { isSubscriptionExpired } = useSession();
+  const { siteMap } = useSites();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +81,7 @@ export function JobTabsContent({
           return;
         }
 
-        console.log(location.search);
+        console.log(router.asPath);
         setListing((listing) => ({ ...listing, isLoading: true }));
 
         const result = await listJobs({
@@ -89,10 +91,18 @@ export function JobTabsContent({
           linkIds,
           limit: JOB_BATCH_SIZE,
         });
+        
+        if (!result.jobs) {
+          console.error('No jobs returned from listJobs');
+          setListing(prev => ({ ...prev, isLoading: false, jobs: [] }));
+          return;
+        }
+        
         console.log('found jobs', result.jobs.length);
 
         setListing({
           ...result,
+          jobs: result.jobs,
           isLoading: false,
           hasMore: result.jobs.length === JOB_BATCH_SIZE,
         });
@@ -108,7 +118,7 @@ export function JobTabsContent({
       }
     };
     asyncLoad();
-  }, [location.search]); // using location.search to trigger the effect when the query parameter changes
+  }, [router]); // using router to trigger the effect when the query parameter changes
 
   // Load a new batch of jobs after updating the status of a job if there are still jobs to load
   useEffect(() => {
@@ -129,6 +139,13 @@ export function JobTabsContent({
             siteIds,
             linkIds,
           });
+          
+          if (!result.jobs) {
+            console.error('No jobs returned from listJobs');
+            setListing((l) => ({ ...l, isLoading: false }));
+            return;
+          }
+          
           setListing((l) => ({
             ...result,
             jobs: l.jobs.concat(result.jobs),
@@ -233,21 +250,27 @@ export function JobTabsContent({
 
   const onLoadMore = async () => {
     try {
-      const result = await listJobs({
-        status,
-        limit: JOB_BATCH_SIZE,
-        after: listing.nextPageToken,
-        search,
-        siteIds,
-        linkIds,
-      });
+              const result = await listJobs({
+          status,
+          limit: JOB_BATCH_SIZE,
+          after: listing.nextPageToken,
+          search,
+          siteIds,
+          linkIds,
+        });
 
-      setListing((listing) => ({
-        ...result,
-        jobs: [...listing.jobs, ...result.jobs],
-        isLoading: false,
-        hasMore: result.jobs.length === JOB_BATCH_SIZE,
-      }));
+        if (!result.jobs) {
+          console.error('No jobs returned from listJobs');
+          setListing(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
+
+        setListing((listing) => ({
+          ...result,
+          jobs: [...listing.jobs, ...result.jobs],
+          isLoading: false,
+          hasMore: result.jobs.length === JOB_BATCH_SIZE,
+        }));
     } catch (error) {
       handleError({ error, title: 'Failed to load more jobs' });
     }
@@ -298,8 +321,9 @@ export function JobTabsContent({
 
   // Update the query params when the search input changes
   const onSearchJobs = ({ search, filters }: { search: string; filters: JobFiltersType }) => {
+    const hideReposts = filters.hideLinkedInReposts ? '1' : '0';
     router.push(
-      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}`,
+      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&hide_reposts=${hideReposts}`,
     );
   };
 
@@ -315,23 +339,43 @@ export function JobTabsContent({
 
                 {listing.isLoading || statusItem !== status ? (
                   <JobsListSkeleton />
-                ) : listing.jobs.length > 0 ? (
-                  <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
-                    <JobsList
-                      jobs={listing.jobs}
-                      selectedJobId={selectedJobId}
-                      hasMore={listing.hasMore}
-                      parentContainerId="jobsList"
-                      onLoadMore={onLoadMore}
-                      onSelect={(job) => scanJobAndSelect(job)}
-                      onArchive={(j) => {
-                        onUpdateJobStatus(j.id, 'archived');
-                      }}
-                      onDelete={(j) => {
-                        onUpdateJobStatus(j.id, 'deleted');
-                      }}
-                    />
-                  </div>
+                                  ) : listing.jobs.length > 0 ? (
+                    <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
+                      <JobsList
+                        jobs={(() => {
+                          const params = new URLSearchParams(router.asPath.split('?')[1] || '');
+                          const hideReposts = params.get('hide_reposts') === '1';
+                          if (!hideReposts) return listing.jobs;
+                          return listing.jobs.filter((j) => {
+                            const site = siteMap[j.siteId];
+                            const isLinkedIn = site?.provider === 'linkedin';
+                            if (!isLinkedIn) return true;
+                            const haystack = [j.title, j.description, ...(j.tags || [])]
+                              .filter(Boolean)
+                              .join(' ')
+                              .toLowerCase();
+                            return !(
+                              haystack.includes('reposted') ||
+                              haystack.includes('re post') ||
+                              haystack.includes('re-post') ||
+                              haystack.includes('re shared') ||
+                              haystack.includes('reshared')
+                            );
+                          });
+                        })()}
+                        selectedJobId={selectedJobId}
+                        hasMore={listing.hasMore}
+                        parentContainerId="jobsList"
+                        onLoadMore={onLoadMore}
+                        onSelect={(job) => scanJobAndSelect(job)}
+                        onArchive={(j) => {
+                          onUpdateJobStatus(j.id, 'archived');
+                        }}
+                        onDelete={(j) => {
+                          onUpdateJobStatus(j.id, 'deleted');
+                        }}
+                      />
+                    </div>
                 ) : (
                   <p className="px-4 pt-20 text-center">
                     {search || (siteIds && siteIds.length > 0) || (linkIds && linkIds.length > 0) ? (
@@ -604,7 +648,7 @@ export function JobTabsContent({
   );
 }
 
-const NoSearchResults = () => {
+function NoSearchResults() {
   const { isScanning } = useAppState();
 
   return isScanning ? (
@@ -618,4 +662,4 @@ const NoSearchResults = () => {
   ) : (
     <span>There aren't any jobs that match your search.</span>
   );
-};
+}

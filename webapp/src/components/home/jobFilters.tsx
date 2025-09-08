@@ -22,6 +22,7 @@ export function JobFilters({
   const [filters, setFilters] = useState<JobFiltersType>({
     sites: [],
     links: [],
+    hideLinkedInReposts: false,
   });
 
   // Debounced search for input value
@@ -49,6 +50,7 @@ export function JobFilters({
       <JobFiltersMenu
         selectedSites={siteIds || []}
         selectedLinks={linkIds || []}
+        hideLinkedInReposts={filters.hideLinkedInReposts}
         onApplyFilters={(newFilters) => {
           setFilters(newFilters);
         }}

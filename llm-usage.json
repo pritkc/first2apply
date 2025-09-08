@@ -1,0 +1,19 @@
+{
+  "startDate": "2025-08-23T09:19:24.311Z",
+  "totalRequests": 6,
+  "totalResponseTime": 19999,
+  "totalTokens": 5151,
+  "dailyStats": {
+    "2025-08-23": {
+      "requests": 5,
+      "responseTime": 14558,
+      "tokens": 4276
+    },
+    "2025-08-25": {
+      "requests": 1,
+      "responseTime": 5441,
+      "tokens": 875
+    }
+  },
+  "estimatedSavings": 0.025755000000000004
+}

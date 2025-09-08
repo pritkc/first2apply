@@ -1,5 +1,5 @@
 import { IAnalyticsClient } from '@/lib/analytics';
-import { BrowserWindow, Notification, app, powerSaveBlocker } from 'electron';
+import { BrowserWindow, Notification, app, powerSaveBlocker, shell } from 'electron';
 import fs from 'fs';
 import { ScheduledTask, schedule } from 'node-cron';
 import path from 'path';
@@ -229,8 +229,17 @@ export class JobScanner {
     // figure out which jobs can be scanned in incognito mode
     const sites = await this._supabaseApi.listSites();
     const sitesMap = new Map(sites.map((site) => [site.id, site]));
-    const incognitoJobsToScan = jobs.filter((job) => sitesMap.get(job.siteId)?.incognito_support);
-    const normalJobsToScan = jobs.filter((job) => !sitesMap.get(job.siteId)?.incognito_support);
+    
+    // For LinkedIn jobs, we need to be more careful about applicant data
+    // Keep job discovery in incognito mode, but applicant data needs authenticated session
+    const incognitoJobsToScan = jobs.filter((job) => {
+      const site = sitesMap.get(job.siteId);
+      return site?.incognito_support && site.provider !== 'linkedin';
+    });
+    const normalJobsToScan = jobs.filter((job) => {
+      const site = sitesMap.get(job.siteId);
+      return !site?.incognito_support || site.provider === 'linkedin';
+    });
 
     const scanJobDescriptions = async ({
       jobsToScan,
@@ -316,6 +325,15 @@ export class JobScanner {
   }
 
   /**
+   * Scan LinkedIn jobs specifically for applicant data using authenticated session.
+   * This is a separate method to avoid risks with bulk scraping.
+   */
+  async scanLinkedInApplicantData(jobs: Job[]): Promise<Job[]> {
+    // Applicants feature has been removed
+    return jobs;
+  }
+
+  /**
    * Display a notfication for new jobs.
    */
   showNewJobsNotification({ newJobs }: { newJobs: Job[] }) {
@@ -335,6 +353,14 @@ export class JobScanner {
       // sound: "Submarine",
       silent: !this._settings.useSound,
     });
+
+    // Play an additional audible alert for emphasis if enabled
+    if (this._settings.useSound) {
+      // 3 quick beeps for a louder notification without extra deps
+      shell.beep();
+      setTimeout(() => shell.beep(), 180);
+      setTimeout(() => shell.beep(), 360);
+    }
 
     // Show the notification
     const notificationId = new Date().getTime().toString();

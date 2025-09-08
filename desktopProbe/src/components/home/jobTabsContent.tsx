@@ -2,6 +2,7 @@ import { TabsContent } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
+import { useSites } from '@/hooks/sites';
 import { useSession } from '@/hooks/session';
 import {
   getJobById,
@@ -10,6 +11,8 @@ import {
   scanJob,
   updateJobLabels,
   updateJobStatus,
+  getAdvancedMatchingConfig,
+  updateAdvancedMatchingConfig,
 } from '@/lib/electronMainSdk';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -22,11 +25,13 @@ import { JobFiltersType } from './jobFilters/jobFiltersMenu';
 import { JobNotes } from './jobNotes';
 import { JobSummary } from './jobSummary';
 import { JobListing } from './jobTabs';
-import { JobsList } from './jobsList';
+import { DateGroupManager } from './dateGrouping';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
-const JOB_BATCH_SIZE = 30;
+const JOB_BATCH_SIZE = 1000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
+
+type FavoriteAwareJob = Job & { __isFavorite?: boolean };
 
 /**
  * Job tabs content component.
@@ -53,13 +58,18 @@ export function JobTabsContent({
   const navigate = useNavigate();
   const location = useLocation();
   const { isSubscriptionExpired } = useSession();
+  const { siteMap } = useSites();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
+  const jobsListRef = useRef<HTMLDivElement>(null);
 
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
 
   const statusIndex = ALL_JOB_STATUSES.indexOf(status);
+
+  const [favoriteCompanies, setFavoriteCompanies] = useState<string[]>([]);
+  const [blacklistedCompanies, setBlacklistedCompanies] = useState<string[]>([]);
 
   // Navigate between tabs using arrow keys
   useHotkeys('left', () => {
@@ -71,29 +81,78 @@ export function JobTabsContent({
     navigate(`?status=${ALL_JOB_STATUSES[nextIndex]}&r=${Math.random()}`);
   });
 
+  // Load favorite companies on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const cfg = await getAdvancedMatchingConfig();
+        setFavoriteCompanies(cfg?.favorite_companies || []);
+        setBlacklistedCompanies(cfg?.blacklisted_companies || []);
+      } catch {}
+    };
+    loadFavorites();
+  }, []);
+
   // Reload jobs when location changes
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        // Reset list scroll to top when filters/tab/search change
+        try {
+          jobsListRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+        } catch {}
+
         // check subscription status
         if (isSubscriptionExpired) {
           navigate('/subscription');
           return;
         }
 
-        console.log(location.search);
         setListing((listing) => ({ ...listing, isLoading: true }));
 
-        const result = await listJobs({ status, search, siteIds, linkIds, labels, limit: JOB_BATCH_SIZE });
-        console.log('found jobs', result.jobs.length);
-
-        setListing({
-          ...result,
-          isLoading: false,
-          hasMore: result.jobs.length === JOB_BATCH_SIZE,
+        const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
+        const result = await listJobs({ status, search, siteIds, linkIds, labels: labelsForBackend, favoritesOnly: (labels || []).includes('FAVORITES_ONLY'), limit: JOB_BATCH_SIZE });
+        console.log('[JobTabsContent] listJobs result', {
+          status,
+          counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+          jobs: result.jobs?.length,
+          next: result.nextPageToken,
         });
 
-        const firstJob = result.jobs[0];
+        // Mark favorites
+        const favSet = new Set(favoriteCompanies.map((c) => c?.toLowerCase?.()));
+        const jobsWithFav = result.jobs.map((j) => ({
+          ...j,
+          __isFavorite: favSet.has(j.companyName?.toLowerCase?.()),
+        })) as FavoriteAwareJob[];
+
+        setListing((prev) => ({
+          // keep previous counts for tabs we didn't just fetch
+          ...prev,
+          jobs: jobsWithFav,
+          isLoading: false,
+          hasMore: !!result.nextPageToken,
+          nextPageToken: result.nextPageToken,
+          // update only provided counts, preserve others
+          new: result.new ?? prev.new,
+          applied: result.applied ?? prev.applied,
+          archived: result.archived ?? prev.archived,
+          filtered: result.filtered ?? prev.filtered,
+        }));
+        try {
+          localStorage.setItem(
+            'f2a_job_counts',
+            JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+          );
+          console.log('[JobTabsContent] saved counts to storage', {
+            new: result.new,
+            applied: result.applied,
+            archived: result.archived,
+            filtered: result.filtered,
+          });
+        } catch {}
+
+        const firstJob = jobsWithFav[0] as Job | undefined;
         if (firstJob) {
           scanJobAndSelect(firstJob);
         } else {
@@ -104,34 +163,61 @@ export function JobTabsContent({
       }
     };
     asyncLoad();
-  }, [location.search]); // using location.search to trigger the effect when the query parameter changes
+  }, [location.search, favoriteCompanies.join('|')]);
 
   // Load a new batch of jobs after updating the status of a job if there are still jobs to load
   useEffect(() => {
     const asyncLoad = async () => {
       try {
-        if (
-          !listing.isLoading &&
-          listing.jobs.length < JOB_BATCH_SIZE / 2 &&
-          listing.hasMore &&
-          listing.nextPageToken
-        ) {
+        const wantFavoritesOnly = labels?.includes('FAVORITES_ONLY');
+        const favSet = new Set(favoriteCompanies.map((c) => c?.toLowerCase?.()));
+        const visibleCount = wantFavoritesOnly
+          ? listing.jobs.filter((j: any) => favSet.has(j.companyName?.toLowerCase?.())).length
+          : listing.jobs.length;
+
+        if (!listing.isLoading && visibleCount < JOB_BATCH_SIZE / 2 && listing.hasMore && listing.nextPageToken) {
           setListing((l) => ({ ...l, isLoading: true }));
+          const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
           const result = await listJobs({
             status,
             limit: JOB_BATCH_SIZE,
             after: listing.nextPageToken,
             search,
             siteIds,
-            labels,
+            labels: labelsForBackend,
+            favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
             linkIds,
           });
+          console.log('[JobTabsContent] listJobs append result', {
+            status,
+            counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+            jobs: result.jobs?.length,
+            next: result.nextPageToken,
+          });
+
+          const newFavSet = favSet;
+          const jobsWithFav = result.jobs.map((j) => ({
+            ...j,
+            __isFavorite: newFavSet.has(j.companyName?.toLowerCase?.()),
+          })) as FavoriteAwareJob[];
+
           setListing((l) => ({
-            ...result,
-            jobs: l.jobs.concat(result.jobs),
+            ...l,
+            jobs: l.jobs.concat(jobsWithFav as unknown as Job[]),
             isLoading: false,
             hasMore: !!result.nextPageToken,
+            nextPageToken: result.nextPageToken,
+            new: result.new ?? l.new,
+            applied: result.applied ?? l.applied,
+            archived: result.archived ?? l.archived,
+            filtered: result.filtered ?? l.filtered,
           }));
+          try {
+            localStorage.setItem(
+              'f2a_job_counts',
+              JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+            );
+          } catch {}
         }
       } catch (error) {
         handleError({ error });
@@ -212,24 +298,93 @@ export function JobTabsContent({
     }
   };
 
+  // Add company to favorites (whitelist)
+  const onFavoriteCompany = async (job: Job) => {
+    const company = job.companyName?.trim();
+    if (!company) return;
+
+    const next = Array.from(new Set([...(favoriteCompanies || []), company]));
+    setFavoriteCompanies(next);
+    toast({ title: 'Favorited company', description: `${company} added to favorites.`, variant: 'success' });
+    try {
+      await updateAdvancedMatchingConfig({
+        chatgpt_prompt: (await getAdvancedMatchingConfig())?.chatgpt_prompt || '',
+        blacklisted_companies: blacklistedCompanies,
+        favorite_companies: next,
+      });
+    } catch (error) {
+      setFavoriteCompanies(favoriteCompanies);
+      handleError({ error, title: 'Failed to favorite company' });
+    }
+  };
+
+  // Add company to blacklist and move job to filtered
+  const onBlacklistCompany = async (job: Job) => {
+    const company = job.companyName?.trim();
+    if (!company) return;
+
+    const next = Array.from(new Set([...(blacklistedCompanies || []), company]));
+    setBlacklistedCompanies(next);
+    toast({ title: 'Blacklisted company', description: `${company} added to blacklist.`, variant: 'success' });
+    try {
+      await updateAdvancedMatchingConfig({
+        chatgpt_prompt: (await getAdvancedMatchingConfig())?.chatgpt_prompt || '',
+        blacklisted_companies: next,
+        favorite_companies: favoriteCompanies,
+      });
+
+      // Move current job to filtered immediately
+      await updateListedJobStatus(job.id, 'excluded_by_advanced_matching');
+      selectNextJob(job.id);
+    } catch (error) {
+      setBlacklistedCompanies(blacklistedCompanies);
+      handleError({ error, title: 'Failed to blacklist company' });
+    }
+  };
+
   const onLoadMore = async () => {
     try {
+      const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
       const result = await listJobs({
         status,
         limit: JOB_BATCH_SIZE,
         after: listing.nextPageToken,
         search,
         siteIds,
-        labels,
+        labels: labelsForBackend,
+        favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
         linkIds,
       });
+      console.log('[JobTabsContent] listJobs loadMore result', {
+        status,
+        counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
+        jobs: result.jobs?.length,
+        next: result.nextPageToken,
+      });
+
+      const favSet = new Set(favoriteCompanies.map((c) => c?.toLowerCase?.()));
+      const jobsWithFav = result.jobs.map((j) => ({
+        ...j,
+        __isFavorite: favSet.has(j.companyName?.toLowerCase?.()),
+      })) as FavoriteAwareJob[];
 
       setListing((listing) => ({
-        ...result,
-        jobs: [...listing.jobs, ...result.jobs],
+        ...listing,
+        jobs: [...listing.jobs, ...(jobsWithFav as unknown as Job[])],
         isLoading: false,
-        hasMore: result.jobs.length === JOB_BATCH_SIZE,
+        hasMore: !!result.nextPageToken,
+        nextPageToken: result.nextPageToken,
+        new: result.new ?? listing.new,
+        applied: result.applied ?? listing.applied,
+        archived: result.archived ?? listing.archived,
+        filtered: result.filtered ?? listing.filtered,
       }));
+      try {
+        localStorage.setItem(
+          'f2a_job_counts',
+          JSON.stringify({ new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered }),
+        );
+      } catch {}
     } catch (error) {
       handleError({ error, title: 'Failed to load more jobs' });
     }
@@ -280,10 +435,45 @@ export function JobTabsContent({
 
   // Update the query params when the search input changes
   const onSearchJobs = ({ search, filters }: { search: string; filters: JobFiltersType }) => {
+    const hideReposts = filters.hideLinkedInReposts ? '1' : '0';
+    // Reset scroll to top immediately for better UX
+    try {
+      jobsListRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    } catch {}
     navigate(
-      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&labels=${filters.labels.join(',')}`,
+      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&labels=${filters.labels.join(',')}&hide_reposts=${hideReposts}`,
     );
   };
+
+  const filteredJobs = (() => {
+    let jobs = listing.jobs as any[];
+    const wantFavoritesOnly = labels?.includes('FAVORITES_ONLY');
+    if (wantFavoritesOnly) jobs = jobs.filter((j) => j.__isFavorite);
+
+    // check query param to hide reposts
+    const params = new URLSearchParams(location.search);
+    const hideReposts = params.get('hide_reposts') === '1';
+    if (hideReposts) {
+      jobs = jobs.filter((j) => {
+        // Only apply to LinkedIn
+        const site = siteMap[j.siteId];
+        const isLinkedIn = site?.provider === 'linkedin';
+        if (!isLinkedIn) return true;
+        const haystack = [j.title, j.description, ...(j.tags || [])]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return !(
+          haystack.includes('reposted') ||
+          haystack.includes('re post') ||
+          haystack.includes('re-post') ||
+          haystack.includes('re shared') ||
+          haystack.includes('reshared')
+        );
+      });
+    }
+    return jobs as any;
+  })();
 
   return (
     <>
@@ -294,6 +484,7 @@ export function JobTabsContent({
               {/* Jobs list, search and filters side */}
               <div
                 id="jobsList"
+                ref={jobsListRef}
                 className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-3 overflow-y-scroll lg:w-2/5"
               >
                 <div className="sticky top-0 z-50 bg-background pb-2">
@@ -306,13 +497,14 @@ export function JobTabsContent({
                   />
                 </div>
 
-                {listing.isLoading || statusItem !== status ? (
+                {((!listing.jobs.length && listing.isLoading) || statusItem !== status) ? (
                   <JobsListSkeleton />
-                ) : listing.jobs.length > 0 ? (
-                  <JobsList
-                    jobs={listing.jobs}
-                    selectedJobId={selectedJobId}
-                    hasMore={listing.hasMore}
+                ) : filteredJobs.length > 0 ? (
+                  <DateGroupManager
+                    jobs={filteredJobs}
+                    status={status}
+                    search={search}
+                    selectedJobId={selectedJobId || undefined}
                     parentContainerId="jobsList"
                     onLoadMore={onLoadMore}
                     onSelect={(job) => scanJobAndSelect(job)}
@@ -322,6 +514,8 @@ export function JobTabsContent({
                     onDelete={(j) => {
                       onUpdateJobStatus(j.id, 'deleted');
                     }}
+                    hasMore={listing.hasMore}
+                    favoriteCompanies={favoriteCompanies}
                   />
                 ) : (
                   <p className="px-4 pt-20 text-center">
@@ -335,12 +529,12 @@ export function JobTabsContent({
               </div>
 
               {/* Job description side */}
-              {listing.isLoading || statusItem !== status ? (
+              {((!listing.jobs.length && listing.isLoading) || statusItem !== status) ? (
                 <div className="no-scrollbar h-[calc(100vh-100px)] w-1/2 animate-pulse space-y-4 overflow-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4">
                   <JobSummarySkeleton />
                   <JobDetailsSkeleton />
                 </div>
-              ) : listing.jobs.length > 0 ? (
+              ) : filteredJobs.length > 0 ? (
                 <div
                   ref={jobDescriptionRef}
                   className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-4 overflow-y-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4"
@@ -352,6 +546,8 @@ export function JobTabsContent({
                         onView={onViewJob}
                         onUpdateJobStatus={onUpdateJobStatus}
                         onUpdateLabels={onUpdateJobLabels}
+                        onFavoriteCompany={onFavoriteCompany}
+                        onBlacklistCompany={onBlacklistCompany}
                       />
                       <JobDetails job={selectedJob} isScrapingDescription={!!selectedJob.isLoadingJD}></JobDetails>
                       <hr className="border-t border-muted" />
