@@ -225,11 +225,12 @@ export function JobSummary({
                 className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
                 onClick={(evt) => {
                   evt.stopPropagation();
-                  const text = `${job.companyName} - ${job.title}` + (job.description ? `\n\n${job.description}` : '');
+                  const header = `${job.companyName} - ${job.title}` + (job.location ? ` · ${job.location}` : '');
+                  const text = header + (job.description ? `\n\n${job.description}` : '');
                   navigator.clipboard.writeText(text);
                   toast({
                     title: 'Job details copied',
-                    description: 'Company, title and description are on your clipboard.',
+                    description: 'Company, title, location and description are on your clipboard.',
                     variant: 'success',
                   });
                 }}
