@@ -345,6 +345,152 @@ show_logs() {
     esac
 }
 
+# Function to create secure backup
+create_backup() {
+    print_status "🔒 Creating secure backup..."
+    
+    # Configuration
+    local backup_dir="$PROJECT_ROOT/backups"
+    local timestamp=$(date +"%Y%m%d_%H%M%S")
+    local backup_name="first2apply_backup_${timestamp}"
+    
+    # Create backup directory
+    mkdir -p "$backup_dir"
+    
+    # Define exclusion patterns for sensitive files
+    local exclude_patterns=(
+        "--exclude=*.env*"
+        "--exclude=*/.env*"
+        "--exclude=**/functions.env"
+        "--exclude=**/*.key"
+        "--exclude=**/*.secret"
+        "--exclude=**/*.pem"
+        "--exclude=**/*.p12"
+        "--exclude=**/*.pfx"
+        "--exclude=**/*.crt"
+        "--exclude=**/*.cer"
+        "--exclude=**/*.der"
+        "--exclude=**/api-keys.json"
+        "--exclude=**/secrets.json"
+        "--exclude=**/credentials.json"
+        "--exclude=**/config.json"
+        "--exclude=**/node_modules"
+        "--exclude=**/.git"
+        "--exclude=**/backups"
+        "--exclude=**/.DS_Store"
+        "--exclude=**/dist"
+        "--exclude=**/build"
+        "--exclude=**/.next"
+        "--exclude=**/coverage"
+        "--exclude=**/.nyc_output"
+        "--exclude=**/logs"
+        "--exclude=**/*.log"
+        "--exclude=**/temp"
+        "--exclude=**/tmp"
+        "--exclude=**/.cache"
+        "--exclude=**/invoice-downloader/invoices"
+    )
+    
+    # Create the backup
+    print_status "📦 Creating tar.gz backup..."
+    cd "$PROJECT_ROOT"
+    tar -czf "$backup_dir/${backup_name}.tar.gz" \
+        "${exclude_patterns[@]}" \
+        --exclude="$backup_dir" \
+        .
+    
+    # Verify the backup was created
+    if [ -f "$backup_dir/${backup_name}.tar.gz" ]; then
+        local backup_size=$(du -h "$backup_dir/${backup_name}.tar.gz" | cut -f1)
+        print_success "✅ Backup created successfully: ${backup_name}.tar.gz (${backup_size})"
+        
+        # Verify no sensitive files are in the backup
+        print_status "🔍 Verifying backup security..."
+        
+        # Check for environment files
+        if tar -tzf "$backup_dir/${backup_name}.tar.gz" | grep -q "\.env"; then
+            print_error "❌ WARNING: Environment files found in backup!"
+            tar -tzf "$backup_dir/${backup_name}.tar.gz" | grep "\.env"
+            rm -f "$backup_dir/${backup_name}.tar.gz"
+            return 1
+        fi
+        
+        # Check for API keys
+        if tar -tzf "$backup_dir/${backup_name}.tar.gz" | grep -q -E "\.(key|secret|pem)$"; then
+            print_error "❌ WARNING: Sensitive files found in backup!"
+            tar -tzf "$backup_dir/${backup_name}.tar.gz" | grep -E "\.(key|secret|pem)$"
+            rm -f "$backup_dir/${backup_name}.tar.gz"
+            return 1
+        fi
+        
+        print_success "✅ Backup security verified - no sensitive files detected"
+        
+        # Create backup manifest
+        cat > "$backup_dir/${backup_name}_MANIFEST.txt" << EOF
+First2Apply Secure Backup Manifest
+==================================
+Backup Name: ${backup_name}
+Created: $(date)
+Size: ${backup_size}
+Security: Verified (no sensitive files)
+
+Contents:
+$(tar -tzf "$backup_dir/${backup_name}.tar.gz" | head -20)
+... (truncated, see full backup for complete list)
+
+Excluded Files:
+- All .env* files
+- All API keys and secrets
+- node_modules
+- .git directory
+- Previous backups
+- Build artifacts
+- Log files
+- Temporary files
+
+This backup is safe to share and store.
+EOF
+        
+        print_success "📋 Backup manifest created: ${backup_name}_MANIFEST.txt"
+        
+    else
+        print_error "❌ Backup creation failed!"
+        return 1
+    fi
+    
+    print_success "🎉 Secure backup completed successfully!"
+    print_status "💡 Tip: Always use this command for backups to ensure sensitive data is excluded."
+}
+
+# Function to list backups
+list_backups() {
+    print_status "📋 Available backups:"
+    
+    local backup_dir="$PROJECT_ROOT/backups"
+    if [ -d "$backup_dir" ] && [ "$(ls -A "$backup_dir" 2>/dev/null)" ]; then
+        ls -lah "$backup_dir" | grep -E "\.(tar\.gz|txt)$" | while read -r line; do
+            echo "  $line"
+        done
+    else
+        print_warning "No backups found in $backup_dir"
+    fi
+}
+
+# Function to clean old backups
+clean_backups() {
+    local days=${1:-7}
+    print_status "🧹 Cleaning backups older than $days days..."
+    
+    local backup_dir="$PROJECT_ROOT/backups"
+    if [ -d "$backup_dir" ]; then
+        find "$backup_dir" -name "*.tar.gz" -mtime +$days -delete
+        find "$backup_dir" -name "*_MANIFEST.txt" -mtime +$days -delete
+        print_success "✅ Old backups cleaned (older than $days days)"
+    else
+        print_warning "No backup directory found"
+    fi
+}
+
 # Main script logic
 case "${1:-}" in
     "start")
@@ -368,6 +514,15 @@ case "${1:-}" in
     "logs")
         show_logs "${2:-all}"
         ;;
+    "backup")
+        create_backup
+        ;;
+    "list-backups")
+        list_backups
+        ;;
+    "clean-backups")
+        clean_backups "${2:-7}"
+        ;;
     "help"|"--help"|"-h")
         echo "First2Apply Service Manager"
         echo ""
@@ -381,12 +536,17 @@ case "${1:-}" in
         echo "  troubleshoot Fix Electron white screen issues"
         echo "  cleanup      Clean up old processes and files"
         echo "  logs [type]  Show logs (electron|llm|supabase|all)"
+        echo "  backup       Create secure backup (excludes sensitive files)"
+        echo "  list-backups List available backups"
+        echo "  clean-backups [days] Clean old backups (default: 7 days)"
         echo "  help         Show this help message"
         echo ""
         echo "Examples:"
         echo "  $0 start                    # Start all services"
         echo "  $0 troubleshoot            # Fix white screen"
         echo "  $0 logs electron           # Show Electron logs"
+        echo "  $0 backup                  # Create secure backup"
+        echo "  $0 clean-backups 14        # Clean backups older than 14 days"
         echo ""
         ;;
     *)

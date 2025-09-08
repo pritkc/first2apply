@@ -1,2 +1,0 @@
-id,created_at,user_id,stripe_customer_id,stripe_subscription_id,subscription_end_date,subscription_tier,is_trial
-1,2025-08-28 01:27:28.106943+00,f5ebad5c-0298-4eda-9305-1415809c280f,,,2025-09-04 01:27:28.106943,basic,t

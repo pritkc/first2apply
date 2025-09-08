@@ -135,9 +135,36 @@ test.html
 
 First2Apply-master-legacy/
 
-# Environment variables
+# Environment variables and sensitive files
 *.env
+.env.*
 .env.local
 .env.production
+.env.development
+.env.test
 functions.env
+*.key
+*.secret
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+
+# Backup files (to prevent accidental commits)
+backups/*.tar.gz
+backups/*.zip
+backups/*.sql
+backups/*.csv
+backups/*.json
+backups/*/
+*.backup
+*.bak
+
+# API keys and secrets
+**/api-keys.json
+**/secrets.json
+**/credentials.json
+**/config.json
 

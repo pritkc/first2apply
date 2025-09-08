@@ -25,7 +25,7 @@ scripts/
 - **test-supabase-connection.js** - Tests Supabase database connection
 
 ### Management Scripts (`management/`)
-- **service-manager.sh** - Comprehensive service management script
+- **service-manager.sh** - Comprehensive service management script with secure backup functionality
 - **reboot-recovery.sh** - System recovery after reboot
 - **start-desktop-app.sh** - Starts the desktop application
 
@@ -33,6 +33,7 @@ scripts/
 - **data-protection-manager.sh** - Main data protection management script
 - **enhance-user-protection.sql** - Enhanced user data protection SQL
 - **create-readonly-user.sql** - Creates read-only database user for troubleshooting
+- **env.template** - Environment variable template for secure configuration
 
 ## 🚀 Usage
 
@@ -55,6 +56,15 @@ node scripts/testing/test-external-apis.js
 ```bash
 # Start all services
 ./scripts/management/service-manager.sh start
+
+# Create secure backup (excludes sensitive files)
+./scripts/management/service-manager.sh backup
+
+# List available backups
+./scripts/management/service-manager.sh list-backups
+
+# Clean old backups (older than 7 days)
+./scripts/management/service-manager.sh clean-backups
 
 # Recover after reboot
 ./scripts/management/reboot-recovery.sh
