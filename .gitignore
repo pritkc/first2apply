@@ -135,3 +135,9 @@ test.html
 
 First2Apply-master-legacy/
 
+# Environment variables
+*.env
+.env.local
+.env.production
+functions.env
+
