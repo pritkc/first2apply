@@ -250,6 +250,7 @@ export function parseLinkedInJobs({
       document.querySelector(
         'div[data-view-name="jobs-home-top-jymbii-jobs-feed-module"]'
       ) ??
+      document.querySelector('div[data-view-name="feed-full-update"]') ??
       null;
     if (jobsList) parserVersion = 3;
   }
