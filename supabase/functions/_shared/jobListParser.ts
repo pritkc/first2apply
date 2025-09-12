@@ -1709,6 +1709,17 @@ export function parseRobertHalfJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
+  const notFoundNode = document.querySelector(
+    `rhcl-block-copy[component-title="No matching jobs found"]`
+  );
+  if (notFoundNode) {
+    return {
+      jobs: [],
+      listFound: true,
+      elementsCount: 0,
+    };
+  }
+
   const jobsList = document.querySelector(
     ".rh-mt-20x .row .col-md-5.col-lg-5 > div"
   );
