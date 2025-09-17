@@ -1,9 +1,9 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the working directory name when running `supabase init`.
-project_id = "first2apply"
+project_id = "first2apply-dev"
 
 [api]
 enabled = true
-port = 54321
+port = 54331
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 5000
@@ -12,7 +12,7 @@ max_rows = 5000
 enabled = false
 
 [db]
-port = 54322
+port = 54332
 shadow_port = 54320
 major_version = 15
 
@@ -25,7 +25,7 @@ max_client_conn = 100
 
 [studio]
 enabled = true
-port = 54323
+port = 54333
 api_url = "http://127.0.0.1"
 
 [storage]
