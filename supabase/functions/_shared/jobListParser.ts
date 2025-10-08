@@ -1720,9 +1720,9 @@ export function parseRobertHalfJobs({
     };
   }
 
-  const jobsList = document.querySelector(
-    ".rh-mt-20x .row .col-md-5.col-lg-5 > div"
-  );
+  const jobsList =
+    document.querySelector("rhcl-job-card")?.parentElement?.parentElement
+      ?.parentElement;
   if (!jobsList)
     return {
       jobs: [],
