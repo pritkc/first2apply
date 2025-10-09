@@ -82,8 +82,8 @@ export const SessionProvider = ({ children }: React.PropsWithChildren) => {
     const userProfile = await getProfile();
     const now = new Date();
     setIsSubscriptionExpired(
-      userProfile?.subscription_end_date &&
-        new Date(userProfile.subscription_end_date) < now
+      !!(userProfile?.subscription_end_date &&
+        new Date(userProfile.subscription_end_date) < now)
     );
     setProfile(userProfile);
   };

@@ -9,7 +9,7 @@ import { getExceptionMessage, throwError } from '../lib/error';
 import { AVAILABLE_CRON_RULES, JobScannerSettings } from '../lib/types';
 import { chunk, promiseAllSequence, waitRandomBetween } from './helpers';
 import { HtmlDownloader } from './htmlDownloader';
-import { ILogger } from './logger';
+import { logger, LogSection } from './logger';
 import { F2aSupabaseApi } from './supabaseApi';
 
 const userDataPath = app.getPath('userData');
@@ -26,7 +26,6 @@ const DEFAULT_SETTINGS: JobScannerSettings = {
  * Class used to manage a cron job that periodically scans links.
  */
 export class JobScanner {
-  private _logger: ILogger;
   private _supabaseApi: F2aSupabaseApi;
   private _normalHtmlDownloader: HtmlDownloader;
   private _incognitoHtmlDownloader: HtmlDownloader;
@@ -44,23 +43,23 @@ export class JobScanner {
   private _prowerSaveBlockerId: number | undefined;
   private _notificationsMap: Map<string, Notification> = new Map();
   private _runningScansCount = 0;
+  private _failedUrls: Map<string, { count: number; lastFailed: number }> = new Map();
+  private _maxRetriesPerUrl = 5; // Increased back to 5 retries
+  private _retryCooldownMs = 5 * 60 * 1000; // Reduced to 5 minutes
 
   constructor({
-    logger,
     supabaseApi,
     normalHtmlDownloader,
     incognitoHtmlDownloader,
     onNavigate,
     analytics,
   }: {
-    logger: ILogger;
     supabaseApi: F2aSupabaseApi;
     normalHtmlDownloader: HtmlDownloader;
     incognitoHtmlDownloader: HtmlDownloader;
     onNavigate: (_: { path: string }) => void;
     analytics: IAnalyticsClient;
   }) {
-    this._logger = logger;
     this._supabaseApi = supabaseApi;
     this._normalHtmlDownloader = normalHtmlDownloader;
     this._incognitoHtmlDownloader = incognitoHtmlDownloader;
@@ -77,9 +76,9 @@ export class JobScanner {
         ...this._settings,
         ...JSON.parse(fs.readFileSync(settingsPath, 'utf-8')),
       };
-      this._logger.info(`loadied settings from disk: ${JSON.stringify(settingsToApply)}`);
+      logger.jobScanner.info(`Settings loaded from disk`, settingsToApply);
     } else {
-      this._logger.info(`no settings found on disk, using defaults`);
+      logger.jobScanner.info(`No settings found on disk, using defaults`);
       settingsToApply = DEFAULT_SETTINGS;
     }
 
@@ -99,13 +98,13 @@ export class JobScanner {
   async scanAllLinks() {
     // if the scanner hasn't finished scanning the previous links, skip this scan
     if (this.isScanning()) {
-      this._logger.info('skipping scheduled scan because the scanner is processing other links');
+      logger.jobScanner.warn('Skipping scheduled scan - scanner is already processing other links');
       return;
     }
 
     // fetch all links from the database
     const links = (await this._supabaseApi.listLinks()) ?? [];
-    this._logger.info(`found ${links?.length} links`);
+    logger.jobScanner.info(`Found ${links?.length} links to scan`);
 
     // start the scan
     return this.scanLinks({ links });
@@ -116,7 +115,7 @@ export class JobScanner {
    */
   async scanLinks({ links, sendNotification = true }: { links: Link[]; sendNotification?: boolean }) {
     try {
-      this._logger.info('scanning links ...');
+      logger.jobScanner.start('Scanning links');
       this._analytics.trackEvent('scan_links_start', {
         links_count: links.length,
       });
@@ -137,7 +136,7 @@ export class JobScanner {
                 ]);
 
                 if (parseFailed) {
-                  this._logger.debug(`failed to parse html for link ${link.title}`, {
+                  logger.jobScanner.debug(`Failed to parse HTML for link: ${link.title}`, {
                     linkId: link.id,
                   });
 
@@ -154,7 +153,7 @@ export class JobScanner {
             .catch(async (error): Promise<Job[]> => {
               if (this._isRunning) {
                 const errorMessage = getExceptionMessage(error);
-                this._logger.error(`failed to scan link: ${errorMessage}`, {
+                logger.jobScanner.failure(`Failed to scan link: ${errorMessage}`, {
                   linkId: link.id,
                 });
 
@@ -165,7 +164,7 @@ export class JobScanner {
                     failures: link.scrape_failure_count + 1,
                   })
                   .catch((error) => {
-                    this._logger.error(`failed to increase scrape failure count: ${getExceptionMessage(error)}`, {
+                    logger.jobScanner.error(`Failed to increase scrape failure count: ${getExceptionMessage(error)}`, {
                       linkId: link.id,
                     });
                   });
@@ -179,7 +178,7 @@ export class JobScanner {
           return newJobs;
         }),
       ).then((r) => r.flat());
-      this._logger.info(`downloaded html for ${links.length} links`);
+      logger.jobScanner.success(`Downloaded HTML for ${links.length} links`);
 
       // scan job descriptions for all pending jobs
       if (!this._isRunning) return;
@@ -187,7 +186,7 @@ export class JobScanner {
         status: 'processing',
         limit: 300,
       });
-      this._logger.info(`found ${jobs.length} jobs that need processing`);
+      logger.jobScanner.info(`Found ${jobs.length} jobs that need processing`);
       const scannedJobs = await this.scanJobs(jobs);
       const newJobs = scannedJobs.filter((job) => job.status === 'new');
 
@@ -199,7 +198,7 @@ export class JobScanner {
           areEmailAlertsEnabled: this._settings.areEmailAlertsEnabled,
         })
         .catch((error) => {
-          this._logger.error(`failed to run post scan hook: ${getExceptionMessage(error)}`);
+          logger.jobScanner.error(`Failed to run post scan hook: ${getExceptionMessage(error)}`);
         });
 
       // fire a notification if there are new jobs
@@ -208,15 +207,110 @@ export class JobScanner {
 
       const end = new Date().getTime();
       const took = (end - start) / 1000;
-      this._logger.info(`scan complete in ${took.toFixed(0)} seconds`);
+      logger.jobScanner.complete(`Scan complete in ${took.toFixed(0)} seconds`);
       this._analytics.trackEvent('scan_links_complete', {
         links_count: links.length,
         new_jobs_count: newJobs.length,
       });
     } catch (error) {
-      this._logger.error(getExceptionMessage(error));
+      logger.jobScanner.error(`Scan failed: ${getExceptionMessage(error)}`);
     } finally {
       this._runningScansCount--;
+    }
+  }
+
+  /**
+   * Check if a URL should be skipped due to repeated failures.
+   */
+  private shouldSkipUrl(url: string): boolean {
+    const failureInfo = this._failedUrls.get(url);
+    if (!failureInfo) return false;
+
+    const now = Date.now();
+    const timeSinceLastFailure = now - failureInfo.lastFailed;
+    const isLinkedIn = url.includes('linkedin.com');
+
+    // Special handling for LinkedIn URLs - less aggressive skipping
+    if (isLinkedIn && failureInfo.count >= 3) {
+      const linkedinCooldown = 10 * 60 * 1000; // 10 minutes for LinkedIn
+      if (timeSinceLastFailure < linkedinCooldown) {
+        return true;
+      }
+    }
+
+    // If we've exceeded max retries and it's been less than cooldown time, skip
+    if (failureInfo.count >= this._maxRetriesPerUrl && timeSinceLastFailure < this._retryCooldownMs) {
+      return true;
+    }
+
+    // If cooldown has passed, reset the failure count
+    if (timeSinceLastFailure >= this._retryCooldownMs) {
+      this._failedUrls.delete(url);
+      return false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Record a URL failure.
+   */
+  private recordUrlFailure(url: string): void {
+    const now = Date.now();
+    const failureInfo = this._failedUrls.get(url);
+    
+    if (failureInfo) {
+      failureInfo.count += 1;
+      failureInfo.lastFailed = now;
+    } else {
+      this._failedUrls.set(url, { count: 1, lastFailed: now });
+    }
+
+    // If this URL has failed too many times, show a notification
+    const currentFailureInfo = this._failedUrls.get(url);
+    if (currentFailureInfo && currentFailureInfo.count >= this._maxRetriesPerUrl) {
+      logger.jobScanner.warn(`URL skipped due to repeated failures: ${url}`, {
+        failureCount: currentFailureInfo.count,
+        lastFailed: new Date(currentFailureInfo.lastFailed).toISOString()
+      });
+      
+      // Show notification to user
+      this.showUrlSkippedNotification(url, currentFailureInfo.count);
+    }
+  }
+
+  /**
+   * Show notification when a URL is skipped due to repeated failures.
+   */
+  private showUrlSkippedNotification(url: string, failureCount: number): void {
+    const notification = new Notification({
+      title: 'URL Skipped - Manual Review Required',
+      body: `URL failed ${failureCount} times and has been skipped. Please check for robot detection: ${url.substring(0, 100)}...`,
+      icon: 'assets/icon.png'
+    });
+
+    notification.on('click', () => {
+      // Open the URL in the default browser for manual review
+      require('electron').shell.openExternal(url);
+    });
+
+    notification.show();
+
+    // Emit event to renderer process
+    try {
+      const { BrowserWindow } = require('electron');
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('url-skipped', {
+          url,
+          failureCount,
+          lastFailed: new Date().toISOString(),
+          jobTitle: undefined, // This could be enhanced to include job title
+          companyName: undefined, // This could be enhanced to include company name
+        });
+      }
+    } catch (error) {
+      logger.jobScanner.error('Failed to emit url-skipped event:', error);
     }
   }
 
@@ -224,22 +318,15 @@ export class JobScanner {
    * Scan a list of new jobs to extract the description.
    */
   async scanJobs(jobs: Job[]): Promise<Job[]> {
-    this._logger.info(`scanning ${jobs.length} jobs descriptions...`);
+    logger.jobScanner.start(`Scanning ${jobs.length} job descriptions`);
 
     // figure out which jobs can be scanned in incognito mode
     const sites = await this._supabaseApi.listSites();
     const sitesMap = new Map(sites.map((site) => [site.id, site]));
     
-    // For LinkedIn jobs, we need to be more careful about applicant data
-    // Keep job discovery in incognito mode, but applicant data needs authenticated session
-    const incognitoJobsToScan = jobs.filter((job) => {
-      const site = sitesMap.get(job.siteId);
-      return site?.incognito_support && site.provider !== 'linkedin';
-    });
-    const normalJobsToScan = jobs.filter((job) => {
-      const site = sitesMap.get(job.siteId);
-      return !site?.incognito_support || site.provider === 'linkedin';
-    });
+    // Use the same logic as legacy - incognito for supported sites, normal for others
+    const incognitoJobsToScan = jobs.filter((job) => sitesMap.get(job.siteId)?.incognito_support);
+    const normalJobsToScan = jobs.filter((job) => !sitesMap.get(job.siteId)?.incognito_support);
 
     const scanJobDescriptions = async ({
       jobsToScan,
@@ -254,12 +341,21 @@ export class JobScanner {
 
         return Promise.all(
           chunkOfJobs.map(async (job) => {
+            // Check if this URL should be skipped due to repeated failures
+            if (this.shouldSkipUrl(job.externalUrl)) {
+              logger.jobScanner.warn(`Skipping URL due to repeated failures: ${job.externalUrl}`, {
+                jobId: job.id,
+                jobTitle: job.title
+              });
+              return job; // Return original job without processing
+            }
+
             try {
               return await htmlDownloader.loadUrl({
                 url: job.externalUrl,
                 scrollTimes: 1,
                 callback: async ({ html, maxRetries, retryCount }) => {
-                  this._logger.info(`downloaded html for ${job.title}`, {
+                  logger.jobScanner.success(`Downloaded HTML for ${job.title}`, {
                     jobId: job.id,
                   });
 
@@ -274,7 +370,7 @@ export class JobScanner {
                   });
 
                   if (parseFailed) {
-                    this._logger.debug(`failed to parse job description: ${job.title}`, {
+                    logger.jobScanner.debug(`Failed to parse job description: ${job.title}`, {
                       jobId: job.id,
                     });
 
@@ -289,10 +385,16 @@ export class JobScanner {
                 },
               });
             } catch (error) {
-              if (this._isRunning)
-                this._logger.error(`failed to scan job description: ${getExceptionMessage(error)}`, {
+              // Record the URL failure
+              this.recordUrlFailure(job.externalUrl);
+              
+              if (this._isRunning) {
+                const errorMessage = getExceptionMessage(error);
+                logger.jobScanner.failure(`Failed to scan job description: ${errorMessage}`, {
                   jobId: job.id,
+                  url: job.externalUrl
                 });
+              }
 
               // intetionally return initial job if there is an error
               // in order to continue scanning the rest of the jobs
@@ -319,7 +421,7 @@ export class JobScanner {
     const allScannedJobs = [...scannedIncognitoJobs, ...scannedNormalJobs];
     const updatedJobs = jobs.map((job) => allScannedJobs.find((j) => j.id === job.id) ?? throwError('job not found')); // preserve the order
 
-    this._logger.info('finished scanning job descriptions');
+    logger.jobScanner.complete('Finished scanning job descriptions');
 
     return updatedJobs;
   }
@@ -400,15 +502,18 @@ export class JobScanner {
   close() {
     // end cron job
     if (this._cronJob) {
-      this._logger.info(`stopping cron schedule`);
+      logger.jobScanner.info(`Stopping cron schedule`);
       this._cronJob.stop();
     }
 
     // stop power blocker
     if (typeof this._prowerSaveBlockerId === 'number') {
-      this._logger.info(`stopping prevent sleep`);
+      logger.jobScanner.info(`Stopping prevent sleep`);
       powerSaveBlocker.stop(this._prowerSaveBlockerId);
     }
+
+    // Clear failed URLs map when closing
+    this._failedUrls.clear();
 
     this._isRunning = false;
   }
@@ -422,10 +527,10 @@ export class JobScanner {
       throw new Error(`link not found: ${linkId}`);
     }
 
-    const debugWindow = new ScannerDebugWindow(this._logger, () => {
+    const debugWindow = new ScannerDebugWindow(logger, () => {
       // scan the link after the debug window is closed
       this.scanLinks({ links: [link] }).catch((error) => {
-        this._logger.error(getExceptionMessage(error));
+        logger.jobScanner.error(`Debug scan failed: ${getExceptionMessage(error)}`);
       });
     });
 
@@ -437,7 +542,7 @@ export class JobScanner {
    */
   private _saveSettings() {
     fs.writeFileSync(settingsPath, JSON.stringify(this._settings));
-    this._logger.info(`settings saved to disk`);
+    logger.jobScanner.info(`Settings saved to disk`);
   }
 
   /**
@@ -447,31 +552,31 @@ export class JobScanner {
     if (settings.cronRule !== this._settings.cronRule) {
       // stop old cron job
       if (this._cronJob) {
-        this._logger.info(`stopping old cron schedule`);
+        logger.jobScanner.info(`Stopping old cron schedule`);
         this._cronJob.stop();
       }
       // start new cron job if needed
       if (settings.cronRule) {
         this._cronJob = schedule(settings.cronRule, () => this.scanAllLinks());
-        this._logger.info(`cron job started successfully ${settings.cronRule}`);
+        logger.jobScanner.info(`Cron job started successfully: ${settings.cronRule}`);
       }
     }
 
     if (settings.preventSleep !== this._settings.preventSleep) {
       // stop old power blocker
       if (typeof this._prowerSaveBlockerId === 'number') {
-        this._logger.info(`stopping old prevent sleep`);
+        logger.jobScanner.info(`Stopping old prevent sleep`);
         powerSaveBlocker.stop(this._prowerSaveBlockerId);
       }
       // start new power blocker if needed
       if (settings.preventSleep) {
         this._prowerSaveBlockerId = powerSaveBlocker.start('prevent-app-suspension');
-        this._logger.info(`prevent sleep started successfully: ${this._prowerSaveBlockerId}`);
+        logger.jobScanner.info(`Prevent sleep started successfully: ${this._prowerSaveBlockerId}`);
       }
     }
 
     this._settings = settings;
-    this._logger.info(`settings applied successfully`);
+    logger.jobScanner.info(`Settings applied successfully`);
   }
 }
 
@@ -485,7 +590,7 @@ class ScannerDebugWindow {
    * Class constructor.
    */
   constructor(
-    private _logger: ILogger,
+    private _logger: any,
     private _onClose: () => void = () => {},
   ) {
     this._window = new BrowserWindow({

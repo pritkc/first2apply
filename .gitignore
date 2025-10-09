@@ -168,3 +168,10 @@ backups/*/
 **/credentials.json
 **/config.json
 
+
+# Environment files
+.env.development
+.env.production
+webapp/.env.local.dev
+webapp/.env.local.prod
+supabase/config.dev.toml.bak

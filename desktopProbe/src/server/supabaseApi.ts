@@ -31,7 +31,14 @@ export class F2aSupabaseApi {
    * Login using an email and password.
    */
   async loginWithEmail({ email, password }: { email: string; password: string }) {
-    return this._supabaseApiCall(() => this._supabase.auth.signInWithPassword({ email, password }));
+    console.log('🔧 [loginWithEmail] Attempting login with email:', email);
+    const result = await this._supabaseApiCall(() => this._supabase.auth.signInWithPassword({ email, password }));
+    console.log('🔧 [loginWithEmail] Login result:', { 
+      success: !!result?.user, 
+      error: 'none',
+      userId: result?.user?.id || 'none'
+    });
+    return result;
   }
 
   /**
@@ -76,16 +83,29 @@ export class F2aSupabaseApi {
     // const htmlFixture = fs.readFileSync(path.join(__dirname, '../../../test.html'), 'utf-8');
     // html = htmlFixture;
 
-    const { link, newJobs } = await this._supabaseApiCall(() =>
-      this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>('create-link', {
+    console.log('🔧 [createLink] ===== FUNCTION CALLED =====');
+    console.log('🔧 [createLink] Starting link creation with params:', { title, url, htmlLength: html?.length || 0 });
+    
+    // Check current user session before making the call
+    const { data: userData, error: userError } = await this._supabase.auth.getUser();
+    console.log('🔧 [createLink] Current user session:', { 
+      user: userData?.user?.id ? 'authenticated' : 'not authenticated',
+      userError: userError?.message || 'none',
+      userEmail: userData?.user?.email || 'none'
+    });
+
+    const { link, newJobs } = await this._supabaseApiCall(() => {
+      console.log('🔧 [createLink] Calling Edge Function create-link...');
+      return this._supabase.functions.invoke<{ link: Link; newJobs: Job[] }>('create-link', {
         body: {
           title,
           url,
           html,
         },
-      }),
-    );
+      });
+    });
 
+    console.log('🔧 [createLink] Successfully created link:', { linkId: link.id, newJobsCount: newJobs?.length || 0 });
     return { link, newJobs };
   }
 
@@ -238,6 +258,16 @@ export class F2aSupabaseApi {
     const jobs_site_ids = siteIds?.length > 0 ? siteIds : undefined;
     const jobs_link_ids = linkIds?.length > 0 ? linkIds : undefined;
     const jobs_labels = labels?.length > 0 ? labels : undefined;
+    console.log('[Desktop SupabaseApi:listJobs] params', {
+      status,
+      search: jobs_search,
+      siteIds: jobs_site_ids,
+      linkIds: jobs_link_ids,
+      labels: jobs_labels,
+      favoritesOnly,
+      limit,
+      after,
+    });
     const [jobs, countersByStatus] = await Promise.all([
       this._supabaseApiCall<Job[], PostgrestError>(async () => {
         const res = await this._supabase.rpc('list_jobs', {
@@ -250,7 +280,9 @@ export class F2aSupabaseApi {
           jobs_labels,
           jobs_favorites_only: favoritesOnly ?? null,
         });
-
+        try {
+          console.log('[Desktop SupabaseApi:listJobs] list_jobs result', { rows: (res as any)?.length, limit, after });
+        } catch {}
         return res;
       }),
       // Fetch counters for each status independently so tab badges reflect global counts
@@ -308,10 +340,17 @@ export class F2aSupabaseApi {
       const lastJob = jobs[jobs.length - 1];
       nextPageToken = `${lastJob.id}!${lastJob.updated_at}`;
     }
+    console.log('[Desktop SupabaseApi:listJobs] computed nextPageToken', { nextPageToken });
 
     const countersMap = new Map<JobStatus, number>();
     try {
       const [newC, appliedC, archivedC, filteredC] = countersByStatus;
+      console.log('[Desktop SupabaseApi:listJobs] count_jobs results', {
+        new: newC?.[0]?.job_count,
+        applied: appliedC?.[0]?.job_count,
+        archived: archivedC?.[0]?.job_count,
+        filtered: filteredC?.[0]?.job_count,
+      });
       const pickCount = (arr: any) => (Array.isArray(arr) && arr[0] && typeof arr[0].job_count === 'number' ? arr[0].job_count : 0);
       countersMap.set('new', pickCount(newC));
       countersMap.set('applied', pickCount(appliedC));
@@ -405,19 +444,46 @@ export class F2aSupabaseApi {
   private async _supabaseApiCall<T, E extends Error | PostgrestError | FunctionsHttpError>(
     method: () => Promise<{ data?: T; error: E }>,
   ) {
-    const { data, error } = await backOff(
-      async () => {
-        const result = await method();
-        if (result.error) throw result.error;
+    const startMs = Date.now();
+    const attemptTimings: number[] = [];
+    const label = '[supabaseApi]';
+    try {
+      const { data, error } = await backOff(
+        async () => {
+          const attemptStart = Date.now();
+          console.log('🔧 [supabaseApi] Making API call...');
+          const result = await method();
+          attemptTimings.push(Date.now() - attemptStart);
+          console.log('🔧 [supabaseApi] API call result:', { 
+            hasData: !!result.data, 
+            hasError: !!result.error,
+            errorType: result.error?.constructor?.name || 'none',
+            errorMessage: result.error?.message || 'none'
+          });
+          if (result.error) throw result.error;
+          return result;
+        },
+        {
+          numOfAttempts: 5,
+          jitter: 'full',
+          startingDelay: 300,
+        },
+      );
 
-        return result;
-      },
-      {
-        numOfAttempts: 5,
-        jitter: 'full',
-        startingDelay: 300,
-      },
-    );
+      const totalMs = Date.now() - startMs;
+      try {
+        // Log only if slow (>500ms) or there were retries
+        const maxAttempt = attemptTimings.length > 0 ? Math.max(...attemptTimings) : totalMs;
+        if (totalMs > 500 || attemptTimings.length > 1) {
+          // Attempt timings example: [120, 340]
+          console.log(
+            `${label} success in %d ms (attempts=%d, timings=%s)`,
+            totalMs,
+            attemptTimings.length || 1,
+            attemptTimings.join(',') || String(totalMs),
+          );
+        }
+      } catch {}
 
     // edge functions don't throw errors, instead they return an errorMessage field in the data object
     // work around for this issue https://github.com/supabase/functions-js/issues/45
@@ -435,6 +501,24 @@ export class F2aSupabaseApi {
     if (error) throw error;
 
     return data;
+    } catch (err: any) {
+      const totalMs = Date.now() - startMs;
+      try {
+        console.error(`${label} failed in %d ms (attempts=%d, timings=%s): %s`, totalMs, attemptTimings.length || 1, attemptTimings.join(','), err?.message || String(err));
+        
+        // Add detailed error logging for Edge Function errors
+        if (err?.name === 'FunctionsHttpError') {
+          console.error('🔧 [Edge Function Error] Details:', {
+            name: err.name,
+            message: err.message,
+            status: err.status,
+            statusText: err.statusText,
+            data: err.data
+          });
+        }
+      } catch {}
+      throw err;
+    }
   }
 
   /**

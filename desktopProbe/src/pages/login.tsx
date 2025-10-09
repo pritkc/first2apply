@@ -17,10 +17,12 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
-  // Auto-login for development environment
+  // Auto-login only when using local Supabase (avoid on cloud/prod even if NODE_ENV=development)
   useEffect(() => {
     const attemptAutoLogin = async () => {
-      if (ENV.nodeEnv === 'development' && !autoLoginAttempted) {
+      const supabaseUrl = ENV.supabase?.url || '';
+      const isLocalSupabase = /^(http:\/\/)?(localhost|127\.0\.0\.1)/i.test(supabaseUrl);
+      if (isLocalSupabase && !autoLoginAttempted) {
         setAutoLoginAttempted(true);
         console.log('🔧 Development mode: Attempting auto-login with default credentials');
         

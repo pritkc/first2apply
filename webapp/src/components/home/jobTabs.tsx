@@ -3,6 +3,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import { useError } from '@/hooks/error';
+import { useSkippedUrls } from '@/hooks/skippedUrls';
 import { changeAllJobsStatus, exportJobsToCsv } from '@/lib/electronMainSdk';
 import { ArchiveIcon, DotsVerticalIcon, DownloadIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,6 +12,7 @@ import { Job, JobStatus } from '@/lib/supabase/types';
 import { Button } from '../ui/button';
 import { JobTabsContent } from './jobTabsContent';
 import { TabActions } from './tabActions';
+import { SkippedUrlsAlert } from './skippedUrlsAlert';
 
 export type JobListing = {
   isLoading: boolean;
@@ -32,6 +34,7 @@ export type JobListing = {
  */
 export function JobTabs() {
   const { handleError } = useError();
+  const { skippedUrls, retryUrl, openUrl, dismissAlert } = useSkippedUrls();
 
   const router = useRouter();
 
@@ -127,6 +130,14 @@ export function JobTabs() {
           />
         </div>
       </div>
+
+      {/* Skipped URLs Alert */}
+      <SkippedUrlsAlert
+        skippedUrls={skippedUrls}
+        onRetryUrl={retryUrl}
+        onOpenUrl={openUrl}
+        onDismiss={dismissAlert}
+      />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">

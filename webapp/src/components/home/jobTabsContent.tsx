@@ -28,6 +28,7 @@ import { JobsList } from './jobsList';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
 const JOB_BATCH_SIZE = 1000;
+const MAX_TOTAL_JOBS = 5000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 /**
@@ -81,15 +82,15 @@ export function JobTabsContent({
           return;
         }
 
-        console.log(router.asPath);
         setListing((listing) => ({ ...listing, isLoading: true }));
 
+        console.log('[JobTabsContent] initial fetch', { status, limit: Math.min(JOB_BATCH_SIZE, MAX_TOTAL_JOBS) });
         const result = await listJobs({
           status,
           search,
           siteIds,
           linkIds,
-          limit: JOB_BATCH_SIZE,
+          limit: Math.min(JOB_BATCH_SIZE, MAX_TOTAL_JOBS),
         });
         
         if (!result.jobs) {
@@ -98,13 +99,13 @@ export function JobTabsContent({
           return;
         }
         
-        console.log('found jobs', result.jobs.length);
+        console.log('[JobTabsContent] initial result', { rows: result.jobs.length, next: result.nextPageToken });
 
         setListing({
           ...result,
           jobs: result.jobs,
           isLoading: false,
-          hasMore: result.jobs.length === JOB_BATCH_SIZE,
+          hasMore: !!result.nextPageToken && (result.jobs.length < MAX_TOTAL_JOBS),
         });
 
         const firstJob = result.jobs[0];
@@ -128,17 +129,20 @@ export function JobTabsContent({
           !listing.isLoading &&
           listing.jobs.length < JOB_BATCH_SIZE / 2 &&
           listing.hasMore &&
-          listing.nextPageToken
+          listing.nextPageToken &&
+          listing.jobs.length < MAX_TOTAL_JOBS
         ) {
           setListing((l) => ({ ...l, isLoading: true }));
+          console.log('[JobTabsContent] auto-load more', { after: listing.nextPageToken, remaining: MAX_TOTAL_JOBS - listing.jobs.length });
           const result = await listJobs({
             status,
-            limit: JOB_BATCH_SIZE,
+            limit: Math.min(JOB_BATCH_SIZE, Math.max(0, MAX_TOTAL_JOBS - listing.jobs.length)),
             after: listing.nextPageToken,
             search,
             siteIds,
             linkIds,
           });
+          console.log('[JobTabsContent] auto-load result', { rows: result.jobs?.length, next: result.nextPageToken });
           
           if (!result.jobs) {
             console.error('No jobs returned from listJobs');
@@ -148,9 +152,9 @@ export function JobTabsContent({
           
           setListing((l) => ({
             ...result,
-            jobs: l.jobs.concat(result.jobs),
+            jobs: l.jobs.concat(result.jobs || []),
             isLoading: false,
-            hasMore: !!result.nextPageToken,
+            hasMore: !!result.nextPageToken && (l.jobs.length + (result.jobs?.length || 0) < MAX_TOTAL_JOBS),
           }));
         }
       } catch (error) {
@@ -250,14 +254,19 @@ export function JobTabsContent({
 
   const onLoadMore = async () => {
     try {
+        if (listing.jobs.length >= MAX_TOTAL_JOBS) {
+          return;
+        }
+        console.log('[JobTabsContent] manual load more', { after: listing.nextPageToken, loaded: listing.jobs.length });
               const result = await listJobs({
           status,
-          limit: JOB_BATCH_SIZE,
+          limit: Math.min(JOB_BATCH_SIZE, Math.max(0, MAX_TOTAL_JOBS - listing.jobs.length)),
           after: listing.nextPageToken,
           search,
           siteIds,
           linkIds,
         });
+        console.log('[JobTabsContent] manual load result', { rows: result.jobs?.length, next: result.nextPageToken });
 
         if (!result.jobs) {
           console.error('No jobs returned from listJobs');
@@ -267,9 +276,9 @@ export function JobTabsContent({
 
         setListing((listing) => ({
           ...result,
-          jobs: [...listing.jobs, ...result.jobs],
+          jobs: [...listing.jobs, ...(result.jobs || [])],
           isLoading: false,
-          hasMore: result.jobs.length === JOB_BATCH_SIZE,
+          hasMore: !!result.nextPageToken && (listing.jobs.length + (result.jobs?.length || 0) < MAX_TOTAL_JOBS),
         }));
     } catch (error) {
       handleError({ error, title: 'Failed to load more jobs' });
@@ -343,7 +352,7 @@ export function JobTabsContent({
                     <div className="no-scrollbar h-[calc(100vh-235px)] w-full overflow-y-scroll md:h-[calc(100vh-241px)]">
                       <JobsList
                         jobs={(() => {
-                          const params = new URLSearchParams(router.asPath.split('?')[1] || '');
+                          const params = new URLSearchParams(window.location.search);
                           const hideReposts = params.get('hide_reposts') === '1';
                           if (!hideReposts) return listing.jobs;
                           return listing.jobs.filter((j) => {

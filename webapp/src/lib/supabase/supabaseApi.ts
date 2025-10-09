@@ -219,6 +219,14 @@ export class F2aSupabaseApi {
     const jobs_search = search || undefined;
     const jobs_site_ids = siteIds?.length ?? 0 > 0 ? siteIds : undefined;
     const jobs_link_ids = linkIds?.length ?? 0 > 0 ? linkIds : undefined;
+    console.log('[SupabaseApi:listJobs] params', {
+      status,
+      search: jobs_search,
+      siteIds: jobs_site_ids,
+      linkIds: jobs_link_ids,
+      limit,
+      after,
+    });
     const [jobs, counters] = await Promise.all([
       this._supabaseApiCall<Job[], PostgrestError>(async () => {
         const res = await this._supabase.rpc("list_jobs", {
@@ -233,6 +241,7 @@ export class F2aSupabaseApi {
           jobs_hide_reposts: false, // Add missing parameter to match 10-parameter version
           jobs_show_reposts_only: false, // Add missing parameter to match 10-parameter version
         });
+        console.log('[SupabaseApi:listJobs] list_jobs result', { rows: res?.length, limit, after });
         return res;
       }),
       this._supabaseApiCall<
@@ -252,7 +261,9 @@ export class F2aSupabaseApi {
           jobs_hide_reposts: false, // Add missing parameter to match 8-parameter version
           jobs_show_reposts_only: false, // Add missing parameter to match 8-parameter version
         });
-
+        try {
+          console.log('[SupabaseApi:listJobs] count_jobs result', res);
+        } catch {}
         return res;
       }),
     ]);
@@ -263,6 +274,7 @@ export class F2aSupabaseApi {
       const lastJob = jobs[jobs.length - 1];
       nextPageToken = `${lastJob.id}!${lastJob.updated_at}`;
     }
+    console.log('[SupabaseApi:listJobs] computed nextPageToken', { nextPageToken });
 
     const countersMap = new Map(counters.map((c) => [c.status, c.job_count]));
     return {
@@ -368,19 +380,39 @@ export class F2aSupabaseApi {
         }
     >
   ): Promise<T | undefined> {
-    const { data, error } = await backOff(
-      async () => {
-        const result = await method();
-        if (result.error) throw result.error;
+    const startMs = Date.now();
+    const attemptTimings: number[] = [];
+    const label = '[webapp-supabaseApi]';
+    try {
+      const { data, error } = await backOff(
+        async () => {
+          const attemptStart = Date.now();
+          const result = await method();
+          attemptTimings.push(Date.now() - attemptStart);
+          if (result.error) throw result.error;
 
-        return result;
-      },
-      {
-        numOfAttempts: 5,
-        jitter: "full",
-        startingDelay: 300,
-      }
-    );
+          return result;
+        },
+        {
+          numOfAttempts: 5,
+          jitter: "full",
+          startingDelay: 300,
+        }
+      );
+
+      const totalMs = Date.now() - startMs;
+      try {
+        // Log only if slow (>500ms) or there were retries
+        const maxAttempt = attemptTimings.length > 0 ? Math.max(...attemptTimings) : totalMs;
+        if (totalMs > 500 || attemptTimings.length > 1) {
+          console.log(
+            `${label} success in %d ms (attempts=%d, timings=%s)`,
+            totalMs,
+            attemptTimings.length || 1,
+            attemptTimings.join(',') || String(totalMs),
+          );
+        }
+      } catch {}
 
     // edge functions don't throw errors, instead they return an errorMessage field in the data object
     // work around for this issue https://github.com/supabase/functions-js/issues/45
@@ -398,6 +430,13 @@ export class F2aSupabaseApi {
     if (error) throw error;
 
     return data;
+    } catch (err: any) {
+      const totalMs = Date.now() - startMs;
+      try {
+        console.error(`${label} failed in %d ms (attempts=%d, timings=%s): %s`, totalMs, attemptTimings.length || 1, attemptTimings.join(','), err?.message || String(err));
+      } catch {}
+      throw err;
+    }
   }
 
   /**

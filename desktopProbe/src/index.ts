@@ -13,7 +13,7 @@ import { promiseAllSequence } from './server/helpers';
 import { HtmlDownloader } from './server/htmlDownloader';
 import { JobBoardModal } from './server/jobBoardModal';
 import { JobScanner } from './server/jobScanner';
-import { logger } from './server/logger';
+import { logger, LogSection } from './server/logger';
 import { initRendererIpcApi } from './server/rendererIpcApi';
 import { F2aSupabaseApi } from './server/supabaseApi';
 import { TrayMenu } from './server/trayMenu';
@@ -168,12 +168,10 @@ const supabase = createClient<DbSchema>(ENV.supabase.url, ENV.supabase.key);
 const supabaseApi = new F2aSupabaseApi(supabase);
 const htmlDownloaders = [
   new HtmlDownloader({
-    logger,
     numInstances: 2,
     incognitoMode: false,
   }),
   new HtmlDownloader({
-    logger,
     numInstances: 1,
     incognitoMode: true,
   }),
@@ -183,7 +181,7 @@ let trayMenu: TrayMenu | undefined;
 const jobBoardModal = new JobBoardModal();
 
 function navigate({ path }: { path: string }) {
-  logger.info(`sending nav event to ${path}`);
+  logger.info(LogSection.MAIN, `Sending nav event to ${path}`);
   mainWindow?.webContents.send('navigate', { path });
   onActivate(); // make sure the window is visible
 }
@@ -208,7 +206,7 @@ async function handleDeepLink(url: string) {
 
     navigate({ path });
   } catch (error) {
-    logger.error(getExceptionMessage(error));
+    logger.error(LogSection.MAIN, getExceptionMessage(error));
     dialog.showErrorBox('Error', getExceptionMessage(error, true));
   }
 }
@@ -242,7 +240,6 @@ async function bootstrap() {
 
     // init the job scanner
     jobScanner = new JobScanner({
-      logger,
       supabaseApi,
       normalHtmlDownloader,
       incognitoHtmlDownloader,
@@ -267,8 +264,7 @@ async function bootstrap() {
     // save the session to disk when it changes
     supabase.auth.onAuthStateChange(async (event, session) => {
       try {
-        logger.info(`auth state change: ${event}`);
-        logger.addMeta('user_id', session?.user?.id || 'none');
+        logger.info(LogSection.AUTH, `Auth state change: ${event}`, { userId: session?.user?.id || 'none' });
 
         if (session?.user?.id) {
           // set the user id for logging and analytics
@@ -277,19 +273,19 @@ async function bootstrap() {
 
         // clear the session from disk if it's being removed
         if (event === 'SIGNED_OUT') {
-          logger.info(`removing session from disk`);
+          logger.info(LogSection.AUTH, `Removing session from disk`);
           fs.unlinkSync(sessionPath);
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-          logger.info(`saving new session to disk`);
+          logger.info(LogSection.AUTH, `Saving new session to disk`);
           if (safeStorage.isEncryptionAvailable()) {
             const encryptedSession = safeStorage.encryptString(JSON.stringify(session));
             fs.writeFileSync(sessionPath, encryptedSession.toString('base64'), 'utf-8');
           } else {
-            logger.error(`encryption is not available, cannot save plain session to disk`);
+            logger.error(LogSection.AUTH, `Encryption is not available, cannot save plain session to disk`);
           }
         }
       } catch (error) {
-        logger.error(getExceptionMessage(error));
+        logger.error(LogSection.AUTH, getExceptionMessage(error));
       }
     });
 
@@ -298,19 +294,61 @@ async function bootstrap() {
       const encryptedSession = fs.readFileSync(sessionPath, 'utf-8');
       const plaintextSession = safeStorage.decryptString(Buffer.from(encryptedSession, 'base64'));
       const session = JSON.parse(plaintextSession);
-      logger.info(`finished loading session from disk`);
-      const { error } = await supabase.auth.setSession(session);
-      if (error) throw error;
+      logger.info(LogSection.AUTH, `Finished loading session from disk`);
 
-      // perform an initial scan
-      jobScanner.scanAllLinks().catch((error) => {
-        logger.error(getExceptionMessage(error));
-      });
+      // If the saved session belongs to a different Supabase project, drop it
+      try {
+        const currentHost = new URL(ENV.supabase.url || '').host;
+        const accessToken: string | undefined = session?.access_token;
+        const tokenIss: string | undefined = (() => {
+          if (!accessToken || typeof accessToken !== 'string' || !accessToken.includes('.')) return undefined;
+          try {
+            const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64').toString('utf-8'));
+            return typeof payload?.iss === 'string' ? payload.iss : undefined;
+          } catch {
+            return undefined;
+          }
+        })();
+
+        console.log('🔧 [session] Session validation:', {
+          currentHost,
+          tokenIss,
+          hasAccessToken: !!accessToken,
+          tokenExpiry: accessToken ? (() => {
+            try {
+              const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64').toString('utf-8'));
+              return new Date(payload.exp * 1000).toISOString();
+            } catch { return 'invalid'; }
+          })() : 'none'
+        });
+
+        if (!currentHost || !tokenIss || !tokenIss.includes(currentHost)) {
+          logger.info(LogSection.AUTH, 'Saved session does not match current Supabase project, clearing saved session');
+          fs.unlinkSync(sessionPath);
+        } else {
+          console.log('🔧 [session] Setting session from disk...');
+          const { error } = await supabase.auth.setSession(session);
+          if (error) {
+            console.log('🔧 [session] Error setting session:', error.message);
+            throw error;
+          }
+          console.log('🔧 [session] Session set successfully');
+
+          // perform an initial scan
+          jobScanner.scanAllLinks().catch((error) => {
+            logger.error(LogSection.AUTH, getExceptionMessage(error));
+          });
+        }
+      } catch (e) {
+        console.log('🔧 [session] Error in session handling:', getExceptionMessage(e));
+        logger.error(LogSection.AUTH, getExceptionMessage(e));
+        try { fs.unlinkSync(sessionPath); } catch {}
+      }
     } else {
-      logger.info(`no session found on disk`);
+      logger.info(LogSection.AUTH, `No session found on disk`);
     }
   } catch (error) {
-    logger.error(getExceptionMessage(error));
+    logger.error(LogSection.AUTH, getExceptionMessage(error));
   }
 
   // create the main window after everything is setup
@@ -345,36 +383,35 @@ async function bootstrap() {
  */
 async function quit() {
   try {
-    logger.info(`quitting...`);
+    logger.info(LogSection.MAIN, `Quitting...`);
     appIsRunning = false;
 
     jobScanner?.close();
-    logger.info(`closed job scanner`);
+    logger.info(LogSection.MAIN, `Closed job scanner`);
 
     await promiseAllSequence(htmlDownloaders, (htmlDownloader) => htmlDownloader.close());
-    logger.info(`closed html downloader`);
+    logger.info(LogSection.MAIN, `Closed HTML downloader`);
 
     trayMenu?.close();
-    logger.info(`closed tray menu`);
+    logger.info(LogSection.MAIN, `Closed tray menu`);
 
     autoUpdater.stop();
-    logger.info(`stopped auto updater`);
+    logger.info(LogSection.MAIN, `Stopped auto updater`);
 
     storage.set('width', mainWindow?.getSize()[0] || 1024);
     storage.set('height', mainWindow?.getSize()[1] || 800);
 
     mainWindow?.removeAllListeners();
-    logger.info(`removed all main window listeners`);
+    logger.info(LogSection.MAIN, `Removed all main window listeners`);
 
     mainWindow?.close();
-    logger.info(`closed main window`);
+    logger.info(LogSection.MAIN, `Closed main window`);
 
     analytics.trackEvent('app_quit');
 
     analytics.flush();
-    logger.flush();
   } catch (error) {
-    logger.error(getExceptionMessage(error));
+    logger.error(LogSection.MAIN, getExceptionMessage(error));
     process.exit(-1); // force quit
   }
 }

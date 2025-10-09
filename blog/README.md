@@ -1,3 +1,4 @@
+Note: For project-wide setup and commands, see the root README.
 ![tailwind-nextjs-banner](/public/static/images/twitter-card.png)
 
 # Tailwind Nextjs Starter Blog

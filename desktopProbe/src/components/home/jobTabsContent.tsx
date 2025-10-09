@@ -26,9 +26,11 @@ import { JobNotes } from './jobNotes';
 import { JobSummary } from './jobSummary';
 import { JobListing } from './jobTabs';
 import { DateGroupManager } from './dateGrouping';
+import { Button } from '@/components/ui/button';
 import { JobDetailsSkeleton, JobSummarySkeleton, JobsListSkeleton } from './jobsSkeleton';
 
 const JOB_BATCH_SIZE = 1000;
+const MAX_TOTAL_JOBS = 5000;
 const ALL_JOB_STATUSES: JobStatus[] = ['new', 'applied', 'archived', 'excluded_by_advanced_matching'];
 
 type FavoriteAwareJob = Job & { __isFavorite?: boolean };
@@ -111,7 +113,8 @@ export function JobTabsContent({
         setListing((listing) => ({ ...listing, isLoading: true }));
 
         const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
-        const result = await listJobs({ status, search, siteIds, linkIds, labels: labelsForBackend, favoritesOnly: (labels || []).includes('FAVORITES_ONLY'), limit: JOB_BATCH_SIZE });
+        console.log('[Desktop JobTabsContent] initial fetch', { status, limit: Math.min(JOB_BATCH_SIZE, MAX_TOTAL_JOBS) });
+        const result = await listJobs({ status, search, siteIds, linkIds, labels: labelsForBackend, favoritesOnly: (labels || []).includes('FAVORITES_ONLY'), limit: Math.min(JOB_BATCH_SIZE, MAX_TOTAL_JOBS) });
         console.log('[JobTabsContent] listJobs result', {
           status,
           counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
@@ -126,12 +129,13 @@ export function JobTabsContent({
           __isFavorite: favSet.has(j.companyName?.toLowerCase?.()),
         })) as FavoriteAwareJob[];
 
+        console.log('[Desktop JobTabsContent] initial result', { rows: result.jobs?.length, next: result.nextPageToken });
         setListing((prev) => ({
           // keep previous counts for tabs we didn't just fetch
           ...prev,
           jobs: jobsWithFav,
           isLoading: false,
-          hasMore: !!result.nextPageToken,
+          hasMore: !!result.nextPageToken && (jobsWithFav.length < MAX_TOTAL_JOBS),
           nextPageToken: result.nextPageToken,
           // update only provided counts, preserve others
           new: result.new ?? prev.new,
@@ -175,12 +179,13 @@ export function JobTabsContent({
           ? listing.jobs.filter((j: any) => favSet.has(j.companyName?.toLowerCase?.())).length
           : listing.jobs.length;
 
-        if (!listing.isLoading && visibleCount < JOB_BATCH_SIZE / 2 && listing.hasMore && listing.nextPageToken) {
+        if (!listing.isLoading && visibleCount < JOB_BATCH_SIZE / 2 && listing.hasMore && listing.nextPageToken && listing.jobs.length < MAX_TOTAL_JOBS) {
           setListing((l) => ({ ...l, isLoading: true }));
           const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
+          console.log('[Desktop JobTabsContent] auto-load more', { after: listing.nextPageToken, remaining: MAX_TOTAL_JOBS - listing.jobs.length });
           const result = await listJobs({
             status,
-            limit: JOB_BATCH_SIZE,
+            limit: Math.min(JOB_BATCH_SIZE, Math.max(0, MAX_TOTAL_JOBS - listing.jobs.length)),
             after: listing.nextPageToken,
             search,
             siteIds,
@@ -188,6 +193,7 @@ export function JobTabsContent({
             favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
             linkIds,
           });
+          console.log('[Desktop JobTabsContent] auto-load result', { rows: result.jobs?.length, next: result.nextPageToken });
           console.log('[JobTabsContent] listJobs append result', {
             status,
             counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
@@ -205,7 +211,7 @@ export function JobTabsContent({
             ...l,
             jobs: l.jobs.concat(jobsWithFav as unknown as Job[]),
             isLoading: false,
-            hasMore: !!result.nextPageToken,
+            hasMore: !!result.nextPageToken && (l.jobs.length + jobsWithFav.length < MAX_TOTAL_JOBS),
             nextPageToken: result.nextPageToken,
             new: result.new ?? l.new,
             applied: result.applied ?? l.applied,
@@ -344,10 +350,14 @@ export function JobTabsContent({
 
   const onLoadMore = async () => {
     try {
+      if (listing.jobs.length >= MAX_TOTAL_JOBS) {
+        return;
+      }
       const labelsForBackend = (labels || []).filter((l) => l !== 'FAVORITES_ONLY');
+      console.log('[Desktop JobTabsContent] manual load more', { after: listing.nextPageToken, loaded: listing.jobs.length });
       const result = await listJobs({
         status,
-        limit: JOB_BATCH_SIZE,
+        limit: Math.min(JOB_BATCH_SIZE, Math.max(0, MAX_TOTAL_JOBS - listing.jobs.length)),
         after: listing.nextPageToken,
         search,
         siteIds,
@@ -355,6 +365,7 @@ export function JobTabsContent({
         favoritesOnly: (labels || []).includes('FAVORITES_ONLY'),
         linkIds,
       });
+      console.log('[Desktop JobTabsContent] manual load result', { rows: result.jobs?.length, next: result.nextPageToken });
       console.log('[JobTabsContent] listJobs loadMore result', {
         status,
         counts: { new: result.new, applied: result.applied, archived: result.archived, filtered: result.filtered },
@@ -372,7 +383,7 @@ export function JobTabsContent({
         ...listing,
         jobs: [...listing.jobs, ...(jobsWithFav as unknown as Job[])],
         isLoading: false,
-        hasMore: !!result.nextPageToken,
+        hasMore: !!result.nextPageToken && (listing.jobs.length + jobsWithFav.length < MAX_TOTAL_JOBS),
         nextPageToken: result.nextPageToken,
         new: result.new ?? listing.new,
         applied: result.applied ?? listing.applied,
@@ -500,23 +511,32 @@ export function JobTabsContent({
                 {((!listing.jobs.length && listing.isLoading) || statusItem !== status) ? (
                   <JobsListSkeleton />
                 ) : filteredJobs.length > 0 ? (
-                  <DateGroupManager
-                    jobs={filteredJobs}
-                    status={status}
-                    search={search}
-                    selectedJobId={selectedJobId || undefined}
-                    parentContainerId="jobsList"
-                    onLoadMore={onLoadMore}
-                    onSelect={(job) => scanJobAndSelect(job)}
-                    onArchive={(j) => {
-                      onUpdateJobStatus(j.id, 'archived');
-                    }}
-                    onDelete={(j) => {
-                      onUpdateJobStatus(j.id, 'deleted');
-                    }}
-                    hasMore={listing.hasMore}
-                    favoriteCompanies={favoriteCompanies}
-                  />
+                  <>
+                    <DateGroupManager
+                      jobs={filteredJobs}
+                      status={status}
+                      search={search}
+                      selectedJobId={selectedJobId || undefined}
+                      parentContainerId="jobsList"
+                      onLoadMore={onLoadMore}
+                      onSelect={(job) => scanJobAndSelect(job)}
+                      onArchive={(j) => {
+                        onUpdateJobStatus(j.id, 'archived');
+                      }}
+                      onDelete={(j) => {
+                        onUpdateJobStatus(j.id, 'deleted');
+                      }}
+                      hasMore={listing.hasMore}
+                      favoriteCompanies={favoriteCompanies}
+                    />
+                    {listing.hasMore && (
+                      <div className="flex items-center justify-center py-3">
+                        <Button variant="secondary" onClick={onLoadMore}>
+                          Load more
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className="px-4 pt-20 text-center">
                     {search || (siteIds && siteIds.length > 0) || (linkIds && linkIds.length > 0) ? (

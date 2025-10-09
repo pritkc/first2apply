@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron';
 import { backOff } from 'exponential-backoff';
 
 import { sleep, waitRandomBetween } from './helpers';
-import { ILogger } from './logger';
+import { logger, LogSection } from './logger';
 import { WorkerQueue } from './workerQueue';
 
 const KNOWN_AUTHWALLS = ['authwall', 'login'];
@@ -13,7 +13,6 @@ const KNOWN_AUTHWALLS = ['authwall', 'login'];
 export class HtmlDownloader {
   private _isRunning = false;
   private _pool: BrowserWindowPool | undefined;
-  private _logger: ILogger;
   private _numInstances: number;
   private _incognitoMode: boolean;
 
@@ -21,15 +20,12 @@ export class HtmlDownloader {
    * Class constructor.
    */
   constructor({
-    logger,
     numInstances,
     incognitoMode,
   }: {
-    logger: ILogger;
     numInstances: number;
     incognitoMode: boolean;
   }) {
-    this._logger = logger;
     this._numInstances = numInstances;
     this._incognitoMode = incognitoMode;
   }
@@ -98,7 +94,8 @@ export class HtmlDownloader {
   private async _loadUrl(window: BrowserWindow, url: string, scrollTimes: number) {
     if (!this._isRunning) return '<html></html>';
 
-    this._logger.info(`loading url: ${url} ...`);
+    logger.htmlDownloader.start(`Loading URL: ${url}`);
+    
     await backOff(
       async () => {
         let statusCode: number | undefined;
@@ -110,7 +107,7 @@ export class HtmlDownloader {
         // handle rate limits
         const title = await window.webContents.executeJavaScript('document.title');
         if (statusCode === 429 || title?.toLowerCase().startsWith('just a moment')) {
-          this._logger.debug(`429 status code detected: ${url}`);
+          logger.htmlDownloader.warn(`Rate limit detected (429): ${url}`);
           await waitRandomBetween(20_000, 40_000);
           throw new Error('rate limit exceeded');
         }
@@ -135,7 +132,7 @@ export class HtmlDownloader {
           // check if page was redirected to a login page
           const finalUrl = window.webContents.getURL();
           if (KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))) {
-            this._logger.debug(`authwall detected: ${finalUrl}`);
+            logger.htmlDownloader.warn(`Auth wall detected: ${finalUrl}`);
             throw new Error('authwall');
           }
         }
@@ -151,7 +148,7 @@ export class HtmlDownloader {
       },
     );
 
-    this._logger.info(`finished loading url: ${url}`);
+    logger.htmlDownloader.success(`Finished loading URL: ${url}`);
   }
 }
 

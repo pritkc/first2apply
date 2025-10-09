@@ -73,9 +73,13 @@ export async function loginWithEmail({
   const supabaseClient = await createClient<DbSchema>();
   const f2aSupabaseClient = new F2aSupabaseApi(supabaseClient);
 
-  const { user } = await f2aSupabaseClient.loginWithEmail({ email, password });
+  const result = await f2aSupabaseClient.loginWithEmail({ email, password });
 
-  return user;
+  if (!result?.user) {
+    throw new Error('Login failed');
+  }
+
+  return result.user;
 }
 
 /**

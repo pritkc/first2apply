@@ -41,7 +41,7 @@ export const SitesProvider = ({ children }: React.PropsWithChildren<{}>) => {
     const asyncLoad = async () => {
       try {
         if (!isLoggedIn) return;
-        setSites(await listSites());
+        setSites(await listSites() || []);
         setIsLoading(false);
       } catch (error) {
         handleError({ error });
