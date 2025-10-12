@@ -1940,7 +1940,7 @@ export function parseUSAJobsJobs({
   const document = new DOMParser().parseFromString(html, "text/html");
   if (!document) throw new Error("Could not parse html");
 
-  const jobsList = document.querySelector(".usajobs-search-results");
+  const jobsList = document.querySelector("#search-results");
   if (!jobsList)
     return {
       jobs: [],
@@ -1948,13 +1948,11 @@ export function parseUSAJobsJobs({
       elementsCount: 0,
     };
   const jobElements = Array.from(
-    jobsList.querySelectorAll(".usajobs-search-result--core")
+    jobsList.querySelectorAll(":scope > div")
   ) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
-    const titleElement = el.querySelector(
-      "a.usajobs-search-result--core__title"
-    );
+    const titleElement = el.querySelector("a[data-document-id]");
 
     const externalId = titleElement?.getAttribute("data-document-id")?.trim();
     if (!externalId) return null;
@@ -1967,16 +1965,22 @@ export function parseUSAJobsJobs({
     if (!title) return null;
 
     const companyName = el
-      .querySelector(".usajobs-search-result--core__agency")
+      .querySelector(
+        ":scope > div:nth-child(2) > div:first-child > p:nth-child(2)"
+      )
       ?.textContent?.trim();
     if (!companyName) return null;
 
     const location = el
-      .querySelector(".usajobs-search-result--core__location")
+      .querySelector(
+        ":scope > div:nth-child(2) > div:first-child > p:nth-child(3)"
+      )
       ?.textContent?.trim();
 
     const salary = el
-      .querySelector(".usajobs-search-result--core__item")
+      .querySelector(
+        ":scope > div:nth-child(2) > div:nth-child(2) > p:first-child"
+      )
       ?.textContent?.trim();
 
     const jobType = location?.toLowerCase().includes("remote")
