@@ -100,18 +100,8 @@ stop_all_services() {
     cd "$PROJECT_ROOT"
     npx supabase stop 2>/dev/null || true
     
-    # Stop Local LLM API
-    print_status "Stopping Local LLM API..."
-    kill_by_port 3001
-    kill_by_name "local-llm-api"
-    
-    # Stop Ollama
-    print_status "Stopping Ollama..."
-    brew services stop ollama 2>/dev/null || true
-    kill_by_name "ollama"
-    
     # Kill any remaining processes on common ports
-    for port in 54321 54322 54323 54324 3001 11434; do
+    for port in 54321 54322 54323 54324; do
         kill_by_port $port
     done
     
@@ -192,8 +182,6 @@ check_all_services() {
     print_status "📊 Checking status of all services..."
     
     echo ""
-    check_service "Ollama" 11434 "/api/tags"
-    check_service "Local LLM API" 3001 "/health"
     check_service "Supabase API" 54321
     check_service "Supabase DB" 54322
     check_service "Supabase Studio" 54323
@@ -209,8 +197,6 @@ check_all_services() {
     print_status "Service URLs:"
     echo "  • Supabase Studio: http://localhost:54323"
     echo "  • Supabase API: http://localhost:54321"
-    echo "  • Local LLM API: http://localhost:3001/health"
-    echo "  • Ollama: http://localhost:11434/api/tags"
 }
 
 # Function to troubleshoot Electron white screen
@@ -262,13 +248,8 @@ cleanup() {
     
     # Remove PID files
     rm -f "$PROJECT_ROOT/electron.pid"
-    rm -f "$PROJECT_ROOT/local-llm-api/llm-api.pid"
-    
-    # Clean up log files
-    rm -f "$PROJECT_ROOT/local-llm-api/llm-api.log"
     
     # Kill any zombie processes
-    kill_by_name "node.*local-llm-api"
     kill_by_name "electron.*desktopProbe"
     
     print_success "Cleanup complete!"
@@ -287,21 +268,13 @@ show_logs() {
                 print_warning "No Electron logs found"
             fi
             ;;
-        "llm")
-            print_status "Local LLM API logs:"
-            if [ -f "$PROJECT_ROOT/local-llm-api/llm-api.log" ]; then
-                tail -f "$PROJECT_ROOT/local-llm-api/llm-api.log"
-            else
-                print_warning "No LLM API logs found"
-            fi
-            ;;
         "supabase")
             print_status "Supabase logs:"
             cd "$PROJECT_ROOT"
             npx supabase logs
             ;;
         *)
-            print_status "Available log options: electron, llm, supabase"
+            print_status "Available log options: electron, supabase"
             ;;
     esac
 }

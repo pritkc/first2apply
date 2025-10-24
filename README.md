@@ -144,15 +144,10 @@ node monitor-llm-usage.js report    # View usage stats
 node monitor-llm-usage.js reset     # Reset stats
 ```
 
-### Verify No OpenAI Usage
+### Test External APIs
 ```bash
-node verify-no-openai-usage.js      # Comprehensive verification
-```
-
-### Test Local LLM
-```bash
-node test-local-llm.js              # Performance test
-node test-supabase-local-llm.js     # Integration test
+node scripts/testing/test-external-apis.js      # External API test
+node scripts/testing/comprehensive-test.js     # Comprehensive test
 ```
 
 ## Performance & Cost
@@ -167,20 +162,6 @@ node test-supabase-local-llm.js     # Integration test
 
 ## Manual Service Management
 
-### Ollama
-```bash
-brew services start ollama
-brew services stop ollama
-curl http://localhost:11434/api/tags
-```
-
-### Local LLM API
-```bash
-cd local-llm-api
-npm start
-curl http://localhost:3001/health
-```
-
 ### Supabase
 ```bash
 npx supabase start
@@ -192,7 +173,7 @@ open http://localhost:54323
 ### Electron App
 ```bash
 cd desktopProbe
-USE_LOCAL_LLM=true LOCAL_LLM_ENDPOINT=http://localhost:3001 npm start
+npm start
 ```
 
 ## Directory Structure
@@ -201,15 +182,10 @@ USE_LOCAL_LLM=true LOCAL_LLM_ENDPOINT=http://localhost:3001 npm start
 first2apply/
 ├── desktopProbe/           # Electron app
 ├── supabase/               # Database & functions
-├── local-llm-api/          # Local LLM server
 ├── webapp/                 # Web interface
+├── scripts/                # Management & testing scripts
 ├── service-manager.sh      # Service management
-├── reboot-recovery.sh      # System recovery
-├── start-local-llm.sh      # LLM setup
-├── monitor-llm-usage.js    # Usage tracking
-├── verify-no-openai-usage.js # Verification
-├── test-local-llm.js       # Performance test
-└── test-supabase-local-llm.js # Integration test
+└── reboot-recovery.sh      # System recovery
 ```
 
 ## Emergency Recovery
@@ -219,10 +195,8 @@ first2apply/
 # Nuclear option - complete reset
 ./service-manager.sh stop
 sudo pkill -f electron
-sudo pkill -f ollama  
 sudo pkill -f supabase
-sudo pkill -f "node.*local-llm"
-sudo lsof -ti:54321,54322,54323,3001,11434 | xargs sudo kill -9
+sudo lsof -ti:54321,54322,54323 | xargs sudo kill -9
 ./service-manager.sh start
 ```
 
@@ -233,9 +207,6 @@ rm -rf node_modules package-lock.json && npm install
 
 # Desktop app
 cd desktopProbe && rm -rf node_modules package-lock.json && npm install && cd ..
-
-# LLM API
-cd local-llm-api && rm -rf node_modules package-lock.json && npm install && cd ..
 ```
 
 ## Key Features

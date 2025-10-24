@@ -85,43 +85,25 @@ if [ -f "desktopProbe/package.json" ] && [ ! -d "desktopProbe/node_modules" ]; t
     cd ..
 fi
 
-# Check local LLM API dependencies
-if [ -f "local-llm-api/package.json" ] && [ ! -d "local-llm-api/node_modules" ]; then
-    print_status "Installing local LLM API dependencies..."
-    cd local-llm-api
-    npm install
-    cd ..
-fi
-
 print_success "Dependencies checked"
 
-# Step 4: Check if Ollama is installed
-print_status "4️⃣ Checking Ollama installation..."
-if ! command -v ollama &> /dev/null; then
-    print_warning "Ollama is not installed"
-    print_status "Installing Ollama..."
-    brew install ollama
-else
-    print_success "Ollama is installed"
-fi
-
-# Step 5: Check if Supabase CLI is available
-print_status "5️⃣ Checking Supabase CLI..."
+# Step 4: Check if Supabase CLI is available
+print_status "4️⃣ Checking Supabase CLI..."
 if ! command -v supabase &> /dev/null && ! npx supabase --version &> /dev/null; then
     print_warning "Supabase CLI not found globally, will use npx"
 fi
 print_success "Supabase CLI is available"
 
-# Step 6: Clean up any leftover processes
-print_status "6️⃣ Cleaning up leftover processes..."
+# Step 5: Clean up any leftover processes
+print_status "5️⃣ Cleaning up leftover processes..."
 "$PROJECT_ROOT/service-manager.sh" cleanup
 
-# Step 7: Start all services
-print_status "7️⃣ Starting all services..."
+# Step 6: Start all services
+print_status "6️⃣ Starting all services..."
 "$PROJECT_ROOT/service-manager.sh" start
 
-# Step 8: Verify everything is working
-print_status "8️⃣ Verifying services..."
+# Step 7: Verify everything is working
+print_status "7️⃣ Verifying services..."
 sleep 5
 "$PROJECT_ROOT/service-manager.sh" status
 
