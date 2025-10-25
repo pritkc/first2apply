@@ -204,7 +204,9 @@ Really important, if there are any ambiguities between the user's requirements a
 
 Reply with a JSON object containing the following fields:
 - excluded: boolean (true if the job should be excluded, false otherwise)
-- reason: string (the reason why the job should be excluded; leave this field empty if the job should not be excluded)`;
+- reason: string (the reason why the job should be excluded; leave this field empty if the job should not be excluded)
+- keep the reason as short as possible, maximum 20 words.
+`;
 
 const JobExclusionFormat = z.object({
   excluded: z.boolean(),
