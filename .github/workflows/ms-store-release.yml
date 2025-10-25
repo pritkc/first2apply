@@ -34,7 +34,7 @@ jobs:
           AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
         run: |
           cd desktopProbe
-          npm run build:win
+          npm run build:win -- --skip-signing
           
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
