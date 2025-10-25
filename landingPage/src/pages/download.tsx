@@ -27,7 +27,7 @@ export default function Download() {
           <div className="mt-12 flex w-full flex-col gap-4 xs:max-w-[500px] xs:flex-row xs:flex-wrap xs:items-center xs:justify-center">
             {/* macos apple silicon */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-1.12.0-arm64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-2.0.0-arm64.dmg"
               onClick={() => {
                 sendGTMEvent({
                   event: 'file_download',
@@ -81,7 +81,7 @@ export default function Download() {
 
             {/* macos x64 */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-1.12.0-x64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-2.0.0-x64.dmg"
               onClick={() => {
                 sendGTMEvent({
                   event: 'file_download',
@@ -108,7 +108,7 @@ export default function Download() {
 
             {/* linux */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_1.12.0_amd64.deb"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first-2-apply_2.0.0_amd64.deb"
               onClick={() => {
                 sendGTMEvent({
                   event: 'file_download',
