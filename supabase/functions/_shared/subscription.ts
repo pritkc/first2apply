@@ -5,17 +5,18 @@ import { DbSchema, Profile } from "./types.ts";
  * Retrieve the user profile and check if his subscription allows advanced matching.
  */
 export async function checkUserSubscription({
-  supabaseClient,
+  supabaseAdminClient,
   userId,
 }: {
-  supabaseClient: SupabaseClient<DbSchema, "public">;
+  supabaseAdminClient: SupabaseClient<DbSchema, "public">;
   userId: string;
 }): Promise<{
   profile: Profile;
   subscriptionHasExpired: boolean;
   hasAdvancedMatching: boolean;
+  hasCustomJobsParsing: boolean;
 }> {
-  const { data: profile, error } = await supabaseClient
+  const { data: profile, error } = await supabaseAdminClient
     .from("profiles")
     .select("*")
     .eq("user_id", userId)
@@ -32,11 +33,12 @@ export async function checkUserSubscription({
   // check if the user's subscription has expired
   const subscriptionHasExpired =
     new Date(profile.subscription_end_date) < new Date();
-  const hasRequiredTier = profile.subscription_tier === "pro";
+  const hasProTier = profile.subscription_tier === "pro";
 
   return {
     profile,
     subscriptionHasExpired,
-    hasAdvancedMatching: hasRequiredTier && !subscriptionHasExpired,
+    hasAdvancedMatching: hasProTier && !subscriptionHasExpired,
+    hasCustomJobsParsing: hasProTier && !subscriptionHasExpired,
   };
 }
