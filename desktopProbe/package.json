@@ -9,7 +9,9 @@
     "package": "npx electron-forge package",
     "make": "npx electron-forge make",
     "publish": "npx electron-forge publish",
-    "lint": "npx eslint --ext .ts,.tsx ."
+    "lint": "npx eslint --ext .ts,.tsx .",
+    "build:win": "npx electron-forge make --platform=win32 --targets=@electron-forge/maker-appx",
+    "release:win": ""
   },
   "keywords": [],
   "author": "BeastX Industries",
