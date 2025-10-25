@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'master' && 'Production' || 'Staging' }}
+    environment: Production
     
     steps:
       - name: Checkout code
