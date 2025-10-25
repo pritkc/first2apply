@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: ${{ github.ref_name == 'main' && 'Production' || 'Staging' }}
     
     steps:
       - name: Checkout code
