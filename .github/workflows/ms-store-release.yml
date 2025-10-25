@@ -8,6 +8,7 @@ on:
 jobs:
   build-store:
     runs-on: windows-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     
     steps:
       - uses: actions/checkout@v4
