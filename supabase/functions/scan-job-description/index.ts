@@ -1,12 +1,11 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 
-import { DbSchema } from "../_shared/types.ts";
-import { getExceptionMessage, throwError } from "../_shared/errorUtils.ts";
-import { parseJobDescription } from "../_shared/jobDescriptionParser.ts";
+import { getExceptionMessage } from "../_shared/errorUtils.ts";
+import { parseJobDescriptionUpdates } from "../_shared/jobDescriptionParser.ts";
 import { applyAdvancedMatchingFilters } from "../_shared/advancedMatching.ts";
 import { Job } from "../_shared/types.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
+import { getEdgeFunctionContext } from "../_shared/edgeFunctions.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,27 +16,12 @@ Deno.serve(async (req) => {
     function: "scan-job-description",
   });
   try {
-    const requestId = crypto.randomUUID();
-    logger.addMeta("request_id", requestId);
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Missing Authorization header");
-    }
-    const supabaseClient = createClient<DbSchema>(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: userData, error: getUserError } =
-      await supabaseClient.auth.getUser();
-    if (getUserError) {
-      throw new Error(getUserError.message);
-    }
-    const user = userData?.user;
-    logger.addMeta("user_id", user?.id ?? "");
-    logger.addMeta("user_email", user?.email ?? "");
+    const context = await getEdgeFunctionContext({
+      logger,
+      req,
+      checkAuthorization: true,
+    });
+    const { supabaseClient, supabaseAdminClient } = context;
 
     const body: {
       jobId: number;
@@ -70,80 +54,114 @@ Deno.serve(async (req) => {
       throw findSiteErr;
     }
 
-    let updatedJob: Job = { ...job, status: "new" };
-    if (!job.description) {
-      // parse the job description
-      logger.info(
-        `[${site.provider}] parsing job description for ${jobId} ...`
-      );
-
-      // update the job with the description
-      const jd = parseJobDescription({ site, job, html });
-      const isLastRetry = retryCount === maxRetries;
-      updatedJob = {
-        ...updatedJob,
-        description: jd.content ?? updatedJob.description,
-      };
-      if (!jd.content && isLastRetry) {
-        logger.error(
-          `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`,
-          {
-            url: job.externalUrl,
-            site: site.provider,
-          }
-        );
-
-        await supabaseClient
-          .from("html_dumps")
-          .insert([{ url: job.externalUrl, html }]);
-      }
-
-      if (jd.content) {
+    const parseDescriptionAndSaveUpdates = async () => {
+      let updatedJob: Job = { ...job, status: "new" };
+      if (!job.description) {
+        // parse the job description
         logger.info(
-          `[${site.provider}] finished parsing job description for ${job.title}`,
+          `[${site.provider}] parsing job description for ${jobId} ...`
+        );
+
+        // update the job with the description
+        const updates = await parseJobDescriptionUpdates({
+          site,
+          job,
+          html,
+          ...context,
+        });
+        const isLastRetry = retryCount === maxRetries;
+        updatedJob = {
+          ...updatedJob,
+          description: updates.description ?? job.description,
+          salary: !job.salary ? updates.salary : job.salary,
+          tags: Array.from(
+            new Set((job.tags ?? []).concat(updates.tags ?? []))
+          ),
+        };
+        if (!updates.description && isLastRetry) {
+          logger.error(
+            `[${site.provider}] no JD details extracted from the html of job ${jobId}, this could be a problem with the parser`,
+            {
+              url: job.externalUrl,
+              site: site.provider,
+            }
+          );
+
+          await supabaseClient
+            .from("html_dumps")
+            .insert([{ url: job.externalUrl, html }]);
+        }
+
+        if (updates.description) {
+          logger.info(
+            `[${site.provider}] finished parsing job description for ${job.title}`,
+            {
+              site: site.provider,
+            }
+          );
+        }
+
+        const { newStatus, excludeReason } = await applyAdvancedMatchingFilters(
           {
-            site: site.provider,
+            logger,
+            job: updatedJob,
+            supabaseClient,
+            supabaseAdminClient,
           }
         );
+
+        updatedJob = {
+          ...updatedJob,
+          status: newStatus,
+          exclude_reason: excludeReason,
+        };
       }
 
-      const { newStatus, excludeReason } = await applyAdvancedMatchingFilters({
-        logger,
-        job: updatedJob,
-        supabaseClient,
-        openAiApiKey:
-          Deno.env.get("OPENAI_API_KEY") ??
-          throwError("missing OPENAI_API_KEY"),
-      });
+      logger.info(`[${site.provider}] ${updatedJob.status} ${job.title}`);
 
-      updatedJob = {
-        ...updatedJob,
-        status: newStatus,
-        exclude_reason: excludeReason,
-      };
-    }
+      const { error: updateJobErr } = await supabaseClient
+        .from("jobs")
+        .update({
+          description: updatedJob.description,
+          salary: updatedJob.salary,
+          tags: updatedJob.tags,
+          status: updatedJob.status,
+          updated_at: new Date(),
+          exclude_reason: updatedJob.exclude_reason,
+        })
+        .eq("id", jobId)
 
-    logger.info(`[${site.provider}] ${updatedJob.status} ${job.title}`);
+        // I think this is causing jobs to be put back on new from deleted
+        // if the app fails to process an entire batch in one cron interval
+        // then the same job will be processed twice (since it's status is processing still)
+        .in("status", ["processing", "new"]);
+      if (updateJobErr) {
+        throw updateJobErr;
+      }
 
-    const { error: updateJobErr } = await supabaseClient
-      .from("jobs")
-      .update({
-        description: updatedJob.description,
-        status: updatedJob.status,
-        updated_at: new Date(),
-        exclude_reason: updatedJob.exclude_reason,
-      })
-      .eq("id", jobId)
+      const parseFailed = !updatedJob.description;
 
-      // I think this is causing jobs to be put back on new from deleted
-      // if the app fails to process an entire batch in one cron interval
-      // then the same job will be processed twice (since it's status is processing still)
-      .eq("status", "processing");
-    if (updateJobErr) {
-      throw updateJobErr;
-    }
+      return { updatedJob, parseFailed };
+    };
 
-    const parseFailed = !updatedJob.description;
+    // Let's add a timeout of 20 seconds on the parsing operation, but without failing it
+    // This means it will still work in the background, but the client will not wait for it.
+    const timeoutPromise = new Promise<{
+      updatedJob: Job;
+      parseFailed: boolean;
+    }>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          updatedJob: job,
+          parseFailed: false,
+        });
+      }, 30_000);
+    });
+
+    const { updatedJob, parseFailed } = await Promise.race([
+      parseDescriptionAndSaveUpdates(),
+      timeoutPromise,
+    ]);
 
     return new Response(JSON.stringify({ job: updatedJob, parseFailed }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },

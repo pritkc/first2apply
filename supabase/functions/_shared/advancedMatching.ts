@@ -1,12 +1,12 @@
-import { AzureOpenAI } from "npm:openai@4.86.2";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
-import { Profile } from "./types.ts";
-import { getExceptionMessage, throwError } from "./errorUtils.ts";
 import { ILogger } from "./logger.ts";
-import { zodResponseFormat } from "npm:openai@4.86.2/helpers/zod";
+import { zodResponseFormat } from "npm:openai@6.7.0/helpers/zod";
 import { z } from "npm:zod";
+import { buildOpenAiClient, logAiUsage } from "./openAI.ts";
+import { throwError } from "./errorUtils.ts";
+import { checkUserSubscription } from "./subscription.ts";
 
 /**
  * Apply all the advanced matching rules to the given job and
@@ -15,18 +15,18 @@ import { z } from "npm:zod";
 export async function applyAdvancedMatchingFilters({
   logger,
   supabaseClient,
+  supabaseAdminClient,
   job,
-  openAiApiKey,
 }: {
   logger: ILogger;
   supabaseClient: SupabaseClient<DbSchema, "public">;
+  supabaseAdminClient: SupabaseClient<DbSchema, "public">;
   job: Job;
-  openAiApiKey: string;
 }): Promise<{ newStatus: JobStatus; excludeReason?: string }> {
   logger.info(`applying advanced matching filters to job ${job.id} ...`);
   // check if the user has advanced matching enabled
   const { hasAdvancedMatching } = await checkUserSubscription({
-    supabaseClient,
+    supabaseAdminClient,
     userId: job.user_id,
   });
   if (!hasAdvancedMatching) {
@@ -64,76 +64,24 @@ export async function applyAdvancedMatchingFilters({
       "prompting OpenAI to determine if the job should be excluded ..."
     );
 
-    const { exclusionDecision, inputTokensUsed, outputTokensUsed, cost } =
-      await promptOpenAI({
-        prompt: advancedMatching.chatgpt_prompt,
-        job,
-        openAiApiKey,
-      });
-
-    // persist the cost of the OpenAI API call
-    const { error: countUsageError } = await supabaseClient.rpc(
-      "count_chatgpt_usage",
-      {
-        for_user_id: job.user_id,
-        cost_increment: cost,
-        input_tokens_increment: inputTokensUsed,
-        output_tokens_increment: outputTokensUsed,
-      }
-    );
-    if (countUsageError) {
-      console.error(getExceptionMessage(countUsageError));
-    }
+    const { exclusionDecision } = await promptOpenAI({
+      prompt: advancedMatching.chatgpt_prompt,
+      job,
+      logger,
+      supabaseAdminClient,
+    });
 
     if (exclusionDecision.excluded) {
       logger.info(`job excluded by OpenAI: ${exclusionDecision.reason}`);
       return {
         newStatus: "excluded_by_advanced_matching",
-        excludeReason: exclusionDecision.reason,
+        excludeReason: exclusionDecision.reason ?? undefined,
       };
     }
   }
 
   logger.info("job passed all advanced matching filters");
   return { newStatus: "new" };
-}
-
-/**
- * Retrieve the user profile and check if his subscription allows advanced matching.
- */
-export async function checkUserSubscription({
-  supabaseClient,
-  userId,
-}: {
-  supabaseClient: SupabaseClient<DbSchema, "public">;
-  userId: string;
-}): Promise<{
-  profile: Profile;
-  hasAdvancedMatching: boolean;
-}> {
-  const { data: profile, error } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!profile) {
-    throw new Error("Profile not found");
-  }
-
-  // check if the user's subscription has expired
-  const subscriptionHasExpired =
-    new Date(profile.subscription_end_date) < new Date();
-  const hasRequiredTier = profile.subscription_tier === "pro";
-
-  return {
-    profile,
-    hasAdvancedMatching: hasRequiredTier && !subscriptionHasExpired,
-  };
 }
 
 /**
@@ -160,25 +108,20 @@ export function isExcludedCompany({
 async function promptOpenAI({
   prompt,
   job,
-  openAiApiKey,
+
+  logger,
+  supabaseAdminClient,
 }: {
-  prompt: string;
   job: Job;
-  openAiApiKey: string;
+  prompt: string;
+  logger: ILogger;
+  supabaseAdminClient: SupabaseClient<DbSchema, "public">;
 }) {
-  const openai = new AzureOpenAI({
-    apiKey: openAiApiKey,
-    endpoint: "https://first2apply.openai.azure.com/",
-    apiVersion: "2024-10-21",
+  const { llmConfig, openAi } = buildOpenAiClient({
+    modelName: "o3-mini",
   });
 
-  const llmConfig = {
-    model: "gpt-4o",
-    costPerMillionInputTokens: 2.5,
-    costPerMillionOutputTokens: 10,
-  };
-
-  const response = await openai.chat.completions.create({
+  const response = await openAi.chat.completions.create({
     model: llmConfig.model,
     messages: [
       {
@@ -193,11 +136,7 @@ async function promptOpenAI({
         }),
       },
     ],
-    temperature: 0,
-    max_tokens: 1000,
-    top_p: 0,
-    frequency_penalty: 0,
-    presence_penalty: 0,
+    max_completion_tokens: 1000,
     response_format: zodResponseFormat(JobExclusionFormat, "JobExclusion"),
   });
 
@@ -209,17 +148,17 @@ async function promptOpenAI({
     JSON.parse(choice.message.content ?? throwError("missing content"))
   );
 
-  const inputTokensUsed = response.usage?.prompt_tokens ?? 0;
-  const outputTokensUsed = response.usage?.completion_tokens ?? 0;
-  const cost =
-    (llmConfig.costPerMillionInputTokens / 1_000_000) * inputTokensUsed +
-    (llmConfig.costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
+  // persist the cost of the OpenAI API call
+  await logAiUsage({
+    logger,
+    supabaseAdminClient,
+    forUserId: job.user_id,
+    llmConfig,
+    response,
+  });
 
   return {
     exclusionDecision,
-    inputTokensUsed,
-    outputTokensUsed,
-    cost,
   };
 }
 
@@ -269,5 +208,5 @@ Reply with a JSON object containing the following fields:
 
 const JobExclusionFormat = z.object({
   excluded: z.boolean(),
-  reason: z.string().optional(),
+  reason: z.string().optional().nullable().nullable(),
 });

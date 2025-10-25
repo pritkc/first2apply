@@ -1,14 +1,14 @@
-import {
-  SupabaseClient,
-  createClient,
-} from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { CORS_HEADERS } from "../_shared/cors.ts";
 import { parseJobsListUrl } from "../_shared/jobListParser.ts";
-import { DbSchema, JobSite, Link, SiteProvider } from "../_shared/types.ts";
+import { JobSite, Link, SiteProvider } from "../_shared/types.ts";
 import { getExceptionMessage } from "../_shared/errorUtils.ts";
 import { checkUserSubscription } from "../_shared/subscription.ts";
 import { createLoggerWithMeta } from "../_shared/logger.ts";
-import { ILogger } from "../_shared/logger.ts";
+
+import {
+  EdgeFunctionAuthorizedContext,
+  getEdgeFunctionContext,
+} from "../_shared/edgeFunctions.ts";
 
 type HtmlParseRequest = {
   linkId: number;
@@ -26,26 +26,12 @@ Deno.serve(async (req) => {
     function: "scan-urls",
   });
   try {
-    const requestId = crypto.randomUUID();
-    logger.addMeta("request_id", requestId);
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Missing Authorization header");
-    }
-    const supabaseClient = createClient<DbSchema>(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: userData, error: getUserError } =
-      await supabaseClient.auth.getUser();
-    if (getUserError) {
-      throw new Error(getUserError.message);
-    }
-    const user = userData?.user;
-    logger.addMeta("user_id", user?.id ?? "");
-    logger.addMeta("user_email", user?.email ?? "");
+    const context = await getEdgeFunctionContext({
+      logger,
+      req,
+      checkAuthorization: true,
+    });
+    const { supabaseClient, user } = context;
 
     const body = await req.json();
     const htmls: Array<HtmlParseRequest> = body.htmls;
@@ -65,10 +51,10 @@ Deno.serve(async (req) => {
     const links = linksData as Link[];
     logger.info(`found ${links.length} links`);
 
-    const userId = links?.[0]?.user_id;
+    const userId = user.id;
     const { subscriptionHasExpired } = await checkUserSubscription({
-      supabaseClient,
       userId,
+      ...context,
     });
     if (subscriptionHasExpired) {
       logger.info(`subscription has expired for user ${userId}`);
@@ -85,80 +71,45 @@ Deno.serve(async (req) => {
     const allJobSites = jobSitesData ?? [];
 
     // parse htmls and match them with links
-    let parseFailed = false;
-    const isLastRetry = htmls.every(
-      (html) => html.retryCount === html.maxRetries
-    );
-    const parsedJobs = await Promise.all(
-      htmls.map(async (html) => {
-        const link = links?.find((link) => link.id === html.linkId);
-        // ignore links that are not in the db
-        if (!link) {
-          logger.error(`link not found: ${html.linkId}`);
-          return [];
-        }
-        // ignore links for sites that are deprecated
-        const targetSite = allJobSites.find((site) => site.id === link.site_id);
-        if (targetSite?.deprecated) {
-          logger.info(`skip parsing for deprecated site ${targetSite.name}`);
-          return [];
-        }
-
-        const {
-          jobs,
-          site,
-          parseFailed: currentUrlParseFailed,
-        } = await parseJobsListUrl({
-          allJobSites,
-          link,
-          html: html.content,
-        });
-
-        logger.info(
-          `[${site.provider}] found ${jobs.length} jobs from link ${link.id}`
-        );
-
-        // if the parsing failed, save the html dump for debugging
-        parseFailed = currentUrlParseFailed;
-        if (currentUrlParseFailed) {
-          await handleParsingFailureForLink({
-            logger,
-            supabaseClient,
-            link,
+    const parseAndSaveJobs = async () => {
+      let parseFailed = false;
+      const isLastRetry = htmls.every(
+        (html) => html.retryCount === html.maxRetries
+      );
+      const parsedJobs = await Promise.all(
+        htmls.map(async (html) => {
+          const { jobs, currentUrlParseFailed } = await parseHtmlToJobsList({
             html,
-            site,
+            allJobSites,
             isLastRetry,
+            links,
+            context,
           });
-        } else {
-          await handlePasringSuccessForLink({
-            logger,
-            supabaseClient,
-            link,
-            site,
-          });
-        }
+          if (currentUrlParseFailed) {
+            parseFailed = true;
+          }
 
-        // add the link id to the jobs
-        jobs.forEach((job) => {
-          job.link_id = link.id;
-        });
+          return jobs;
+        })
+      ).then((r) => r.flat());
 
-        return jobs;
-      })
-    ).then((r) => r.flat());
+      const { data: upsertedJobs, error: insertError } = await supabaseClient
+        .from("jobs")
+        .upsert(
+          parsedJobs.map((job) => ({ ...job, status: "processing" as const })),
+          { onConflict: "user_id, externalId", ignoreDuplicates: true }
+        )
+        .select("*");
+      if (insertError) throw new Error(insertError.message);
 
-    const { data: upsertedJobs, error: insertError } = await supabaseClient
-      .from("jobs")
-      .upsert(
-        parsedJobs.map((job) => ({ ...job, status: "processing" as const })),
-        { onConflict: "user_id, externalId", ignoreDuplicates: true }
-      )
-      .select("*");
-    if (insertError) throw new Error(insertError.message);
+      const newJobs =
+        upsertedJobs?.filter((job) => job.status === "processing") ?? [];
+      logger.info(`found ${newJobs.length} new jobs`);
 
-    const newJobs =
-      upsertedJobs?.filter((job) => job.status === "processing") ?? [];
-    logger.info(`found ${newJobs.length} new jobs`);
+      return { newJobs, parseFailed };
+    };
+
+    const { newJobs, parseFailed } = await parseAndSaveJobs();
 
     return new Response(JSON.stringify({ newJobs, parseFailed }), {
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
@@ -177,21 +128,89 @@ Deno.serve(async (req) => {
   }
 });
 
+async function parseHtmlToJobsList({
+  html,
+  allJobSites,
+  isLastRetry,
+  links,
+  context,
+}: {
+  html: HtmlParseRequest;
+  allJobSites: JobSite[];
+  isLastRetry: boolean;
+  links: Link[];
+  // dependencies
+  context: EdgeFunctionAuthorizedContext;
+}) {
+  const { logger, supabaseClient } = context;
+  const link = links.find((link) => link.id === html.linkId);
+  // ignore links that are not in the db
+  if (!link) {
+    logger.error(`link not found: ${html.linkId}`);
+    return { jobs: [], currentUrlParseFailed: false };
+  }
+  // ignore links for sites that are deprecated
+  const targetSite = allJobSites.find((site) => site.id === link.site_id);
+  if (targetSite?.deprecated) {
+    logger.info(`skip parsing for deprecated site ${targetSite.name}`);
+    return { jobs: [], currentUrlParseFailed: false };
+  }
+
+  const {
+    jobs,
+    site,
+    parseFailed: currentUrlParseFailed,
+  } = await parseJobsListUrl({
+    allJobSites,
+    link,
+    html: html.content,
+    context,
+  });
+
+  logger.info(
+    `[${site.provider}] found ${jobs.length} jobs from link ${link.id}`
+  );
+
+  // if the parsing failed, save the html dump for debugging
+  if (currentUrlParseFailed) {
+    await handleParsingFailureForLink({
+      link,
+      html,
+      site,
+      isLastRetry,
+      context,
+    });
+  } else {
+    await handleParsingSuccessForLink({
+      link,
+      site,
+      context,
+    });
+  }
+
+  // add the link id to the jobs
+  jobs.forEach((job) => {
+    job.link_id = link.id;
+  });
+
+  return { jobs, currentUrlParseFailed };
+}
+
 async function handleParsingFailureForLink({
-  logger,
-  supabaseClient,
   link,
   html,
   site,
   isLastRetry,
+  context,
 }: {
-  logger: ILogger;
-  supabaseClient: SupabaseClient<DbSchema, "public", DbSchema["public"]>;
   link: Link;
   html: HtmlParseRequest;
   site: JobSite;
   isLastRetry: boolean;
+  context: EdgeFunctionAuthorizedContext;
 }) {
+  const { logger, supabaseClient } = context;
+
   // increment the failure count
   const { error: linkUpdateError } = await supabaseClient
     .from("links")
@@ -223,17 +242,16 @@ async function handleParsingFailureForLink({
   }
 }
 
-async function handlePasringSuccessForLink({
-  logger,
-  supabaseClient,
+async function handleParsingSuccessForLink({
   link,
   site,
+  context,
 }: {
-  logger: ILogger;
-  supabaseClient: SupabaseClient<DbSchema, "public", DbSchema["public"]>;
   link: Link;
   site: JobSite;
+  context: EdgeFunctionAuthorizedContext;
 }) {
+  const { logger, supabaseClient } = context;
   // when the parsing went ok, reset the failure count
   await supabaseClient
     .from("links")

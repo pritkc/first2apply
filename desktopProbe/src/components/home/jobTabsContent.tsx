@@ -3,19 +3,13 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
-import {
-  getJobById,
-  listJobs,
-  openExternalUrl,
-  scanJob,
-  updateJobLabels,
-  updateJobStatus,
-} from '@/lib/electronMainSdk';
+import { getJobById, listJobs, scanJob, updateJobLabels, updateJobStatus } from '@/lib/electronMainSdk';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { Job, JobLabel, JobStatus } from '../../../../supabase/functions/_shared/types';
+import { BrowserWindow, BrowserWindowHandle } from '../browserWindow';
 import { JobDetails } from './jobDetails';
 import { JobFilters } from './jobFilters';
 import { JobFiltersType } from './jobFilters/jobFiltersMenu';
@@ -55,6 +49,8 @@ export function JobTabsContent({
   const { isSubscriptionExpired } = useSession();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
+  const browserWindowRef = useRef<BrowserWindowHandle>(null);
+  const browserWindowRefOther = useRef<BrowserWindowHandle>(null);
 
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const selectedJob = listing.jobs.find((job) => job.id === selectedJobId);
@@ -268,7 +264,22 @@ export function JobTabsContent({
 
   // Open a job in the default browser
   const onViewJob = (job: Job) => {
-    openExternalUrl(job.externalUrl);
+    browserWindowRef.current?.open(job.externalUrl);
+  };
+  const onOpenUrl = (url: string) => {
+    browserWindowRefOther.current?.open(url);
+  };
+
+  const markSelectedJobAsApplied = async () => {
+    try {
+      if (selectedJobId) {
+        await onUpdateJobStatus(selectedJobId, 'applied');
+        toast({ title: 'Job marked as applied' });
+        await browserWindowRef.current?.finish();
+      }
+    } catch (error) {
+      handleError({ error, title: 'Failed to mark job as applied' });
+    }
   };
 
   // Scroll to the top of the job description panel when the selected job changes
@@ -352,6 +363,7 @@ export function JobTabsContent({
                         onView={onViewJob}
                         onUpdateJobStatus={onUpdateJobStatus}
                         onUpdateLabels={onUpdateJobLabels}
+                        onOpenUrl={onOpenUrl}
                       />
                       <JobDetails job={selectedJob} isScrapingDescription={!!selectedJob.isLoadingJD}></JobDetails>
                       <hr className="border-t border-muted" />
@@ -583,6 +595,27 @@ export function JobTabsContent({
           </TabsContent>
         );
       })}
+
+      <BrowserWindow
+        ref={browserWindowRef}
+        onClose={() => {}}
+        customActionButton={{
+          text: 'Applied',
+          onClick: () => markSelectedJobAsApplied(),
+          tooltip: 'Mark this job as applied',
+        }}
+      ></BrowserWindow>
+      <BrowserWindow
+        ref={browserWindowRefOther}
+        onClose={() => {}}
+        customActionButton={{
+          text: 'Done',
+          onClick: () => {
+            browserWindowRefOther.current?.finish();
+          },
+          tooltip: 'Done browsing',
+        }}
+      ></BrowserWindow>
     </>
   );
 }

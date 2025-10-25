@@ -1,12 +1,14 @@
+import { BrowserWindow, BrowserWindowHandle } from '@/components/browserWindow';
 import { CreateLink } from '@/components/createLink';
 import { LinksList } from '@/components/linksList';
 import { LinksListSkeleton } from '@/components/skeletons/linksListSkeleton';
+import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
-import { debugLink } from '@/lib/electronMainSdk';
+import { scanLink } from '@/lib/electronMainSdk';
 import { throwError } from '@/lib/error';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { DefaultLayout } from './defaultLayout';
 
@@ -14,6 +16,8 @@ export function LinksPage() {
   const { handleError } = useError();
   const { isLoading, links, removeLink, updateLink, reloadLinks } = useLinks();
   const { isScanning } = useAppState();
+  const browserWindowRef = useRef<BrowserWindowHandle>(null);
+  const [currentDebugLinkId, setCurrentDebugLinkId] = useState<number | null>(null);
 
   // refresh links on component mount
   useEffect(() => {
@@ -37,10 +41,26 @@ export function LinksPage() {
     }
   };
 
-  // start debugging link
   const handleDebugLink = async (linkId: number) => {
     try {
-      await debugLink(linkId);
+      await browserWindowRef.current?.open(links.find((l) => l.id === linkId)?.url ?? throwError('Link not found'));
+      setCurrentDebugLinkId(linkId);
+    } catch (error) {
+      handleError({ error });
+    }
+  };
+
+  const handleScanLink = async () => {
+    try {
+      const linkId = currentDebugLinkId ?? throwError('No link is being debugged');
+      await scanLink(linkId);
+      setCurrentDebugLinkId(null);
+      await browserWindowRef.current?.finish();
+
+      toast({
+        title: 'Scanning URL in background ...',
+        description: 'The link will be scanned in the background. You will be notified if there are new jobs.',
+      });
     } catch (error) {
       handleError({ error });
     }
@@ -98,6 +118,16 @@ export function LinksPage() {
           onUpdateLink={handleUpdateLink}
         />
       )}
+
+      <BrowserWindow
+        ref={browserWindowRef}
+        onClose={() => {}}
+        customActionButton={{
+          text: 'Retry',
+          onClick: () => handleScanLink(),
+          tooltip: 'Click to retry fetching jobs for this search',
+        }}
+      ></BrowserWindow>
     </DefaultLayout>
   );
 }
