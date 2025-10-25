@@ -11,6 +11,7 @@
     "publish": "npx electron-forge publish",
     "lint": "npx eslint --ext .ts,.tsx .",
     "build:win": "npx electron-forge make --platform=win32 --targets=@electron-forge/maker-appx",
+    "build:linux": "npx electron-forge make --platform=linux --arch=x64",
     "release:win": ""
   },
   "keywords": [],
