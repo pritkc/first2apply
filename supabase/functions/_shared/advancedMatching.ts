@@ -136,7 +136,7 @@ async function promptOpenAI({
         }),
       },
     ],
-    max_completion_tokens: 1000,
+    max_completion_tokens: 3000,
     response_format: zodResponseFormat(JobExclusionFormat, "JobExclusion"),
   });
 
