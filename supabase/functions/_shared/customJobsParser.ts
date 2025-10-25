@@ -302,7 +302,6 @@ ${htmlContent}
   const parsingFailed = !!parseResult.errorMessage;
   if (parsingFailed) {
     const errorMessage = parseResult.errorMessage ?? "Unknown error";
-    logger.error(`OpenAI reported an error: ${errorMessage}`);
 
     updates = {
       description: `Failed to parse job description: ${errorMessage}`,
