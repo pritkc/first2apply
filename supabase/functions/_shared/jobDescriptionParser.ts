@@ -25,7 +25,10 @@ const SITE_PROVIDER_QUERY_SELECTORS: Record<
     ],
   },
   [SiteProvider.glassdoor]: {
-    description: [".JobDetails_JobDescriptionUpdates__uW_fK"],
+    description: [
+      '[data-brandviews*="jobview-description"]',
+      ".JobDetails_JobDescriptionUpdates__uW_fK", // fallback
+    ],
   },
   [SiteProvider.indeed]: {
     description: ["#JobDescriptionUpdatesText"],
@@ -221,6 +224,13 @@ function parseIndeedJobDescription({
 }: {
   html: string;
 }): JobDescriptionUpdates {
+  // First try to extract from the global JavaScript object
+  const updatesFromScriptTag = extractFromScriptTag();
+  if (updatesFromScriptTag) {
+    // If we found updates, use them
+    return updatesFromScriptTag;
+  }
+
   const { descriptionContainer } = extractCommonDomElements({
     provider: SiteProvider.indeed,
     html,
@@ -243,6 +253,73 @@ function parseIndeedJobDescription({
     description = turndownService
       .turndown(descriptionContainer.innerHTML)
       .replace(/\*\s\s\n/gi, "*");
+  }
+
+  // helpers
+  function extractFromScriptTag() {
+    const globalDataMatch = html.match(
+      /window\._initialData\s*=\s*({.*?});?\s*(?=\n|$|<\/script>)/s
+    );
+
+    if (globalDataMatch) {
+      const globalData = JSON.parse(globalDataMatch[1]);
+      // Extract job data from the hostQueryExecutionResult
+      const jobData =
+        globalData?.hostQueryExecutionResult?.data?.jobData?.results?.[0]?.job;
+
+      if (jobData) {
+        let description: string | undefined;
+        let salary: string | undefined;
+        let tags: string[] = [];
+
+        // Extract description - use the text version which is already clean
+        if (jobData.description?.text) {
+          description = jobData.description.text;
+        } else if (jobData.description?.html) {
+          // Fallback to HTML version and convert to markdown
+          description = turndownService.turndown(jobData.description.html);
+        }
+
+        // Extract salary information
+        if (globalData.salaryInfoModel) {
+          const salaryModel = globalData.salaryInfoModel;
+          if (salaryModel.salaryText) {
+            salary = salaryModel.salaryText;
+          } else if (salaryModel.salaryMin && salaryModel.salaryMax) {
+            const currency = salaryModel.salaryCurrency === "USD" ? "$" : "";
+            const type =
+              salaryModel.salaryType === "HOURLY"
+                ? " per hour"
+                : salaryModel.salaryType === "YEARLY"
+                ? " per year"
+                : "";
+            salary = `${currency}${salaryModel.salaryMin} - ${currency}${salaryModel.salaryMax}${type}`;
+          }
+        }
+
+        // Extract tags from various sources
+        if (jobData.jobTypes) {
+          tags.push(...jobData.jobTypes.map((type: any) => type.label));
+        }
+
+        if (jobData.benefits) {
+          tags.push(...jobData.benefits.map((benefit: any) => benefit.label));
+        }
+
+        // if (jobData.attributes) {
+        //   tags.push(...jobData.attributes.map((attr: any) => attr.label));
+        // }
+
+        // Remove duplicates and clean up tags
+        tags = Array.from(new Set(tags)).filter((tag) => tag && tag.length > 0);
+
+        return {
+          description,
+          salary,
+          tags: tags.length > 0 ? tags : undefined,
+        };
+      }
+    }
   }
 
   return {
