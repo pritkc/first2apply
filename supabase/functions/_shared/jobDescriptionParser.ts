@@ -299,19 +299,54 @@ function parseIndeedJobDescription({
 
         // Extract tags from various sources
         if (jobData.jobTypes) {
-          tags.push(...jobData.jobTypes.map((type: any) => type.label));
+          tags.push(
+            ...jobData.jobTypes.map((type: { label: string }) => type.label)
+          );
         }
 
         if (jobData.benefits) {
-          tags.push(...jobData.benefits.map((benefit: any) => benefit.label));
+          tags.push(
+            ...jobData.benefits.map(
+              (benefit: { label: string }) => benefit.label
+            )
+          );
         }
-
-        // if (jobData.attributes) {
-        //   tags.push(...jobData.attributes.map((attr: any) => attr.label));
-        // }
 
         // Remove duplicates and clean up tags
         tags = Array.from(new Set(tags)).filter((tag) => tag && tag.length > 0);
+
+        // Build metadata table
+        const metadata: { [key: string]: string } = {};
+
+        if (jobData.datePublished) {
+          const datePosted = new Date(jobData.datePublished);
+          metadata["Date Posted"] = datePosted.toLocaleDateString();
+        }
+
+        if (jobData.employer?.ugcStats?.ratings?.overallRating?.value) {
+          const rating = jobData.employer.ugcStats.ratings.overallRating.value;
+          const reviewCount = jobData.employer.ugcStats.globalReviewCount || 0;
+          metadata[
+            "Company Rating"
+          ] = `${rating}/5 (${reviewCount.toLocaleString()} reviews)`;
+        }
+
+        // Create metadata section
+        let metadataTable = "";
+        if (Object.keys(metadata).length > 0) {
+          metadataTable = "**Job Information:**\n\n";
+
+          for (const [key, value] of Object.entries(metadata)) {
+            metadataTable += `**${key}:** ${value}\n\n`;
+          }
+
+          metadataTable += "---\n\n";
+        }
+
+        // Prepend metadata table to description
+        if (description) {
+          description = metadataTable + description;
+        }
 
         return {
           description,
