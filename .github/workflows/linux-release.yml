@@ -3,9 +3,7 @@ name: Build Linux App
 on:
   push:
     tags:
-      - 'v*'
-    branches:
-      - ci/monorepo
+      - 'desktop-v*'
   workflow_dispatch:
 
 jobs:
@@ -42,7 +40,7 @@ jobs:
           MEZMO_API_KEY: ${{ secrets.MEZMO_API_KEY }}
           AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
         run: |
-          npx nx run @first2apply/desktop-probe:build:linux
+          pnpm make
           
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3

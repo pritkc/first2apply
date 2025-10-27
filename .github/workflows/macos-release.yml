@@ -3,9 +3,7 @@ name: Build macOS App
 on:
   push:
     tags:
-      - 'v*'
-    branches:
-      - ci/monorepo
+      - 'desktop-v*'
   workflow_dispatch:
 
 jobs:
@@ -43,7 +41,7 @@ jobs:
           FORCE_COLOR: ${{ vars.FORCE_COLOR }}
           NO_COLOR: ${{ vars.NO_COLOR }}
         run: |
-          npx nx run @first2apply/desktop-probe:build:mac
+          pnpm make
           
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
