@@ -520,7 +520,7 @@ importers:
   apps/landingPage:
     dependencies:
       '@first2apply/ui':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../libraries/ui
       '@next/third-parties':
         specifier: 14.2.0-canary.34
