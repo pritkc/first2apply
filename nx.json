@@ -11,16 +11,7 @@
     "build": {
       "dependsOn": ["^build"]
     },
-    "build:mac": {
-      "dependsOn": ["^build"]
-    },
-    "build:win": {
-      "dependsOn": ["^build"]
-    },
-    "build:linux": {
-      "dependsOn": ["^build"]
-    },
-    "typecheck": {
+    "make": {
       "dependsOn": ["^build"]
     },
     "test": {
