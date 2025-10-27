@@ -24,7 +24,8 @@
       "tagAnnotation": "Desktop App Release ${version}"
     },
     "npm": {
-      "publish": false
+      "publish": false,
+      "skipChecks": true
     }
   },
   "devDependencies": {
