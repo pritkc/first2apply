@@ -11,11 +11,22 @@
     "build": "tsc --noEmit",
     "prettier": "prettier --check \"src/**/*.{ts,tsx}\"",
     "package": "electron-forge package",
-    "make": "electron-forge make --arch=x64"
+    "make": "electron-forge make --arch=x64",
+    "release": "npx release-it --ci"
   },
   "keywords": [],
   "author": "BeastX Industries",
   "license": "MIT",
+  "release-it": {
+    "git": {
+      "commitMessage": "chore(release): desktop-v${version}",
+      "tagName": "desktop-v${version}",
+      "tagAnnotation": "Desktop App Release ${version}"
+    },
+    "npm": {
+      "publish": false
+    }
+  },
   "devDependencies": {
     "@electron-forge/cli": "*",
     "electron": "*"
