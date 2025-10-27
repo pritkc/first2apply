@@ -1,0 +1,33 @@
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": []
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"]
+    },
+    "build:mac": {
+      "dependsOn": ["^build"]
+    },
+    "build:win": {
+      "dependsOn": ["^build"]
+    },
+    "build:linux": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    }
+  },
+  "installation": {
+    "version": "16.4.2"
+  }
+}
