@@ -12,7 +12,7 @@
   "author": "BeastX Industries",
   "license": "MIT",
   "dependencies": {
-    "@first2apply/core": "workspace:*"
+    "@first2apply/core": "*"
   },
   "devDependencies": {}
 }
