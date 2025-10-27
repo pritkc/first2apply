@@ -14,6 +14,7 @@
     "lint": "npx nx run-many -t lint",
     "prettier": "npx nx run-many -t prettier",
     "make": "npx nx run-many -t make",
+    "release": "npx release-it --ci",
     "prepare": "husky"
   },
   "author": "BeastX Industries",
@@ -25,6 +26,9 @@
   "release-it": {
     "git": {
       "commitMessage": "chore(release): ${version}"
+    },
+    "npm": {
+      "publish": false
     },
     "plugins": {
       "@release-it/conventional-changelog": {
