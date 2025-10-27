@@ -6,15 +6,12 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "build": "tsc --noEmit",
-    "build:win": "electron-forge make --platform=win32 --targets=@electron-forge/maker-appx",
-    "build:linux": "electron-forge make --platform=linux --arch=x64",
-    "build:mac": "electron-forge make --platform=darwin --arch=arm64",
-    "prettier": "prettier --check \"src/**/*.{ts,tsx}\""
+    "prettier": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "package": "electron-forge package",
+    "make": "electron-forge make --arch=x64"
   },
   "keywords": [],
   "author": "BeastX Industries",

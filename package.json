@@ -13,6 +13,7 @@
     "test": "npx nx run-many -t test",
     "lint": "npx nx run-many -t lint",
     "prettier": "npx nx run-many -t prettier",
+    "make": "npx nx run-many -t make",
     "prepare": "husky"
   },
   "author": "BeastX Industries",
