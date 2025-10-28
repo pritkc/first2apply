@@ -132,3 +132,15 @@ dist
 invoice-downloader/invoices
 test.html
 .DS_Store
+
+# Project-specific ignored files
+.cursorindexingignore
+.env.development
+.env.production
+backups/
+dev-workdir/
+env-templates/
+webapp/
+*.backup
+*.bak
+.specstory/
