@@ -138,7 +138,8 @@ export class HtmlDownloader {
                 });
             `,
           );
-          await sleep(2_000);
+          // Use longer, more random delays (2-6 seconds) to appear more human-like
+          await waitRandomBetween(2_000, 6_000);
 
           // check if page was redirected to a login page during scrolling
           const currentUrl = window.webContents.getURL();
