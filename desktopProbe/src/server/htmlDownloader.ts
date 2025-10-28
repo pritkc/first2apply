@@ -99,6 +99,7 @@ export class HtmlDownloader {
     if (!this._isRunning) return '<html></html>';
 
     this._logger.info(`loading url: ${url} ...`);
+    
     await backOff(
       async () => {
         let statusCode: number | undefined;
@@ -113,6 +114,13 @@ export class HtmlDownloader {
           this._logger.debug(`429 status code detected: ${url}`);
           await waitRandomBetween(20_000, 40_000);
           throw new Error('rate limit exceeded');
+        }
+
+        // Check for authwall BEFORE scrolling
+        const finalUrl = window.webContents.getURL();
+        if (KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))) {
+          this._logger.debug(`authwall detected: ${finalUrl}`);
+          throw new Error('authwall');
         }
 
         // scroll to bottom a few times to trigger infinite loading
@@ -132,10 +140,10 @@ export class HtmlDownloader {
           );
           await sleep(2_000);
 
-          // check if page was redirected to a login page
-          const finalUrl = window.webContents.getURL();
-          if (KNOWN_AUTHWALLS.some((authwall) => finalUrl?.includes(authwall))) {
-            this._logger.debug(`authwall detected: ${finalUrl}`);
+          // check if page was redirected to a login page during scrolling
+          const currentUrl = window.webContents.getURL();
+          if (KNOWN_AUTHWALLS.some((authwall) => currentUrl?.includes(authwall))) {
+            this._logger.debug(`authwall detected after scroll: ${currentUrl}`);
             throw new Error('authwall');
           }
         }
@@ -144,7 +152,11 @@ export class HtmlDownloader {
         jitter: 'full',
         numOfAttempts: 20,
         maxDelay: 5_000,
-        retry: () => {
+        retry: (e: Error) => {
+          // Don't retry if it's an authwall error - it won't succeed on retry
+          if (e.message === 'authwall') {
+            return false;
+          }
           // perform retries only if the window is still running
           return this._isRunning;
         },

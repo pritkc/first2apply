@@ -280,10 +280,21 @@ export class JobScanner {
                 },
               });
             } catch (error) {
-              if (this._isRunning)
-                this._logger.error(`failed to scan job description: ${getExceptionMessage(error)}`, {
-                  jobId: job.id,
-                });
+              if (this._isRunning) {
+                const errorMessage = getExceptionMessage(error);
+                const isAuthwallError = errorMessage.toLowerCase().includes('authwall');
+                
+                // Log authwall as a warning instead of an error
+                if (isAuthwallError) {
+                  this._logger.debug(`authwall detected for ${job.title}`, {
+                    jobId: job.id,
+                  });
+                } else {
+                  this._logger.error(`failed to scan job description: ${errorMessage}`, {
+                    jobId: job.id,
+                  });
+                }
+              }
 
               // intetionally return initial job if there is an error
               // in order to continue scanning the rest of the jobs
