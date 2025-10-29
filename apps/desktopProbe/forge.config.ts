@@ -62,7 +62,7 @@ const config: ForgeConfig = {
       manifest: './packagers/appx/AppXManifest.xml',
       // Use development certificate
       devCert: path.join(__dirname, 'packagers', 'appx', 'devcert.pfx'),
-      certPass: '', // No password
+      certPass: 'first2apply',
     }),
     // new MakerRpm({}),
     new MakerDeb({
