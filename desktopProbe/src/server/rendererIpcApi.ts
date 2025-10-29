@@ -246,6 +246,58 @@ export function initRendererIpcApi({
     _apiCall(() => supabaseApi.updateAdvancedMatchingConfig(config)),
   );
 
+  // Export advanced matching configuration (prompt, blacklist, favorites) to JSON
+  ipcMain.handle('export-advanced-matching-config', async (event, {}) =>
+    _apiCall(async () => {
+      const res = await dialog.showSaveDialog({
+        properties: ['createDirectory'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+        defaultPath: 'first2apply-advanced-matching-config.json',
+      });
+      if (res.canceled || !res.filePath) return {};
+
+      const current = await supabaseApi.getAdvancedMatchingConfig();
+      const payload = {
+        chatgpt_prompt: current?.chatgpt_prompt ?? '',
+        blacklisted_companies: current?.blacklisted_companies ?? [],
+        favorite_companies: current?.favorite_companies ?? [],
+      } as any;
+
+      fs.writeFileSync(res.filePath, JSON.stringify(payload, null, 2), 'utf8');
+      return {};
+    }),
+  );
+
+  // Import advanced matching configuration from JSON (does not persist automatically)
+  ipcMain.handle('import-advanced-matching-config', async (event, {}) =>
+    _apiCall(async () => {
+      const res = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (res.canceled || !res.filePaths?.length) return {};
+
+      const filePath = res.filePaths[0];
+      const text = fs.readFileSync(filePath, 'utf8');
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON file');
+      }
+
+      const chatgpt_prompt = typeof json?.chatgpt_prompt === 'string' ? json.chatgpt_prompt : '';
+      const blacklisted_companies = Array.isArray(json?.blacklisted_companies)
+        ? json.blacklisted_companies.filter((x: any) => typeof x === 'string')
+        : [];
+      const favorite_companies = Array.isArray(json?.favorite_companies)
+        ? json.favorite_companies.filter((x: any) => typeof x === 'string')
+        : [];
+
+      return { chatgpt_prompt, blacklisted_companies, favorite_companies };
+    }),
+  );
+
   ipcMain.handle('scan-link', async (event, { linkId }) => _apiCall(() => jobScanner.scanLink({ linkId })));
 
   // API Configuration handlers

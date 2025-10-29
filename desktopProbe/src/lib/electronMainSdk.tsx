@@ -410,6 +410,24 @@ export async function updateAdvancedMatchingConfig(
 }
 
 /**
+ * Export advanced matching config (prompt, blacklist, favorites) as JSON via Save dialog.
+ */
+export async function exportAdvancedMatchingConfig(): Promise<void> {
+  await _mainProcessApiCall('export-advanced-matching-config', {});
+}
+
+/**
+ * Import advanced matching config JSON via Open dialog. Returns the parsed values.
+ */
+export async function importAdvancedMatchingConfig(): Promise<{
+  chatgpt_prompt: string;
+  blacklisted_companies: string[];
+  favorite_companies: string[];
+} | {}> {
+  return await _mainProcessApiCall('import-advanced-matching-config', {});
+}
+
+/**
  * Scan a link to fetch new jobs.
  */
 export async function scanLink(linkId: number): Promise<void> {
