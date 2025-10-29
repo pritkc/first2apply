@@ -1,4 +1,4 @@
-name: Microsoft Store Release
+name: Build Windows Store Package AppX
 
 on:
   push:
@@ -52,9 +52,9 @@ jobs:
         run: |
           $VERSION = node -p "require('./package.json').version"
           $src = "apps/desktopProbe/out/make/appx/x64/BeastXIndustries.First2Apply.appx"
-          $dest = "s3://${env:S3_BUCKET_NAME}/releases/windows/x64/first2apply-$VERSION-x64.appx"
+          $dest = "s3://${env:S3_BUCKET_NAME}/releases/win32/x64/first2apply-$VERSION-x64.appx"
           aws s3 cp $src $dest
-          
+
       - name: Update latest symlinks
         env:
           S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
@@ -62,5 +62,5 @@ jobs:
           $VERSION = node -p "require('./package.json').version"
           
           # Create "latest" version for easy linking
-          aws s3 cp "s3://${env:S3_BUCKET_NAME}/releases/windows/x64/first2apply-${VERSION}-x64.appx" \
-            "s3://${env:S3_BUCKET_NAME}/releases/windows/x64/first2apply-latest-x64.appx"
+          aws s3 cp "s3://${env:S3_BUCKET_NAME}/releases/win32/x64/first2apply-${VERSION}-x64.appx" \
+            "s3://${env:S3_BUCKET_NAME}/releases/win32/x64/first2apply-latest-x64.appx"
