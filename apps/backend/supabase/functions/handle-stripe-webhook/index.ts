@@ -1,6 +1,6 @@
 import { DbSchema, SubscriptionTier } from '@first2apply/core';
 import { getExceptionMessage } from '@first2apply/core';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabasefork';
 import Stripe from 'npm:stripe';
 
 import { CORS_HEADERS } from '../_shared/cors.ts';

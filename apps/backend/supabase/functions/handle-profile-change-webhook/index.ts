@@ -1,6 +1,6 @@
 import { DbSchema, Profile } from '@first2apply/core';
 import { getExceptionMessage, throwError } from '@first2apply/core';
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1';
+import { SupabaseClient } from '@supabase/supabasefork';
 
 import { CORS_HEADERS } from '../_shared/cors.ts';
 import { getEdgeFunctionContext } from '../_shared/edgeFunctions.ts';

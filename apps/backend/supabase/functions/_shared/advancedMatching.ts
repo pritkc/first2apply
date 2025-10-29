@@ -1,7 +1,7 @@
 import { AdvancedMatchingConfig, DbSchema, Job, JobStatus, throwError } from '@first2apply/core';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { zodResponseFormat } from 'npm:openai/helpers/zod';
-import { z } from 'npm:zod';
+import { SupabaseClient } from '@supabase/supabasefork';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 
 import { ILogger } from './logger.ts';
 import { buildOpenAiClient, logAiUsage } from './openAI.ts';

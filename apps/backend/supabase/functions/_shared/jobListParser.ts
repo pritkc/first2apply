@@ -1,10 +1,10 @@
 import { JobSite } from '@first2apply/core';
 import { throwError } from '@first2apply/core';
 import { DbSchema, Job, JobType, Link, SiteProvider, User } from '@first2apply/core';
+import { SupabaseClient } from '@supabase/supabasefork';
 import { DOMParser, Element } from 'https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts';
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1/dist/module/index.js';
 import { encodeHex } from 'jsr:@std/encoding/hex';
-import turndown from 'npm:turndown@7.1.2';
+import turndown from 'turndown';
 
 import { parseCustomJobs } from './customJobsParser.ts';
 import { EdgeFunctionAuthorizedContext } from './edgeFunctions.ts';

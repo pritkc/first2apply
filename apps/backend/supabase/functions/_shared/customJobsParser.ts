@@ -1,6 +1,6 @@
 import { throwError } from '@first2apply/core';
 import { DbSchema, User } from '@first2apply/core';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabasefork';
 import { DOMParser, Element } from 'https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts';
 import { zodResponseFormat } from 'npm:openai/helpers/zod';
 import turndown from 'npm:turndown';

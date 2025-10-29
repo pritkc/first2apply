@@ -1,7 +1,7 @@
 import { First2ApplyBackendEnv, parseEnv } from './env.ts';
 
 import { DbSchema, User } from '@first2apply/core';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1';
+import { createClient } from '@supabase/supabasefork';
 
 import { ILogger } from './logger.ts';
 

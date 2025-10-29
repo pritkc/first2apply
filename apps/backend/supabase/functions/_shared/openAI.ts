@@ -1,8 +1,8 @@
 import { parseEnv } from './env.ts';
 
 import { getExceptionMessage } from '@first2apply/core';
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1/dist/module/index.js';
-import { AzureOpenAI } from 'npm:openai';
+import { SupabaseClient } from '@supabase/supabasefork';
+import { AzureOpenAI } from 'openai';
 
 import { ILogger } from './logger.ts';
 
