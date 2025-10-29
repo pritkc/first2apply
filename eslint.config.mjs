@@ -41,6 +41,7 @@ export default [
         },
       ],
       '@ts-ignore': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
     },
   },
   {
