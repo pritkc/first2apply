@@ -215,6 +215,35 @@ export function JobSummary({
           </TooltipProvider>
         )}
 
+        {/* Copy details button */}
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-10 border-none bg-border px-0 transition-colors duration-200 ease-in-out hover:bg-foreground/15 focus:bg-foreground/15"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  const text = `${job.companyName} - ${job.title}` + (job.description ? `\n\n${job.description}` : '');
+                  navigator.clipboard.writeText(text);
+                  toast({
+                    title: 'Job details copied',
+                    description: 'Company, title and description are on your clipboard.',
+                    variant: 'success',
+                  });
+                }}
+              >
+                <CopyIcon className="h-4 w-auto" />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" className="text-base">
+              Copy details
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         {/* Copy url button */}
         <TooltipProvider delayDuration={500}>
           <Tooltip>
