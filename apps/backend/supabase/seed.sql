@@ -45,7 +45,7 @@ public.jobs (
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
   salary text null,
-  tags text[] null,
+  tags text[] not null default '{}'::text[],
   "jobType" text null,
   status public."Job Status" not null default 'new'::"Job Status",
   description text null,
