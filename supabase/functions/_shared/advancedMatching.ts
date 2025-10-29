@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { AdvancedMatchingConfig, Job, JobStatus } from "./types.ts";
 import { DbSchema } from "./types.ts";
@@ -5,7 +6,7 @@ import { ILogger } from "./logger.ts";
 import { zodResponseFormat } from "npm:openai@6.7.0/helpers/zod";
 import { z } from "npm:zod";
 import { buildOpenAiClient, logAiUsage } from "./openAI.ts";
-import { throwError } from "./errorUtils.ts";
+import { throwError, getExceptionMessage } from "./errorUtils.ts";
 import { checkUserSubscription } from "./subscription.ts";
 
 /**
@@ -17,11 +18,17 @@ export async function applyAdvancedMatchingFilters({
   supabaseClient,
   supabaseAdminClient,
   job,
+  openAiApiKey,
+  geminiApiKey,
+  llmProvider = "gemini",
 }: {
   logger: ILogger;
   supabaseClient: SupabaseClient<DbSchema, "public">;
   supabaseAdminClient: SupabaseClient<DbSchema, "public">;
   job: Job;
+  openAiApiKey?: string;
+  geminiApiKey?: string;
+  llmProvider?: "openai" | "gemini" | "llama";
 }): Promise<{ newStatus: JobStatus; excludeReason?: string }> {
   logger.info(`applying advanced matching filters to job ${job.id} ...`);
   // check if the user has advanced matching enabled
@@ -58,26 +65,61 @@ export async function applyAdvancedMatchingFilters({
     };
   }
 
-  // prompt OpenAI to determine if the job should be excluded
+  // prompt LLM to determine if the job should be excluded
   if (job.description && advancedMatching.chatgpt_prompt) {
     logger.info(
-      "prompting OpenAI to determine if the job should be excluded ..."
+      `prompting ${llmProvider.toUpperCase()} to determine if the job should be excluded ...`
+    );
+    logger.info(
+      `advanced match inputs: hasPrompt=${!!advancedMatching.chatgpt_prompt}, descLen=${job.description.length}`
     );
 
-    const { exclusionDecision } = await promptOpenAI({
+    const result = await promptLLM({
       prompt: advancedMatching.chatgpt_prompt,
       job,
+      provider: llmProvider,
+      openAiApiKey,
+      geminiApiKey,
       logger,
       supabaseAdminClient,
     });
+    
+    const exclusionDecision = result.exclusionDecision;
+    const inputTokensUsed = result.inputTokensUsed ?? 0;
+    const outputTokensUsed = result.outputTokensUsed ?? 0;
+    const cost = result.cost ?? 0;
+    
+    logger.info(
+      `LLM result: excluded=${exclusionDecision.excluded}, reason=${exclusionDecision.reason ?? ''}, tokens_in=${inputTokensUsed}, tokens_out=${outputTokensUsed}, cost=${cost.toFixed(6)}`
+    );
+
+    // persist the cost of the LLM API call
+    if (cost > 0) {
+      const { error: countUsageError } = await supabaseClient.rpc(
+        "count_chatgpt_usage",
+        {
+          for_user_id: job.user_id,
+          cost_increment: cost,
+          input_tokens_increment: inputTokensUsed,
+          output_tokens_increment: outputTokensUsed,
+        }
+      );
+      if (countUsageError) {
+        logger.error(getExceptionMessage(countUsageError));
+      }
+    }
 
     if (exclusionDecision.excluded) {
-      logger.info(`job excluded by OpenAI: ${exclusionDecision.reason}`);
+      logger.info(`job excluded by ${llmProvider.toUpperCase()}: ${exclusionDecision.reason}`);
       return {
         newStatus: "excluded_by_advanced_matching",
         excludeReason: exclusionDecision.reason ?? undefined,
       };
     }
+  } else {
+    logger.info(
+      `skipping LLM prompting: hasDescription=${!!job.description}, hasPrompt=${!!advancedMatching.chatgpt_prompt}`
+    );
   }
 
   logger.info("job passed all advanced matching filters");
@@ -102,13 +144,61 @@ export function isExcludedCompany({
 }
 
 /**
+ * Unified function to prompt different LLM providers.
+ */
+async function promptLLM({
+  prompt,
+  job,
+  provider,
+  openAiApiKey,
+  geminiApiKey,
+  logger,
+  supabaseAdminClient,
+}: {
+  prompt: string;
+  job: Job;
+  provider: "openai" | "gemini" | "llama";
+  openAiApiKey?: string;
+  geminiApiKey?: string;
+  logger: ILogger;
+  supabaseAdminClient: SupabaseClient<DbSchema, "public">;
+}) {
+  switch (provider) {
+    case "openai":
+      const openAiResult = await promptOpenAI({ 
+        prompt, 
+        job, 
+        logger, 
+        supabaseAdminClient 
+      });
+      // OpenAI logging is handled inside promptOpenAI
+      return {
+        exclusionDecision: openAiResult.exclusionDecision,
+        inputTokensUsed: 0,
+        outputTokensUsed: 0,
+        cost: 0,
+      };
+    
+    case "gemini":
+      if (!geminiApiKey) throw new Error("Gemini API key is required");
+      return await promptGemini({ prompt, job, geminiApiKey });
+    
+    case "llama":
+      // Future implementation for external Llama API
+      throw new Error("Llama API integration coming soon");
+    
+    default:
+      throw new Error(`Unsupported LLM provider: ${provider}`);
+  }
+}
+
+/**
  * Prompt the OpenAI API to interogate if a job matches the user prompt.
  * Returns true if the job should be excluded, false otherwise.
  */
 async function promptOpenAI({
   prompt,
   job,
-
   logger,
   supabaseAdminClient,
 }: {
@@ -163,7 +253,80 @@ async function promptOpenAI({
 }
 
 /**
- * Generate the user prompt for the OpenAI API.
+ * Prompt the Google Gemini API to determine if a job matches the user prompt.
+ */
+async function promptGemini({
+  prompt,
+  job,
+  geminiApiKey,
+}: {
+  prompt: string;
+  job: Job;
+  geminiApiKey: string;
+}) {
+  const genAI = new GoogleGenerativeAI(geminiApiKey);
+  
+  // Resolve model from env, defaulting to the most cost-effective suitable model
+  const modelName = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash-lite";
+
+  const model = genAI.getGenerativeModel({ 
+    model: modelName,
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 1000,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const llmConfig = {
+    model: modelName,
+    // Approximate pricing; adjust if you switch to a different tier
+    costPerMillionInputTokens: modelName.includes("flash-lite") ? 0.075 : 0.10,
+    costPerMillionOutputTokens: modelName.includes("flash-lite") ? 0.30 : 0.40,
+  };
+
+  const fullPrompt = `${SYSTEM_PROMPT}\n\n${generateUserPrompt({ prompt, job })}`;
+
+  const result = await model.generateContent(fullPrompt);
+  const response = await result.response;
+  const text = response.text();
+
+  if (!text) {
+    throw new Error("Gemini API returned empty response");
+  }
+
+  let exclusionDecision;
+  try {
+    exclusionDecision = JSON.parse(text) as {
+      excluded: boolean;
+      reason?: string;
+    };
+  } catch (parseError) {
+    // Fallback parsing for non-JSON responses
+    const lowerText = text.toLowerCase();
+    exclusionDecision = {
+      excluded: lowerText.includes('"excluded": true') || lowerText.includes('exclude'),
+      reason: lowerText.includes('exclude') ? 'Job excluded based on criteria' : ''
+    };
+  }
+
+  // Estimate token usage (Gemini doesn't provide exact counts in all cases)
+  const inputTokensUsed = Math.ceil(fullPrompt.length / 4);
+  const outputTokensUsed = Math.ceil(text.length / 4);
+  const cost =
+    (llmConfig.costPerMillionInputTokens / 1_000_000) * inputTokensUsed +
+    (llmConfig.costPerMillionOutputTokens / 1_000_000) * outputTokensUsed;
+
+  return {
+    exclusionDecision,
+    inputTokensUsed,
+    outputTokensUsed,
+    cost,
+  };
+}
+
+/**
+ * Generate the user prompt for the LLM APIs.
  */
 function generateUserPrompt({ prompt, job }: { prompt: string; job: Job }) {
   // - Exclude jobs with the title "Senior" or "Lead".
