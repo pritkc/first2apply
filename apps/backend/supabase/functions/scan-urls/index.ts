@@ -86,7 +86,12 @@ Deno.serve(async (req) => {
       const { data: upsertedJobs, error: insertError } = await supabaseClient
         .from('jobs')
         .upsert(
-          parsedJobs.map((job) => ({ ...job, status: 'processing' as const })),
+          parsedJobs.map((job) => ({
+            ...job,
+            status: 'processing' as const,
+            // ensure tags is not null
+            tags: job.tags ?? [],
+          })),
           { onConflict: 'user_id, externalId', ignoreDuplicates: true },
         )
         .select('*');
@@ -128,7 +133,7 @@ async function parseHtmlToJobsList({
   // dependencies
   context: EdgeFunctionAuthorizedContext;
 }) {
-  const { logger, supabaseClient } = context;
+  const { logger } = context;
   const link = links.find((link) => link.id === html.linkId);
   // ignore links that are not in the db
   if (!link) {
