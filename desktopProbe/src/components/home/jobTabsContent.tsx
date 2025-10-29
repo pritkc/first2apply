@@ -3,6 +3,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useSession } from '@/hooks/session';
+import { useSites } from '@/hooks/sites';
 import { getJobById, listJobs, scanJob, updateJobLabels, updateJobStatus } from '@/lib/electronMainSdk';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -47,8 +48,10 @@ export function JobTabsContent({
   const navigate = useNavigate();
   const location = useLocation();
   const { isSubscriptionExpired } = useSession();
+  const { siteMap } = useSites();
 
   const jobDescriptionRef = useRef<HTMLDivElement>(null);
+  const jobsListRef = useRef<HTMLDivElement>(null);
   const browserWindowRef = useRef<BrowserWindowHandle>(null);
   const browserWindowRefOther = useRef<BrowserWindowHandle>(null);
 
@@ -71,6 +74,11 @@ export function JobTabsContent({
   useEffect(() => {
     const asyncLoad = async () => {
       try {
+        // Reset list scroll to top when filters/tab/search change
+        try {
+          jobsListRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+        } catch {}
+
         // check subscription status
         if (isSubscriptionExpired) {
           navigate('/subscription');
@@ -291,10 +299,43 @@ export function JobTabsContent({
 
   // Update the query params when the search input changes
   const onSearchJobs = ({ search, filters }: { search: string; filters: JobFiltersType }) => {
+    const params = new URLSearchParams(location.search);
+    const hideReposts = params.get('hide_reposts') === '1' ? '1' : '0';
+    // Reset scroll to top immediately for better UX
+    try {
+      jobsListRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    } catch {}
     navigate(
-      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&labels=${filters.labels.join(',')}`,
+      `?status=${status}&search=${search}&site_ids=${filters.sites.join(',')}&link_ids=${filters.links.join(',')}&labels=${filters.labels.join(',')}&hide_reposts=${hideReposts}`,
     );
   };
+
+  const filteredJobs = (() => {
+    let jobs = listing.jobs as any[];
+    // check query param to hide reposts
+    const params = new URLSearchParams(location.search);
+    const hideReposts = params.get('hide_reposts') === '1';
+    if (hideReposts) {
+      jobs = jobs.filter((j) => {
+        // Only apply to LinkedIn
+        const site = siteMap[j.siteId];
+        const isLinkedIn = site?.provider === 'linkedin';
+        if (!isLinkedIn) return true;
+        const haystack = [j.title, j.description, ...(j.tags || [])]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return !(
+          haystack.includes('reposted') ||
+          haystack.includes('re post') ||
+          haystack.includes('re-post') ||
+          haystack.includes('re shared') ||
+          haystack.includes('reshared')
+        );
+      });
+    }
+    return jobs as Job[];
+  })();
 
   return (
     <>
@@ -305,6 +346,7 @@ export function JobTabsContent({
               {/* Jobs list, search and filters side */}
               <div
                 id="jobsList"
+                ref={jobsListRef}
                 className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-3 overflow-y-scroll lg:w-2/5"
               >
                 <div className="sticky top-0 z-50 bg-background pb-2">
@@ -319,9 +361,9 @@ export function JobTabsContent({
 
                 {listing.isLoading || statusItem !== status ? (
                   <JobsListSkeleton />
-                ) : listing.jobs.length > 0 ? (
+                ) : filteredJobs.length > 0 ? (
                   <JobsList
-                    jobs={listing.jobs}
+                    jobs={filteredJobs}
                     selectedJobId={selectedJobId}
                     hasMore={listing.hasMore}
                     parentContainerId="jobsList"
@@ -351,7 +393,7 @@ export function JobTabsContent({
                   <JobSummarySkeleton />
                   <JobDetailsSkeleton />
                 </div>
-              ) : listing.jobs.length > 0 ? (
+              ) : filteredJobs.length > 0 ? (
                 <div
                   ref={jobDescriptionRef}
                   className="no-scrollbar h-[calc(100vh-100px)] w-1/2 space-y-4 overflow-y-scroll border-l-[1px] border-muted pl-2 lg:w-3/5 lg:space-y-5 lg:pl-4"
