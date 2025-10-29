@@ -205,6 +205,7 @@ export class F2aSupabaseApi {
     siteIds,
     linkIds,
     labels,
+    favoritesOnly,
     limit = 50,
     after,
   }: {
@@ -213,6 +214,7 @@ export class F2aSupabaseApi {
     siteIds?: number[];
     linkIds?: number[];
     labels?: string[];
+    favoritesOnly?: boolean;
     limit?: number;
     after?: string;
   }) {
