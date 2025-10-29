@@ -1,5 +1,12 @@
 
 
+## [2.1.1](https://github.com/beastx-ro/first2apply/compare/desktop-v2.1.0...2.1.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* **desktop:** job tags iterator ([2541c19](https://github.com/beastx-ro/first2apply/commit/2541c19383ffe0552c00d7b036e1b7bae88f0703))
+
 ## [2.1.0](https://github.com/beastx-ro/first2apply/compare/v2.0.0.3...v2.1.0) (2025-10-27)
 
 
