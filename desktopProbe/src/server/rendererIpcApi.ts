@@ -238,6 +238,49 @@ export function initRendererIpcApi({
 
   ipcMain.handle('scan-link', async (event, { linkId }) => _apiCall(() => jobScanner.scanLink({ linkId })));
 
+  // API Configuration handlers
+  ipcMain.handle('get-api-config', async (event) =>
+    _apiCall(async () => {
+      // Load API config from secure storage
+      const path = require('path');
+      
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      
+      try {
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          return config;
+        }
+      } catch (error) {
+        console.error('Error loading API config:', error);
+      }
+      
+      // Return default config
+      return {
+        provider: 'gemini',
+        keys: { openai: '', gemini: '', llama: '' }
+      };
+    })
+  );
+
+  ipcMain.handle('update-api-config', async (event, { config }) =>
+    _apiCall(async () => {
+      // Save API config to secure storage
+      const path = require('path');
+      
+      const configPath = path.join(os.homedir(), '.first2apply-api-config.json');
+      
+      try {
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+      } catch (error) {
+        console.error('Error saving API config:', error);
+        throw error;
+      }
+      
+      return {};
+    })
+  );
+
   ipcMain.handle('open-overlay-browser-view', async (event, { url }) => {
     return _apiCall(async () => overlayBrowserView.open(url));
   });
