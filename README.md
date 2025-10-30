@@ -1,6 +1,7 @@
 # First 2 Apply
 
 First 2 Apply (https://first2apply.com/) is an open-source job board aggregator that centralizes listings from platforms like LinkedIn, Indeed, Dice, and more, helping job seekers find opportunities faster.
+Watch demo [video](https://www.youtube.com/watch?v=9-OYPBhwYG8).
 
 ## Project Setup
 The project has 2 main components:
