@@ -119,6 +119,20 @@ export class F2aSupabaseApi {
   }
 
   /**
+   * Insert a link directly into the database (for importing).
+   */
+  async insertLinkRaw({ title, url, site_id }: { title: string; url: string; site_id: number }): Promise<Link> {
+    return this._supabaseApiCall(async () => {
+      const { data } = await this._supabase
+        .from('links')
+        .insert({ title, url, site_id })
+        .select('*')
+        .single();
+      return data;
+    });
+  }
+
+  /**
    * Scan a list of htmls for new jobs.
    */
   scanHtmls(

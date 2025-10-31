@@ -426,6 +426,11 @@ export function JobTabsContent({
     openExternalUrl(job.externalUrl);
   };
 
+  // Open a URL in the default browser
+  const onOpenUrl = (url: string) => {
+    openExternalUrl(url);
+  };
+
   // Scroll to the top of the job description panel when the selected job changes
   useEffect(() => {
     if (jobDescriptionRef.current) {
@@ -546,6 +551,7 @@ export function JobTabsContent({
                         onView={onViewJob}
                         onUpdateJobStatus={onUpdateJobStatus}
                         onUpdateLabels={onUpdateJobLabels}
+                        onOpenUrl={onOpenUrl}
                         onFavoriteCompany={onFavoriteCompany}
                         onBlacklistCompany={onBlacklistCompany}
                       />

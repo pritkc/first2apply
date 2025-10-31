@@ -48,3 +48,9 @@ export type JobBoardModalResponse = {
   html: string;
   site: JobSite;
 };
+
+export type OverlayBrowserViewResult = {
+  url: string;
+  title: string;
+  html: string;
+};

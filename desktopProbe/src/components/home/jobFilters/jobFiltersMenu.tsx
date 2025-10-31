@@ -23,6 +23,7 @@ export type JobFiltersType = {
   sites: number[];
   links: number[];
   labels: string[];
+  hideLinkedInReposts?: boolean;
 };
 
 const ALL_LABELS = Object.values(JOB_LABELS);
