@@ -238,6 +238,28 @@ export function JobFiltersMenu({
           </DropdownMenuSub>
         </DropdownMenuGroup>
 
+        {/* AI Filters */}
+        <DropdownMenuGroup>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>AI Filters</DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent sideOffset={8} alignOffset={-37}>
+                <DropdownMenuCheckboxItem
+                  checked={selectedLabels.includes('FAVORITES_ONLY')}
+                  onSelect={(evt) => {
+                    evt.preventDefault();
+                    onSelectLabel('FAVORITES_ONLY');
+                  }}
+                  className="pr-8"
+                >
+                  <div className="h-4 w-4 rounded-full bg-yellow-500"></div>
+                  <p className="ml-2">Favorite Companies Only</p>
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
+
         <DropdownMenuSeparator />
 
         {/* Reset all filters button */}
