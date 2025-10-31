@@ -14,10 +14,12 @@ import {
 import { useLinks } from '@/hooks/links';
 import { useSites } from '@/hooks/sites';
 import { LABEL_COLOR_CLASSES } from '@/lib/labels';
-import { FilterIcon } from 'lucide-react';
-import { useState } from 'react';
+import { FilterIcon, DownloadIcon, UploadIcon, HeartIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 import { JOB_LABELS } from '../../../../../supabase/functions/_shared/types';
+import { getAdvancedMatchingConfig, exportAdvancedMatchingConfig, importAdvancedMatchingConfig } from '@/lib/electronMainSdk';
+import { toast } from '@/components/ui/use-toast';
 
 export type JobFiltersType = {
   sites: number[];
@@ -43,9 +45,23 @@ export function JobFiltersMenu({
   onApplyFilters: (filters: JobFiltersType) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [favoriteCompanies, setFavoriteCompanies] = useState<string[]>([]);
 
   const { siteLogos, sites } = useSites();
   const { links } = useLinks();
+
+  // Load favorite companies on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const config = await getAdvancedMatchingConfig();
+        setFavoriteCompanies(config?.favorite_companies || []);
+      } catch (error) {
+        console.error('Failed to load favorite companies:', error);
+      }
+    };
+    loadFavorites();
+  }, []);
 
   // Sort sites alphabetically and filter out sites that don't have any links
   const sortedSites = sites
@@ -99,6 +115,45 @@ export function JobFiltersMenu({
   };
   const clearAll = () => {
     onApplyFilters({ sites: [], links: [], labels: [] });
+  };
+
+  // Export AI filters configuration
+  const handleExportConfig = async () => {
+    try {
+      await exportAdvancedMatchingConfig();
+      toast({
+        title: 'AI Filters Exported',
+        description: 'Your AI filters configuration has been exported successfully.',
+        variant: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export AI filters configuration.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Import AI filters configuration
+  const handleImportConfig = async () => {
+    try {
+      const result = await importAdvancedMatchingConfig();
+      if ('favorite_companies' in result) {
+        setFavoriteCompanies(result.favorite_companies || []);
+        toast({
+          title: 'AI Filters Imported',
+          description: 'Your AI filters configuration has been imported successfully.',
+          variant: 'success',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Import Failed',
+        description: 'Failed to import AI filters configuration.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const activeFilterCount = selectedSites.length + selectedLinks.length + selectedLabels.length;
@@ -244,7 +299,8 @@ export function JobFiltersMenu({
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>AI Filters</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
-              <DropdownMenuSubContent sideOffset={8} alignOffset={-37}>
+              <DropdownMenuSubContent sideOffset={8} alignOffset={-37} className="w-64">
+                {/* Favorites Only Toggle */}
                 <DropdownMenuCheckboxItem
                   checked={selectedLabels.includes('FAVORITES_ONLY')}
                   onSelect={(evt) => {
@@ -256,10 +312,79 @@ export function JobFiltersMenu({
                   <div className="h-4 w-4 rounded-full bg-yellow-500"></div>
                   <p className="ml-2">Favorite Companies Only</p>
                 </DropdownMenuCheckboxItem>
+
+                <DropdownMenuSeparator />
+
+                {/* Whitelisted Companies List */}
+                <div className="px-2 py-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HeartIcon className="h-4 w-4 text-red-500" />
+                    <span className="text-sm font-medium">Whitelisted Companies ({favoriteCompanies.length})</span>
+                  </div>
+                  
+                  {favoriteCompanies.length === 0 ? (
+                    <p className="text-xs text-muted-foreground px-2 py-1">
+                      No favorite companies yet. Use the heart button on jobs to add companies.
+                    </p>
+                  ) : (
+                    <div className="max-h-32 overflow-y-auto">
+                      {favoriteCompanies.slice(0, 5).map((company, index) => (
+                        <div key={index} className="flex items-center gap-2 px-2 py-1 text-xs">
+                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                          <span className="truncate">{company}</span>
+                        </div>
+                      ))}
+                      {favoriteCompanies.length > 5 && (
+                        <p className="text-xs text-muted-foreground px-2 py-1">
+                          +{favoriteCompanies.length - 5} more companies
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <DropdownMenuSeparator />
+
+                {/* Export/Import Actions */}
+                <DropdownMenuItem
+                  onSelect={(evt) => {
+                    evt.preventDefault();
+                    handleExportConfig();
+                  }}
+                  className="px-2"
+                >
+                  <DownloadIcon className="h-4 w-4 mr-2" />
+                  Export AI Filters
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onSelect={(evt) => {
+                    evt.preventDefault();
+                    handleImportConfig();
+                  }}
+                  className="px-2"
+                >
+                  <UploadIcon className="h-4 w-4 mr-2" />
+                  Import AI Filters
+                </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
         </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        {/* Hide LinkedIn reposts */}
+        <DropdownMenuCheckboxItem
+          checked={selectedLabels.includes('HIDE_LINKEDIN_REPOSTS')}
+          onSelect={(evt) => {
+            evt.preventDefault();
+            onSelectLabel('HIDE_LINKEDIN_REPOSTS');
+          }}
+          className="pr-8"
+        >
+          Hide LinkedIn reposts
+        </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 
