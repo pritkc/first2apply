@@ -1,5 +1,8 @@
 import type IForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import path from "path";
+import dotenv from "dotenv";
+
+require('dotenv').config();
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ForkTsCheckerWebpackPlugin: typeof IForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
