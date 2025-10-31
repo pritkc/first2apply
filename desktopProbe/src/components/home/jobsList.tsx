@@ -14,6 +14,26 @@ import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { DeleteJobDialog } from './deleteJobDialog';
 
+// Lightweight relative time helper for display (minutes/hours/days)
+function getRelativeTimeString(date: Date) {
+  const now = new Date().getTime();
+  const diffMs = now - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diffMs < minute) return 'just now';
+  if (diffMs < hour) {
+    const m = Math.floor(diffMs / minute);
+    return `${m} min${m === 1 ? '' : 's'} ago`;
+  }
+  if (diffMs < day) {
+    const h = Math.floor(diffMs / hour);
+    return `${h} hour${h === 1 ? '' : 's'} ago`;
+  }
+  const d = Math.floor(diffMs / day);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
+
 /**
  * List of jobs component.
  */

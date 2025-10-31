@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppState } from '@/hooks/appState';
 import { useError } from '@/hooks/error';
 import { useLinks } from '@/hooks/links';
-import { debugLink, exportLinks, importLinks } from '@/lib/electronMainSdk';
+import { exportLinks, importLinks, scanLink } from '@/lib/electronMainSdk';
 import { throwError } from '@/lib/error';
 import { useEffect, useRef, useState } from 'react';
 

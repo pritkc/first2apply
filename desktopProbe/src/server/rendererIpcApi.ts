@@ -351,7 +351,7 @@ export function initRendererIpcApi({
     }),
   );
 
-  ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.startDebugWindow({ linkId })));
+  ipcMain.handle('debug-link', async (event, { linkId }) => _apiCall(() => jobScanner.scanLink({ linkId })));
   // API Configuration handlers
   ipcMain.handle('get-api-config', async (event) =>
     _apiCall(async () => {

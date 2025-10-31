@@ -96,6 +96,4 @@ function App() {
   );
 }
 
-// Render the app
-const root = createRoot(document.body.querySelector('#app')!);
-root.render(<App />);
+export default App;
