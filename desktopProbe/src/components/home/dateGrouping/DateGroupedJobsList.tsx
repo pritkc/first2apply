@@ -4,6 +4,8 @@ import { Job } from '@/lib/types';
 import { DateGroupHeader } from './DateGroupHeader';
 import { ArchiveIcon, TrashIcon, StarFilledIcon } from '@radix-ui/react-icons';
 import { getJobPostingDate, getRelativeTimeString } from '@/lib/dateUtils';
+import { useLinks } from '@/hooks/links';
+import { useSites } from '@/hooks/sites';
 
 interface DateGroupedJobsListProps {
   dateGroups: DateGroup[];
@@ -28,6 +30,9 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
   hasMore = false,
   favoriteCompanies = []
 }: DateGroupedJobsListProps) {
+  const { siteLogos } = useSites();
+  const { links } = useLinks();
+  
   // Track which date groups are expanded - use ref to avoid unnecessary re-renders
   const expandedDatesRef = useRef<Set<string>>(new Set());
   const [expandedDatesState, setExpandedDatesState] = useState<Set<string>>(new Set());
@@ -204,6 +209,19 @@ export const DateGroupedJobsList = memo(function DateGroupedJobsList({
                                   Found: {getRelativeTimeString(job.created_at)}
                                 </span>
                               </div>
+                              {/* Source - matches the format from jobSummary.tsx */}
+                              {(() => {
+                                const link = links.find((l) => l.id === job.link_id);
+                                return link ? (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <img src={siteLogos[link.site_id]} alt={link.title} className="h-5" />
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                                      {' via '}
+                                      {link.title}
+                                    </span>
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                         </div>
