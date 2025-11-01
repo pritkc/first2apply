@@ -153,10 +153,11 @@ export class JobScanner {
 
                 // add a random delay before moving on to the next link
                 // to avoid being rate limited by cloudflare
-                // use longer delays for LinkedIn to appear more human-like
+                // use VERY long delays for LinkedIn to appear more human-like (final warning - be conservative)
                 const isLinkedIn = link.url.toLowerCase().includes('linkedin.com');
                 if (isLinkedIn) {
-                  await waitRandomBetween(5000, 15000); // 5-15 seconds for LinkedIn
+                  // INCREASED: 10-25 seconds for LinkedIn (was 5-15, now more conservative)
+                  await waitRandomBetween(10000, 25000);
                 } else {
                   await waitRandomBetween(1000, 4000); // 1-4 seconds for other sites
                 }
@@ -298,10 +299,11 @@ export class JobScanner {
 
             // add a random delay before moving on to the next link
             // to avoid being rate limited by cloudflare
-            // use longer delays for LinkedIn to appear more human-like
+            // use VERY long delays for LinkedIn to appear more human-like (final warning - be conservative)
             const isLinkedIn = job.externalUrl.toLowerCase().includes('linkedin.com');
             if (isLinkedIn) {
-              await waitRandomBetween(2000, 5000); // 2-5 seconds for LinkedIn
+              // INCREASED: 5-12 seconds for LinkedIn job descriptions (was 2-5, now more conservative)
+              await waitRandomBetween(5000, 12000);
             } else {
               await waitRandomBetween(300, 1000); // 300ms-1s for other sites
             }
