@@ -123,8 +123,15 @@ export class JobScanner {
       this._runningScansCount++;
       const start = new Date().getTime();
 
-      await Promise.all(
-        links.map(async (link) => {
+      // Separate LinkedIn links from others to avoid bot detection
+      // LinkedIn links MUST be scanned sequentially (one at a time)
+      // Other links can be scanned in parallel
+      const linkedInLinks = links.filter((link) => link.url.toLowerCase().includes('linkedin.com'));
+      const otherLinks = links.filter((link) => !link.url.toLowerCase().includes('linkedin.com'));
+
+      // Helper function to scan a single link
+      const scanLink = async (link: Link): Promise<Job[]> => {
+        try {
           const newJobs = await this._normalHtmlDownloader
             .loadUrl({
               url: link.url,
@@ -156,36 +163,44 @@ export class JobScanner {
 
                 return newJobs;
               },
-            })
-            .catch(async (error): Promise<Job[]> => {
-              if (this._isRunning) {
-                const errorMessage = getExceptionMessage(error);
-                this._logger.error(`failed to scan link: ${errorMessage}`, {
-                  linkId: link.id,
-                });
-
-                // when dealing with rate limits, bump the number of failed attempts for the link
-                await this._supabaseApi
-                  .increaseScrapeFailureCount({
-                    linkId: link.id,
-                    failures: link.scrape_failure_count + 1,
-                  })
-                  .catch((error) => {
-                    this._logger.error(`failed to increase scrape failure count: ${getExceptionMessage(error)}`, {
-                      linkId: link.id,
-                    });
-                  });
-              }
-
-              // intetionally return an empty array if there is an error
-              // in order to continue scanning the rest of the links
-              return [];
             });
 
           return newJobs;
-        }),
-      );
-      this._logger.info(`downloaded html for ${links.length} links`);
+        } catch (error) {
+          if (this._isRunning) {
+            const errorMessage = getExceptionMessage(error);
+            this._logger.error(`failed to scan link: ${errorMessage}`, {
+              linkId: link.id,
+            });
+
+            // when dealing with rate limits, bump the number of failed attempts for the link
+            await this._supabaseApi
+              .increaseScrapeFailureCount({
+                linkId: link.id,
+                failures: link.scrape_failure_count + 1,
+              })
+              .catch((error) => {
+                this._logger.error(`failed to increase scrape failure count: ${getExceptionMessage(error)}`, {
+                  linkId: link.id,
+                });
+              });
+          }
+
+          // intetionally return an empty array if there is an error
+          // in order to continue scanning the rest of the links
+          return [];
+        }
+      };
+
+      // Scan LinkedIn links sequentially (one at a time) to avoid bot detection
+      const linkedInResults = await promiseAllSequence(linkedInLinks, scanLink);
+
+      // Scan other links in parallel (they don't require sequential processing)
+      const otherResults = await Promise.all(otherLinks.map(scanLink));
+
+      // Combine results
+      const allResults = [...linkedInResults, ...otherResults];
+      this._logger.info(`downloaded html for ${links.length} links (${linkedInLinks.length} LinkedIn, ${otherLinks.length} other)`);
 
       // scan job descriptions for all pending jobs
       if (!this._isRunning) return;
@@ -238,108 +253,131 @@ export class JobScanner {
     
     // For LinkedIn jobs, we need to be more careful about applicant data
     // Keep job discovery in incognito mode, but applicant data needs authenticated session
+    // Also separate LinkedIn jobs to scan them sequentially (one at a time) to avoid bot detection
+    const linkedInJobs = jobs.filter((job) => {
+      const site = sitesMap.get(job.siteId);
+      return site?.provider === 'linkedin';
+    });
     const incognitoJobsToScan = jobs.filter((job) => {
       const site = sitesMap.get(job.siteId);
       return site?.incognito_support && site.provider !== 'linkedin';
     });
     const normalJobsToScan = jobs.filter((job) => {
       const site = sitesMap.get(job.siteId);
-      return !site?.incognito_support || site.provider === 'linkedin';
+      return !site?.incognito_support && site.provider !== 'linkedin';
     });
+
+    // Helper function to scan a single job
+    const scanJob = async (job: Job, htmlDownloader: HtmlDownloader): Promise<Job> => {
+      try {
+        return await htmlDownloader.loadUrl({
+          url: job.externalUrl,
+          scrollTimes: 1,
+          callback: async ({ html, maxRetries, retryCount }) => {
+            this._logger.info(`downloaded html for ${job.title}`, {
+              jobId: job.id,
+            });
+
+            // stop if the scanner is closed
+            if (!this._isRunning) return job;
+
+            const { job: updatedJob, parseFailed } = await this._supabaseApi.scanJobDescription({
+              jobId: job.id,
+              html,
+              maxRetries,
+              retryCount,
+            });
+
+            if (parseFailed) {
+              this._logger.debug(`failed to parse job description: ${job.title}`, {
+                jobId: job.id,
+              });
+
+              throw new Error(`failed to parse job description for ${job.id}`);
+            }
+
+            // add a random delay before moving on to the next link
+            // to avoid being rate limited by cloudflare
+            // use longer delays for LinkedIn to appear more human-like
+            const isLinkedIn = job.externalUrl.toLowerCase().includes('linkedin.com');
+            if (isLinkedIn) {
+              await waitRandomBetween(2000, 5000); // 2-5 seconds for LinkedIn
+            } else {
+              await waitRandomBetween(300, 1000); // 300ms-1s for other sites
+            }
+
+            return updatedJob;
+          },
+        });
+      } catch (error) {
+        if (this._isRunning) {
+          const errorMessage = getExceptionMessage(error);
+          const isAuthwallError = errorMessage.toLowerCase().includes('authwall');
+          
+          // Log authwall as a warning instead of an error
+          if (isAuthwallError) {
+            this._logger.debug(`authwall detected for ${job.title}`, {
+              jobId: job.id,
+            });
+          } else {
+            this._logger.error(`failed to scan job description: ${errorMessage}`, {
+              jobId: job.id,
+            });
+          }
+        }
+
+        // intetionally return initial job if there is an error
+        // in order to continue scanning the rest of the jobs
+        return job;
+      }
+    };
 
     const scanJobDescriptions = async ({
       jobsToScan,
       htmlDownloader,
+      sequential = false,
     }: {
       jobsToScan: Job[];
       htmlDownloader: HtmlDownloader;
+      sequential?: boolean;
     }) => {
-      const jobChunks = chunk(jobsToScan, 10);
-      const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
-        if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
+      if (sequential) {
+        // Scan jobs one at a time (for LinkedIn to avoid bot detection)
+        return promiseAllSequence(jobsToScan, (job) => scanJob(job, htmlDownloader));
+      } else {
+        // Scan jobs in chunks for efficiency (non-LinkedIn jobs)
+        const jobChunks = chunk(jobsToScan, 10);
+        const updatedJobs = await promiseAllSequence(jobChunks, async (chunkOfJobs) => {
+          if (!this._isRunning) return chunkOfJobs; // stop if the scanner is closed
+          return Promise.all(chunkOfJobs.map((job) => scanJob(job, htmlDownloader)));
+        }).then((r) => r.flat());
 
-        return Promise.all(
-          chunkOfJobs.map(async (job) => {
-            try {
-              return await htmlDownloader.loadUrl({
-                url: job.externalUrl,
-                scrollTimes: 1,
-                callback: async ({ html, maxRetries, retryCount }) => {
-                  this._logger.info(`downloaded html for ${job.title}`, {
-                    jobId: job.id,
-                  });
-
-                  // stop if the scanner is closed
-                  if (!this._isRunning) return job;
-
-                  const { job: updatedJob, parseFailed } = await this._supabaseApi.scanJobDescription({
-                    jobId: job.id,
-                    html,
-                    maxRetries,
-                    retryCount,
-                  });
-
-                  if (parseFailed) {
-                    this._logger.debug(`failed to parse job description: ${job.title}`, {
-                      jobId: job.id,
-                    });
-
-                    throw new Error(`failed to parse job description for ${job.id}`);
-                  }
-
-                  // add a random delay before moving on to the next link
-                  // to avoid being rate limited by cloudflare
-                  // use longer delays for LinkedIn to appear more human-like
-                  const isLinkedIn = job.externalUrl.toLowerCase().includes('linkedin.com');
-                  if (isLinkedIn) {
-                    await waitRandomBetween(2000, 5000); // 2-5 seconds for LinkedIn
-                  } else {
-                    await waitRandomBetween(300, 1000); // 300ms-1s for other sites
-                  }
-
-                  return updatedJob;
-                },
-              });
-            } catch (error) {
-              if (this._isRunning) {
-                const errorMessage = getExceptionMessage(error);
-                const isAuthwallError = errorMessage.toLowerCase().includes('authwall');
-                
-                // Log authwall as a warning instead of an error
-                if (isAuthwallError) {
-                  this._logger.debug(`authwall detected for ${job.title}`, {
-                    jobId: job.id,
-                  });
-                } else {
-                  this._logger.error(`failed to scan job description: ${errorMessage}`, {
-                    jobId: job.id,
-                  });
-                }
-              }
-
-              // intetionally return initial job if there is an error
-              // in order to continue scanning the rest of the jobs
-              return job;
-            }
-          }),
-        );
-      }).then((r) => r.flat());
-
-      return updatedJobs;
+        return updatedJobs;
+      }
     };
 
+    // Scan LinkedIn jobs sequentially (one at a time) to avoid bot detection
+    const scannedLinkedInJobs = await scanJobDescriptions({
+      jobsToScan: linkedInJobs,
+      htmlDownloader: this._normalHtmlDownloader,
+      sequential: true,
+    });
+
+    // Scan other jobs in parallel chunks
     const [scannedNormalJobs, scannedIncognitoJobs] = await Promise.all([
       scanJobDescriptions({
         jobsToScan: normalJobsToScan,
         htmlDownloader: this._normalHtmlDownloader,
+        sequential: false,
       }),
       scanJobDescriptions({
         jobsToScan: incognitoJobsToScan,
         htmlDownloader: this._incognitoHtmlDownloader,
+        sequential: false,
       }),
     ]);
 
-    const allScannedJobs = [...scannedIncognitoJobs, ...scannedNormalJobs];
+    const allScannedJobs = [...scannedIncognitoJobs, ...scannedNormalJobs, ...scannedLinkedInJobs];
     const updatedJobs = jobs.map((job) => allScannedJobs.find((j) => j.id === job.id) ?? throwError('job not found')); // preserve the order
 
     this._logger.info('finished scanning job descriptions');
