@@ -144,3 +144,34 @@ webapp/
 *.backup
 *.bak
 .specstory/
+
+# Documentation files (auto-generated)
+BEFORE_AFTER_COMPARISON.md
+IMPLEMENTATION_SUMMARY.md
+LINKEDIN_BOT_DETECTION_FIX.md
+NEW_FEATURES_GUIDE.md
+COMPANY_FILTERING_DEEP_DIVE.md
+DEVELOPMENT_SETUP.md
+QUICK_START.md
+
+# Desktop app build artifacts
+apps/desktopProbe/out/
+apps/desktopProbe/node_modules/
+apps/desktopProbe/.webpack/
+desktopProbe/out/
+desktopProbe/node_modules/
+desktopProbe/.webpack/
+desktopProbe/texput.log
+
+# Webpack build artifacts
+.webpack/
+*/.webpack/
+
+# Supabase functions environment files
+supabase/functions.env
+apps/backend/supabase/functions.env
+
+# Additional build artifacts and temp files
+comprehensive-test.js
+emailTemplates/
+assets/sitesIcons/
