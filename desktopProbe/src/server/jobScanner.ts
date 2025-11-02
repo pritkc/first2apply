@@ -17,9 +17,11 @@ const settingsPath = path.join(userDataPath, 'settings.json');
 
 const DEFAULT_SETTINGS: JobScannerSettings = {
   cronRule: AVAILABLE_CRON_RULES[1].value, // every 1h
+  linkedInScanInterval: 30, // 30 minutes for LinkedIn by default
   preventSleep: true,
   useSound: true,
   areEmailAlertsEnabled: true,
+  isPaused: false, // not paused by default
 };
 
 /**
@@ -44,6 +46,7 @@ export class JobScanner {
   private _prowerSaveBlockerId: number | undefined;
   private _notificationsMap: Map<string, Notification> = new Map();
   private _runningScansCount = 0;
+  private _lastLinkedInScanTime: number = 0; // Track last LinkedIn scan timestamp
 
   constructor({
     logger,
@@ -97,6 +100,12 @@ export class JobScanner {
    * Scan all links for the current user.
    */
   async scanAllLinks() {
+    // if scanning is paused, skip
+    if (this._settings.isPaused) {
+      this._logger.info('skipping scheduled scan because scanning is paused');
+      return;
+    }
+    
     // if the scanner hasn't finished scanning the previous links, skip this scan
     if (this.isScanning()) {
       this._logger.info('skipping scheduled scan because the scanner is processing other links');
@@ -104,11 +113,43 @@ export class JobScanner {
     }
 
     // fetch all links from the database
-    const links = (await this._supabaseApi.listLinks()) ?? [];
-    this._logger.info(`found ${links?.length} links`);
+    const allLinks = (await this._supabaseApi.listLinks()) ?? [];
+    this._logger.info(`found ${allLinks?.length} links`);
+
+    // Separate LinkedIn links from others
+    const linkedInLinks = allLinks.filter((link) => link.url.toLowerCase().includes('linkedin.com'));
+    const otherLinks = allLinks.filter((link) => !link.url.toLowerCase().includes('linkedin.com'));
+
+    // Check if it's time to scan LinkedIn (based on custom interval)
+    const now = Date.now();
+    const linkedInIntervalMs = (this._settings.linkedInScanInterval || 30) * 60 * 1000;
+    const timeSinceLastLinkedInScan = now - this._lastLinkedInScanTime;
+    const shouldScanLinkedIn = timeSinceLastLinkedInScan >= linkedInIntervalMs;
+
+    // Decide which links to scan
+    let linksToScan: Link[] = [];
+    
+    if (shouldScanLinkedIn && linkedInLinks.length > 0) {
+      // Scan LinkedIn + other sites
+      linksToScan = [...linkedInLinks, ...otherLinks];
+      this._lastLinkedInScanTime = now;
+      this._logger.info(`scanning ${linkedInLinks.length} LinkedIn links + ${otherLinks.length} other links`);
+    } else {
+      // Scan only non-LinkedIn sites
+      linksToScan = otherLinks;
+      if (linkedInLinks.length > 0) {
+        const minutesUntilNextLinkedInScan = Math.ceil((linkedInIntervalMs - timeSinceLastLinkedInScan) / 60000);
+        this._logger.info(`skipping LinkedIn links (next scan in ${minutesUntilNextLinkedInScan} minutes), scanning ${otherLinks.length} other links`);
+      }
+    }
+
+    if (linksToScan.length === 0) {
+      this._logger.info('no links to scan at this time');
+      return;
+    }
 
     // start the scan
-    return this.scanLinks({ links });
+    return this.scanLinks({ links: linksToScan });
   }
 
   /**

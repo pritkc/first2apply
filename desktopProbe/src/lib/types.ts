@@ -31,9 +31,11 @@ export type CronRule = (typeof AVAILABLE_CRON_RULES)[number];
 
 export type JobScannerSettings = {
   cronRule?: string;
+  linkedInScanInterval?: number; // minutes, separate from global cronRule
   preventSleep: boolean;
   useSound: boolean;
   areEmailAlertsEnabled: boolean;
+  isPaused?: boolean; // pause all scanning without stopping the app
 };
 
 export type NewAppVersion = {
