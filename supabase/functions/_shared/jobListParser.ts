@@ -848,9 +848,14 @@ export function parseGlassDoorJobs({
       el.querySelector(`#job-title-${externalId}`)?.textContent?.trim() || "";
     if (!title) return null;
 
-    const companyName = el
+    const companyNameRaw = el
       .querySelector(".jobCard .EmployerProfile_profileContainer__63w3R")
       ?.textContent?.trim();
+    if (!companyNameRaw) return null;
+    
+    // Remove rating (e.g., "4.0", "3.9") that gets appended to company names
+    // Only remove if it's a decimal number (ratings are typically 1.0-5.0 range)
+    const companyName = companyNameRaw.replace(/\d+\.\d+$/, '').trim();
     if (!companyName) return null;
 
     const companyLogo = el
