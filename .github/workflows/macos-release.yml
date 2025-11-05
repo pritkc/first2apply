@@ -54,6 +54,7 @@ jobs:
           NO_COLOR: ${{ vars.NO_COLOR }}
         run: |
           pnpm make
+          pnpm make --arch arm64
           
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
