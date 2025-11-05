@@ -66,8 +66,20 @@ jobs:
           $dest = "s3://${env:S3_BUCKET_NAME}/releases/win32/x64/first2apply-latest-x64.appx"
           aws s3 cp $src $dest --acl public-read
 
+  update-releases-json:
+    name: Update RELEASES.json
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Update RELEASES.json
-        if: github.event_name == 'workflow_dispatch'
         shell: bash
         env:
           S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
@@ -77,7 +89,7 @@ jobs:
           RELEASES_JSON="RELEASES.json"
 
           # Download the existing RELEASES.json from S3
-          aws s3 cp s3://${S3_BUCKET_NAME}/releases/windows/$RELEASES_JSON $RELEASES_JSON || echo '{"currentRelease": "", "releases": []}' > $RELEASES_JSON
+          aws s3 cp s3://${S3_BUCKET_NAME}/releases/win32/x64/$RELEASES_JSON $RELEASES_JSON || echo '{"currentRelease": "", "releases": []}' > $RELEASES_JSON
 
           # Update the RELEASES.json with the new release information
           jq \
@@ -95,6 +107,5 @@ jobs:
             }]' $RELEASES_JSON > tmp.$$.json && mv tmp.$$.json $RELEASES_JSON
 
           # Upload the updated RELEASES.json back to S3
-          aws s3 cp $RELEASES_JSON s3://${S3_BUCKET_NAME}/releases/windows/$RELEASES_JSON
+          aws s3 cp $RELEASES_JSON s3://${S3_BUCKET_NAME}/releases/win32/x64/$RELEASES_JSON
 
-      
