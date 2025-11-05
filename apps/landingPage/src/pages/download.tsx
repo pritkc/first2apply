@@ -27,7 +27,7 @@ export default function Download() {
           <div className="mt-12 flex w-full flex-col gap-4 xs:max-w-[500px] xs:flex-row xs:flex-wrap xs:items-center xs:justify-center">
             {/* macos apple silicon */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/First+2+Apply-2.1.2-arm64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/arm64/first2apply-latest.dmg"
               onClick={() => {
                 sendGTMEvent({
                   event: 'file_download',
@@ -81,7 +81,7 @@ export default function Download() {
 
             {/* macos x64 */}
             <a
-              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/First+2+Apply-2.1.2-x64.dmg"
+              href="https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/darwin/x64/first2apply-latest.dmg"
               onClick={() => {
                 sendGTMEvent({
                   event: 'file_download',
