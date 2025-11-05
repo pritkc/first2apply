@@ -1,5 +1,12 @@
 
 
+## [2.1.3](https://github.com/beastx-ro/first2apply/compare/desktop-v2.1.2...2.1.3) (2025-11-05)
+
+
+### Bug Fixes
+
+* **desktop:** create link dialog was not using user input as title ([11dd7df](https://github.com/beastx-ro/first2apply/commit/11dd7dfd8837f9d11266b887049c9c434a715cfa))
+
 ## [2.1.2](https://github.com/beastx-ro/first2apply/compare/2.1.1...2.1.2) (2025-11-05)
 
 
