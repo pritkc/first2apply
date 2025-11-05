@@ -1,5 +1,20 @@
 
 
+## [2.1.2](https://github.com/beastx-ro/first2apply/compare/2.1.1...2.1.2) (2025-11-05)
+
+
+### Bug Fixes
+
+* add deno json to each function ([24db40e](https://github.com/beastx-ro/first2apply/commit/24db40e71b53c673da294df787f2369c5d2354af))
+* **backend:** custom links check only if new site is also custom ([1ef7a7d](https://github.com/beastx-ro/first2apply/commit/1ef7a7debbb1d8307c4e91630fb2f649aeec36a5))
+* **backend:** linkedin no results node ([abf3cc4](https://github.com/beastx-ro/first2apply/commit/abf3cc4f725a16541b206fdf8b5f9af8e8570f71))
+* **backend:** non-null tags ([66b58ba](https://github.com/beastx-ro/first2apply/commit/66b58baf0dc209ac32a5d5b454aaa132928e473e))
+* **backend:** non-null tags ([0b5785b](https://github.com/beastx-ro/first2apply/commit/0b5785bb7271919fba8a0ddfdece859943a3bfc0))
+* **backend:** use deno json for package mgmt ([aa19953](https://github.com/beastx-ro/first2apply/commit/aa19953bda979eb246e399262fc3081e94bd3e40))
+* column default ([5142193](https://github.com/beastx-ro/first2apply/commit/51421939037257ddfcad11ed3df607dc8af247b1))
+* **desktop:** god damn tags bug ([4010c9f](https://github.com/beastx-ro/first2apply/commit/4010c9fb44e5567c781c438079bb20463154f5f0))
+* **desktop:** overlay browser view must use same partition as scrapers ([6267e02](https://github.com/beastx-ro/first2apply/commit/6267e021672299d339271aedd26dd67d1c0de5ef))
+
 ## [2.1.1](https://github.com/beastx-ro/first2apply/compare/desktop-v2.1.0...2.1.1) (2025-10-29)
 
 
