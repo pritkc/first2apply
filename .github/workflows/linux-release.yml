@@ -71,3 +71,32 @@ jobs:
           aws s3 cp s3://${S3_BUCKET_NAME}/releases/linux/x64/first2apply-${VERSION}-amd64.deb \
             s3://${S3_BUCKET_NAME}/releases/linux/x64/first2apply-latest-amd64.deb \
             --acl public-read
+            
+      - name: Update RELEASES.json
+        env:
+          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          RELEASES_JSON="RELEASES.json"
+
+          # Download the existing RELEASES.json from S3
+          aws s3 cp s3://${S3_BUCKET_NAME}/releases/linux/x64/$RELEASES_JSON $RELEASES_JSON || echo '{"currentRelease": "", "releases": []}' > $RELEASES_JSON
+
+          # Update the RELEASES.json with the new release information
+          jq \
+            --arg version "$VERSION" \
+            --arg pub_date "$PUB_DATE" \
+            '.currentRelease = $version | .releases += [{
+              "version": $version,
+              "updateTo": {
+                "name": "First 2 Apply v" + $version,
+                "version": $version,
+                "pub_date": $pub_date,
+                "url": "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first2apply-" + $version + "-amd64.deb",
+                "notes": ""
+              }
+            }]' $RELEASES_JSON > tmp.$$.json && mv tmp.$$.json $RELEASES_JSON
+
+          # Upload the updated RELEASES.json back to S3
+          aws s3 cp $RELEASES_JSON s3://${S3_BUCKET_NAME}/releases/linux/x64/$RELEASES_JSON
