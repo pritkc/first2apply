@@ -238,7 +238,9 @@ export function parseLinkedInJobs({ siteId, html }: { siteId: number; html: stri
 
   // check if the list is empty first
   const noResultsNode =
-    document.querySelector('.no-results') || document.querySelector('.jobs-search-no-results-banner');
+    document.querySelector('.no-results') ||
+    document.querySelector('.jobs-search-no-results-banner') ||
+    document.querySelector('.jobs-semantic-search__no-results');
   if (noResultsNode) {
     return {
       jobs: [],
