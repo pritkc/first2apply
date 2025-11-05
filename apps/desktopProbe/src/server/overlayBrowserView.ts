@@ -29,7 +29,11 @@ export class OverlayBrowserView {
       throw new Error('Search view is already open');
     }
 
-    this._searchView = new WebContentsView();
+    this._searchView = new WebContentsView({
+      webPreferences: {
+        partition: 'persist:scraper',
+      },
+    });
 
     // set the bounds of the view to be the same as the main window
     this._updateSearchViewBounds();
