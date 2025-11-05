@@ -89,7 +89,7 @@ export function CreateLink() {
     }
   };
 
-  const onSaveSearch = async () => {
+  const onSaveSearch = async ({ title }: { title: string }) => {
     if (!jobBoardModalResponse) {
       handleError({ error: new Error('No job search data'), title: 'Error saving job search' });
       return;
@@ -97,7 +97,7 @@ export function CreateLink() {
 
     const createdLink = await createLink({
       url: jobBoardModalResponse.url,
-      title: jobBoardModalResponse.title,
+      title, // use the title provided by the user
       html: jobBoardModalResponse.html,
     });
     toast({
