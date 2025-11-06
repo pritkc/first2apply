@@ -87,13 +87,15 @@ jobs:
           jq \
             --arg version "$VERSION" \
             --arg pub_date "$PUB_DATE" \
+            --arg name "First 2 Apply v$VERSION" \
+            --arg url "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first2apply-$VERSION-amd64.deb" \
             '.currentRelease = $version | .releases += [{
               "version": $version,
               "updateTo": {
-                "name": "First 2 Apply v" + $version,
+                "name": $name,
                 "version": $version,
                 "pub_date": $pub_date,
-                "url": "https://s3.eu-central-1.amazonaws.com/first2apply.com/releases/linux/x64/first2apply-" + $version + "-amd64.deb",
+                "url": $url,
                 "notes": ""
               }
             }]' $RELEASES_JSON > tmp.$$.json && mv tmp.$$.json $RELEASES_JSON
