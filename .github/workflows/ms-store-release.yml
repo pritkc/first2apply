@@ -102,10 +102,11 @@ jobs:
           jq \
             --arg version "$VERSION" \
             --arg pub_date "$PUB_DATE" \
+            --arg name "First 2 Apply v$VERSION" \
             '.currentRelease = $version | .releases += [{
               "version": $version,
               "updateTo": {
-                "name": "First 2 Apply v" + $version,
+                "name": $name,
                 "version": $version,
                 "pub_date": $pub_date,
                 "url": "ms-windows-store://pdp/?productid=9NK18WV87SV2",
