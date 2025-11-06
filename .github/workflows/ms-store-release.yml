@@ -69,7 +69,8 @@ jobs:
   update-releases-json:
     name: Update RELEASES.json
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    needs: build-store
+    environment: Production Manual Release
 
     steps:
       - uses: actions/checkout@v4
