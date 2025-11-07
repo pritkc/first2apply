@@ -29,7 +29,7 @@ export function ProductSection() {
           10+ most popular sites.
         </h1>
 
-        <h2 className="text-foreground/70 mt-2 text-sm md:hidden">
+        <h2 className="mt-2 text-sm text-foreground/70 md:hidden">
           Land more interviews by being the first to know when new jobs are posted.&nbsp;
           <br className="hidden sm:inline-block" />
           Stop wasting time manually browsing LinkedIn, Indeed, Dice or other job boards.
@@ -44,7 +44,7 @@ export function ProductSection() {
         </Link>
       </div>
 
-      <div className="from-muted to-background dark:from-card/60 relative hidden h-[50vh] bg-gradient-to-t md:block">
+      <div className="relative hidden h-[50vh] bg-gradient-to-t from-muted to-background dark:from-card/60 md:block">
         <div className="mx-auto max-w-7xl px-6 pt-3 sm:px-10">
           <h2 className="text-md text-foreground/70 lg:text-lg">
             Land more interviews by being the first to know when new jobs are posted.
@@ -56,27 +56,34 @@ export function ProductSection() {
             src={trackBlackImage}
             alt="paperfly track black"
             priority={true}
-            className="absolute top-2 z-10 h-auto max-h-[315px] w-96 md:left-1/2 md:ml-40 md:-translate-x-1/2 lg:ml-44 lg:h-[40vh] lg:w-auto dark:hidden"
+            className="absolute top-2 z-10 h-auto max-h-[315px] w-96 dark:hidden md:left-1/2 md:ml-40 md:-translate-x-1/2 lg:ml-44 lg:h-[40vh] lg:w-auto"
           />
           <Image
             src={trackWhiteImage}
             alt="paperfly track white"
             priority={true}
-            className="absolute top-2 z-10 hidden h-auto max-h-[315px] w-96 md:left-1/2 md:ml-40 md:-translate-x-1/2 lg:ml-44 lg:h-[40vh] lg:w-auto dark:block"
+            className="absolute top-2 z-10 hidden h-auto max-h-[315px] w-96 dark:block md:left-1/2 md:ml-40 md:-translate-x-1/2 lg:ml-44 lg:h-[40vh] lg:w-auto"
           />
         </div>
       </div>
 
       <div className="mx-auto min-h-fit max-w-5xl overflow-hidden px-6 md:relative md:-top-[20vh] md:px-10">
-        <iframe
-          className="xs:h-[350px] h-[250px] rounded-2xl shadow-lg sm:h-[500px] md:h-[550px] lg:h-[662px]"
-          width="100%"
-          height="720"
-          src="https://www.youtube.com/embed/FdGVp3SbV2k?si=X5NGCDIo0K_ibaZN"
-          title="YouTube video player"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        ></iframe>
+        <div
+          style={{
+            padding: '70.68% 0 0 0',
+            position: 'relative',
+          }}
+        >
+          <iframe
+            src="https://player.vimeo.com/video/1134606780?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+            frameBorder="0"
+            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%' }}
+            title="How to Add Job Searches in First 2 Apply"
+          ></iframe>
+        </div>
+        <script src="https://player.vimeo.com/api/player.js"></script>
       </div>
     </section>
   );
