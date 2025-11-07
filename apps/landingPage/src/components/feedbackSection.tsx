@@ -40,14 +40,15 @@ const reviews: Review[] = [
 
 export function FeedbackSection() {
   return (
-    <section id="feedback" className="bg-muted dark:bg-card/60 relative mt-[10vh] md:mt-[20vh]">
-      <QuoteIcon className="text-foreground/80 absolute left-1 top-2 h-10 w-10 sm:top-10 sm:h-16 sm:w-16" />
+    <section id="feedback" className="relative mt-[10vh] bg-muted dark:bg-card/60 md:mt-[20vh]">
+      <QuoteIcon className="absolute left-1 top-2 h-10 w-10 text-foreground/80 sm:top-10 sm:h-16 sm:w-16" />
       <Carousel
-        className="xs:py-32 mx-auto flex max-w-7xl flex-col justify-center py-12"
+        className="mx-auto flex max-w-7xl flex-col justify-center py-12 xs:py-32"
         opts={{ loop: true }}
         plugins={[
           Autoplay({
             delay: 8000,
+            stopOnMouseEnter: true,
           }),
         ]}
       >
@@ -56,7 +57,7 @@ export function FeedbackSection() {
             <CarouselItem key={index} className="flex flex-col justify-center px-10 sm:px-16">
               <p className="block text-balance text-2xl font-medium sm:text-3xl">{review.title}</p>
               <p className="mt-4 block text-base sm:text-justify sm:text-lg">{review.details} </p>
-              <a href={review.source.href} className="text-muted-foreground mt-4">
+              <a href={review.source.href} className="mt-4 text-muted-foreground">
                 Source: {review.source.name}
               </a>
             </CarouselItem>
@@ -74,7 +75,7 @@ export function FeedbackSection() {
           </div>
         </div>
       </Carousel>
-      <QuoteIcon className="text-foreground/80 absolute bottom-2 right-1 h-10 w-10 sm:bottom-10 sm:h-16 sm:w-16" />
+      <QuoteIcon className="absolute bottom-2 right-1 h-10 w-10 text-foreground/80 sm:bottom-10 sm:h-16 sm:w-16" />
     </section>
   );
 }
