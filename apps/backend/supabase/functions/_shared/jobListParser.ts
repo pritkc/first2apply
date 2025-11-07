@@ -897,7 +897,7 @@ export function parseDiceJobs({ siteId, html }: { siteId: number; html: string }
     };
   }
 
-  const jobsList = document.querySelector('div[data-id')?.parentElement;
+  const jobsList = document.querySelector('[role="list"], [aria-label="Job search results"]');
   if (!jobsList) {
     return {
       jobs: [],
@@ -906,7 +906,7 @@ export function parseDiceJobs({ siteId, html }: { siteId: number; html: string }
     };
   }
 
-  const jobElements = Array.from(jobsList.querySelectorAll('div[data-id]')) as Element[];
+  const jobElements = Array.from(jobsList.querySelectorAll('div[data-testid="job-card"]')) as Element[];
 
   const jobs = jobElements.map((el): ParsedJob | null => {
     const externalId = el?.getAttribute('data-id')?.trim();
